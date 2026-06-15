@@ -37,3 +37,33 @@ export interface Message {
   citations?: Citation[];
   timestamp: Date;
 }
+
+export interface SpaceResponse {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SpaceDetailResponse {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  documents: {
+    id: number;
+    fileName: string;
+    fileType: string;
+    storageUrl: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+}
+
+export interface ApiResponse<T> {
+  code: number;
+  message: string;
+  result: T;
+}
