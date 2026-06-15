@@ -1,4 +1,6 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { ChatPage } from '@/pages/ChatPage';
+
 
 // Placeholder Pages (Sẽ được viết chi tiết hơn trong quá trình code)
 const HomePlaceholder = () => (
@@ -74,6 +76,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <DashboardPlaceholder />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/document/:id',
+    element: (
+      <ProtectedRoute>
+        <ChatPage />
       </ProtectedRoute>
     ),
   },
