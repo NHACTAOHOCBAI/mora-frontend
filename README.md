@@ -1,73 +1,86 @@
-# React + TypeScript + Vite
+# Mora Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Mora Frontend là ứng dụng giao diện được xây dựng bằng **React 19** và **Vite**, tích hợp hệ sinh thái thư viện hiện đại nhằm tối ưu hóa hiệu năng, trải nghiệm lập trình và trải nghiệm người dùng.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Công Nghệ Sử Dụng (Tech Stack)
 
-## React Compiler
+- **Framework**: [React 19](https://react.dev/) & [Vite 8](https://vite.dev/) (TypeScript)
+- **Styling & UI Components**: [Tailwind CSS v4](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
+- **State Management (Server State)**: [TanStack Query v5](https://tanstack.com/query/latest) (React Query)
+- **Routing**: [React Router](https://reactrouter.com/) (v6/v7)
+- **HTTP Client**: [Axios](https://axios-http.com/) (Tự động hóa Interceptors cấu hình JWT Token)
+- **Form & Validation**: [React Hook Form](https://react-hook-form.com/) kết hợp với [Zod](https://zod.dev/)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 📂 Cấu Trúc Thư Mục (Folder Structure)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Dự án tuân theo mô hình **Feature-based** để dễ dàng mở rộng khi hệ thống lớn lên:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+├── assets/             # Hình ảnh, icons, font tĩnh
+├── components/         # Các components dùng chung toàn dự án
+│   ├── ui/             # Các components UI nguyên bản (Shadcn/ui)
+│   └── shared/         # Components dùng chung tự viết (Header, Footer, Loading...)
+├── config/             # Cấu hình dự án (Axios client, biến môi trường...)
+├── features/           # Phân chia thư mục theo nghiệp vụ/chức năng (Auth, Chat, User...)
+│   └── [feature_name]/
+│       ├── components/ # Components nội bộ của feature
+│       ├── hooks/      # Hooks nghiệp vụ (API queries/mutations)
+│       ├── services/   # Services gọi API
+│       ├── types/      # Định nghĩa TypeScript Types
+│       └── index.ts    # Điểm xuất khẩu dữ liệu dùng ra bên ngoài
+├── hooks/              # Custom hooks dùng chung toàn dự án
+├── layouts/            # Layout hiển thị chính (MainLayout, AuthLayout...)
+├── pages/              # Màn hình/Trang tương ứng với mỗi Router
+├── providers/          # Các Provider bọc ngoài App (QueryProvider...)
+├── routes/             # Cấu hình routes ứng dụng (AppRoutes)
+├── types/              # Định nghĩa Types dùng chung toàn dự án
+└── utils/              # Các hàm tiện ích dùng chung
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🛠️ Hướng Dẫn Cài Đặt & Chạy Dự Án
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Cài đặt dependencies
+Đảm bảo bạn đã cài đặt Node.js phiên bản mới (khuyến nghị v18+ hoặc v20+).
+```bash
+npm install
 ```
+
+### 2. Biến Môi Trường (Environment Variables)
+Tạo file `.env` ở thư mục gốc của dự án và cấu hình đường dẫn API:
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+### 3. Chạy môi trường phát triển (Development)
+```bash
+npm run dev
+```
+
+### 4. Build sản phẩm (Production)
+```bash
+npm run build
+```
+Thư mục chứa kết quả build sẽ là `dist/`.
+
+### 5. Xem trước bản Build (Preview)
+```bash
+npm run preview
+```
+
+---
+
+## 📜 Quy Định Viết Code (Coding Standards)
+
+Để dự án được đồng bộ và nhất quán, vui lòng đọc kỹ tài liệu **[frontend-guide.md](./frontend-guide.md)** trước khi tham gia viết code. Một số quy tắc quan trọng:
+- Đặt tên component bằng **PascalCase** (ví dụ: `LoginForm.tsx`).
+- Sử dụng **Named Export** thay vì Default Export.
+- Không gọi API trực tiếp trong component; luôn bọc qua **React Query** custom hooks.
+- Validate Form bằng **Zod** schema và **React Hook Form**.
+- Sử dụng path alias `@/` khi import (ví dụ: `@/components/ui/button` thay vì `../../components/ui/button`).
