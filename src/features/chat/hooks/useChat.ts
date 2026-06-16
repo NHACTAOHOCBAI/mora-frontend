@@ -1,5 +1,5 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { getDocumentDetails, sendChatMessage, sendSpaceChatMessage } from '../services/chat-api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getDocumentDetails, sendChatMessage, sendSpaceChatMessage, generateStudyNotes } from '../services/chat-api';
 import type { DocumentChatRequest, SpaceChatRequest } from '../types';
 
 export const useDocumentDetails = (id: number) => {
@@ -19,5 +19,15 @@ export const useSendChatMessage = () => {
 export const useSendSpaceChatMessage = () => {
   return useMutation({
     mutationFn: (request: SpaceChatRequest) => sendSpaceChatMessage(request),
+  });
+};
+
+export const useGenerateStudyNotes = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => generateStudyNotes(id),
+    onSuccess: (data, id) => {
+      queryClient.setQueryData(['document', id], data);
+    },
   });
 };

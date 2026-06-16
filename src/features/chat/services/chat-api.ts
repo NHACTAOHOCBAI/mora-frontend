@@ -15,3 +15,8 @@ export const sendSpaceChatMessage = async (request: SpaceChatRequest): Promise<S
   const response = await apiClient.post<SpaceChatResponse>('/chat/space', request);
   return response.data;
 };
+
+export const generateStudyNotes = async (id: number): Promise<DocumentDetailResponse> => {
+  const response = await apiClient.post<DocumentDetailResponse>(`/documents/${id}/generate-study-notes`);
+  return response.data;
+};

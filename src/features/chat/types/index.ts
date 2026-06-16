@@ -45,6 +45,8 @@ export interface DocumentDetailResponse {
   createdAt: string;
   updatedAt: string;
   pages: DocumentPageResponse[];
+  summary?: string;
+  flashcards?: string;
 }
 
 export interface Message {
