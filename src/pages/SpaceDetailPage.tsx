@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, Menu, PanelLeftClose, PanelLeft, MessageSquare, BookOpenCheck, HelpCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck } from 'lucide-react';
 import { useSpaceDetail, useUploadDocument, useDeleteDocument } from '@/features/chat/hooks/useSpace';
-import { useDocumentDetails, useSendChatMessage, useSendSpaceChatMessage, useGenerateStudyNotes } from '@/features/chat/hooks/useChat';
+import { 
+  useDocumentDetails, 
+  useSendChatMessage, 
+  useSendSpaceChatMessage, 
+  useGenerateStudyNotes,
+  useDocumentChatHistory,
+  useSpaceChatHistory,
+  useClearDocumentChatHistory,
+  useClearSpaceChatHistory
+} from '@/features/chat/hooks/useChat';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
 import type { Message } from '@/features/chat/types';
@@ -35,6 +44,66 @@ export const SpaceDetailPage: React.FC = () => {
   const deleteDocMutation = useDeleteDocument();
   const sendMessageMutation = useSendChatMessage();
   const sendSpaceMessageMutation = useSendSpaceChatMessage();
+
+  // Chat History hooks
+  const { data: spaceHistoryData } = useSpaceChatHistory(spaceId);
+  const { data: docHistoryData } = useDocumentChatHistory(selectedDocId || 0);
+
+  // Clear History mutations
+  const clearSpaceHistoryMutation = useClearSpaceChatHistory();
+  const clearDocHistoryMutation = useClearDocumentChatHistory();
+
+  // Load space chat history from DB
+  useEffect(() => {
+    if (spaceHistoryData) {
+      const formattedHistory: Message[] = spaceHistoryData.map((msg) => ({
+        id: String(msg.id),
+        sender: msg.sender,
+        text: msg.text,
+        timestamp: new Date(msg.timestamp),
+        citations: msg.citations || [],
+        condensedQuestion: msg.condensedQuestion,
+      }));
+      setSpaceMessages(formattedHistory);
+    } else {
+      setSpaceMessages([]);
+    }
+  }, [spaceHistoryData]);
+
+  // Load document chat history from DB
+  useEffect(() => {
+    if (selectedDocId && docHistoryData) {
+      const formattedHistory: Message[] = docHistoryData.map((msg) => ({
+        id: String(msg.id),
+        sender: msg.sender,
+        text: msg.text,
+        timestamp: new Date(msg.timestamp),
+        citations: msg.citations || [],
+        condensedQuestion: msg.condensedQuestion,
+      }));
+      setDocMessages((prev) => ({
+        ...prev,
+        [selectedDocId]: formattedHistory,
+      }));
+    } else if (selectedDocId) {
+      setDocMessages((prev) => ({
+        ...prev,
+        [selectedDocId]: [],
+      }));
+    }
+  }, [docHistoryData, selectedDocId]);
+
+  const handleClearHistory = () => {
+    if (chatMode === 'space') {
+      if (confirm('Bạn có chắc chắn muốn xóa lịch sử cuộc trò chuyện của Không gian học tập này?')) {
+        clearSpaceHistoryMutation.mutate(spaceId);
+      }
+    } else {
+      if (selectedDocId && confirm('Bạn có chắc chắn muốn xóa lịch sử cuộc trò chuyện của tài liệu này?')) {
+        clearDocHistoryMutation.mutate(selectedDocId);
+      }
+    }
+  };
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,6 +183,7 @@ export const SpaceDetailPage: React.FC = () => {
                 : 'Tôi không tìm thấy câu trả lời phù hợp trong các tài liệu của không gian học tập.',
               citations: data.citations || [],
               timestamp: new Date(),
+              condensedQuestion: data.condensedQuestion,
             };
             setSpaceMessages((prev) => [...prev, assistantMessage]);
           },
@@ -151,6 +221,7 @@ export const SpaceDetailPage: React.FC = () => {
                 : 'Tôi không tìm thấy câu trả lời phù hợp trong tài liệu này.',
               citations: data.citations || [],
               timestamp: new Date(),
+              condensedQuestion: data.condensedQuestion,
             };
             setDocMessages((prev) => ({
               ...prev,
@@ -454,13 +525,23 @@ export const SpaceDetailPage: React.FC = () => {
                 </button>
               </div>
 
-              <button
-                onClick={() => setIsChatCollapsed(true)}
-                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer mb-2"
-                title="Thu gọn khung này"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={handleClearHistory}
+                  disabled={activeTab !== 'chat' || (selectedDocId ? (docMessages[selectedDocId] || []) : []).length === 0}
+                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-rose-600 transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  title="Xóa lịch sử cuộc trò chuyện"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setIsChatCollapsed(true)}
+                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  title="Thu gọn khung này"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-100">
@@ -468,13 +549,23 @@ export const SpaceDetailPage: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5" />
                 TRỢ LÝ KHÔNG GIAN
               </span>
-              <button
-                onClick={() => setIsChatCollapsed(true)}
-                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                title="Thu gọn khung chat"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleClearHistory}
+                  disabled={spaceMessages.length === 0}
+                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-rose-600 transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  title="Xóa lịch sử cuộc trò chuyện"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setIsChatCollapsed(true)}
+                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  title="Thu gọn khung chat"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
 

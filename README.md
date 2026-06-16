@@ -1,17 +1,19 @@
 # Mora Frontend
 
-Mora Frontend là ứng dụng giao diện được xây dựng bằng **React 19** và **Vite**, tích hợp hệ sinh thái thư viện hiện đại nhằm tối ưu hóa hiệu năng, trải nghiệm lập trình và trải nghiệm người dùng.
+Mora Frontend là ứng dụng giao diện được xây dựng bằng **React 19** và **Vite**, tích hợp hệ sinh thái thư viện hiện đại nhằm tối ưu hóa hiệu năng, trải nghiệm lập trình và trải nghiệm người dùng trong dự án **Mora - AI-Powered Social Learning Network**.
 
 ---
 
 ## 🚀 Công Nghệ Sử Dụng (Tech Stack)
 
-- **Framework**: [React 19](https://react.dev/) & [Vite 8](https://vite.dev/) (TypeScript)
-- **Styling & UI Components**: [Tailwind CSS v4](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
-- **State Management (Server State)**: [TanStack Query v5](https://tanstack.com/query/latest) (React Query)
-- **Routing**: [React Router](https://reactrouter.com/) (v6/v7)
-- **HTTP Client**: [Axios](https://axios-http.com/) (Tự động hóa Interceptors cấu hình JWT Token)
-- **Form & Validation**: [React Hook Form](https://react-hook-form.com/) kết hợp với [Zod](https://zod.dev/)
+*   **Framework**: [React 19](https://react.dev/) & [Vite 8](https://vite.dev/) (TypeScript)
+*   **Styling & UI Components**: [Tailwind CSS v4](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
+*   **Icons**: [Lucide React](https://lucide.dev/)
+*   **State Management (Server State)**: [TanStack Query v5](https://tanstack.com/query/latest) (React Query)
+*   **Routing**: [React Router](https://reactrouter.com/) (v6/v7)
+*   **HTTP Client**: [Axios](https://axios-http.com/) (Interceptors đính kèm JWT Token tự động)
+*   **Form & Validation**: [React Hook Form](https://react-hook-form.com/) kết hợp với [Zod](https://zod.dev/)
+*   **PDF Rendering**: [react-pdf](https://projects.wojtekmaj.pl/react-pdf/) (Hỗ trợ lật trang, cuộn trang và hiển thị tài liệu PDF trực tuyến)
 
 ---
 
@@ -24,23 +26,41 @@ src/
 ├── assets/             # Hình ảnh, icons, font tĩnh
 ├── components/         # Các components dùng chung toàn dự án
 │   ├── ui/             # Các components UI nguyên bản (Shadcn/ui)
-│   └── shared/         # Components dùng chung tự viết (Header, Footer, Loading...)
+│   └── shared/         # Components dùng chung tự viết
 ├── config/             # Cấu hình dự án (Axios client, biến môi trường...)
 ├── features/           # Phân chia thư mục theo nghiệp vụ/chức năng (Auth, Chat, User...)
-│   └── [feature_name]/
-│       ├── components/ # Components nội bộ của feature
+│   └── chat/
+│       ├── components/ # Components nội bộ (ChatContainer, PdfViewer, MessageItem...)
 │       ├── hooks/      # Hooks nghiệp vụ (API queries/mutations)
-│       ├── services/   # Services gọi API
-│       ├── types/      # Định nghĩa TypeScript Types
-│       └── index.ts    # Điểm xuất khẩu dữ liệu dùng ra bên ngoài
+│       ├── services/   # Services gọi API (chat-api.ts)
+│       └── types/      # Định nghĩa TypeScript Types
 ├── hooks/              # Custom hooks dùng chung toàn dự án
 ├── layouts/            # Layout hiển thị chính (MainLayout, AuthLayout...)
-├── pages/              # Màn hình/Trang tương ứng với mỗi Router
+├── pages/              # Màn hình/Trang tương ứng với mỗi Router (SpaceDetailPage, ChatPage, Dashboard...)
 ├── providers/          # Các Provider bọc ngoài App (QueryProvider...)
 ├── routes/             # Cấu hình routes ứng dụng (AppRoutes)
 ├── types/              # Định nghĩa Types dùng chung toàn dự án
 └── utils/              # Các hàm tiện ích dùng chung
 ```
+
+---
+
+## 🚀 Tính năng Nổi bật (Core Features)
+
+1.  **Giao diện Split-Screen hiện đại (Chia đôi màn hình):**
+    *   **Bên trái (AI Chat & Study helper):** Khung hội thoại AI, cho phép chuyển đổi mượt mà giữa các tab hỏi đáp và học tập.
+    *   **Bên phải (Document PDF Viewer):** Tải trực tiếp file PDF từ Object Storage đám mây, hỗ trợ điều hướng, lật trang chính xác.
+2.  **Trích dẫn tương tác (Interactive Citation):**
+    *   Nhận kết quả cấu trúc kèm định vị vị trí trích dẫn của câu trả lời AI từ backend.
+    *   Khi người dùng click vào các nhãn trích dẫn (ví dụ: `📍 Trang 5`), trình xem PDF bên phải sẽ tự động nhảy đến đúng trang số 5 ngay lập tức.
+3.  **Hỏi đáp Đa tài liệu (Space-Wide Chat):**
+    *   Cho phép đặt câu hỏi trên toàn bộ Không gian học tập (nhiều tài liệu). AI sẽ tổng hợp câu trả lời kèm nhãn chỉ định rõ tài liệu nào và trang số mấy đã trích dẫn thông tin.
+4.  **Tóm tắt & Flashcards học tập tự động:**
+    *   Tự động sinh bản tóm tắt học thuật đầy đủ cho tài liệu.
+    *   Tạo danh sách các Flashcards tương tác, hỗ trợ lật thẻ xem đáp án, điều hướng các câu hỏi giúp ôn tập bài học tốt hơn.
+5.  **Lưu trữ & Dọn dẹp Lịch sử hội thoại:**
+    *   Lịch sử chat được tự động tải từ database mỗi khi bạn truy cập trang.
+    *   Cung cấp nút **Xóa lịch sử** (`Trash2` icon) đặt cạnh nút thu gọn khung chat giúp người dùng làm sạch hội thoại nhanh chóng.
 
 ---
 
@@ -79,8 +99,8 @@ npm run preview
 ## 📜 Quy Định Viết Code (Coding Standards)
 
 Để dự án được đồng bộ và nhất quán, vui lòng đọc kỹ tài liệu **[frontend-guide.md](./frontend-guide.md)** trước khi tham gia viết code. Một số quy tắc quan trọng:
-- Đặt tên component bằng **PascalCase** (ví dụ: `LoginForm.tsx`).
-- Sử dụng **Named Export** thay vì Default Export.
-- Không gọi API trực tiếp trong component; luôn bọc qua **React Query** custom hooks.
-- Validate Form bằng **Zod** schema và **React Hook Form**.
-- Sử dụng path alias `@/` khi import (ví dụ: `@/components/ui/button` thay vì `../../components/ui/button`).
+*   Đặt tên component bằng **PascalCase** (ví dụ: `LoginForm.tsx`).
+*   Sử dụng **Named Export** thay vì Default Export.
+*   Không gọi API trực tiếp trong component; luôn bọc qua **React Query** custom hooks.
+*   Validate Form bằng **Zod** schema và **React Hook Form**.
+*   Sử dụng path alias `@/` khi import (ví dụ: `@/components/ui/button` thay vì `../../components/ui/button`).

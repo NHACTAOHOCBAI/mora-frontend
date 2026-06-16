@@ -91,6 +91,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                   >
                     {message.text}
                   </div>
+                  
+                  {isAI && message.condensedQuestion && (
+                    <div className="text-[11px] text-slate-400 pl-1 italic">
+                      🔍 Câu hỏi tối ưu: {message.condensedQuestion}
+                    </div>
+                  )}
 
                   {/* Citations */}
                   {isAI && message.citations && message.citations.length > 0 && (

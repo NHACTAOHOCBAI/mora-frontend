@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
-import { useDocumentDetails, useSendChatMessage } from '@/features/chat/hooks/useChat';
+import { ArrowLeft, AlertCircle, Trash2 } from 'lucide-react';
+import { useDocumentDetails, useSendChatMessage, useDocumentChatHistory, useClearDocumentChatHistory } from '@/features/chat/hooks/useChat';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
 import type { Message } from '@/features/chat/types';
@@ -16,14 +16,42 @@ export const ChatPage: React.FC = () => {
   // Fetch document details (includes storage URL)
   const { data: document, isLoading: isDocLoading, error: docError } = useDocumentDetails(documentId);
 
+  // Fetch document chat history from DB
+  const { data: historyData } = useDocumentChatHistory(documentId);
+
   // Send message mutation
   const sendMessageMutation = useSendChatMessage();
 
+  // Clear history mutation
+  const clearHistoryMutation = useClearDocumentChatHistory();
+
   // Reset messages when document changes
   useEffect(() => {
-    setMessages([]);
     setActivePage(1);
   }, [documentId]);
+
+  // Load history data into messages state
+  useEffect(() => {
+    if (historyData) {
+      const formattedHistory: Message[] = historyData.map((msg) => ({
+        id: String(msg.id),
+        sender: msg.sender,
+        text: msg.text,
+        timestamp: new Date(msg.timestamp),
+        citations: msg.citations || [],
+        condensedQuestion: msg.condensedQuestion,
+      }));
+      setMessages(formattedHistory);
+    } else {
+      setMessages([]);
+    }
+  }, [historyData]);
+
+  const handleClearHistory = () => {
+    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử cuộc trò chuyện này không?')) {
+      clearHistoryMutation.mutate(documentId);
+    }
+  };
 
   const handleSendMessage = (text: string) => {
     // 1. Append user message locally
@@ -36,7 +64,7 @@ export const ChatPage: React.FC = () => {
 
     setMessages((prev) => [...prev, userMessage]);
 
-    // 2. Call backend API
+    // 2. Call backend API (backend will load history directly from DB to condense)
     sendMessageMutation.mutate(
       {
         documentId,
@@ -53,6 +81,7 @@ export const ChatPage: React.FC = () => {
               : 'Tôi không thể tìm thấy câu trả lời cho câu hỏi này trong nội dung tài liệu.',
             citations: data.citations || [],
             timestamp: new Date(),
+            condensedQuestion: data.condensedQuestion,
           };
           setMessages((prev) => [...prev, assistantMessage]);
         },
@@ -119,6 +148,15 @@ export const ChatPage: React.FC = () => {
             {isDocLoading ? 'Đang tải tên tài liệu...' : document?.fileName}
           </h1>
         </div>
+        <button
+          onClick={handleClearHistory}
+          disabled={messages.length === 0}
+          className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-450 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1.5 text-xs font-semibold"
+          title="Xóa lịch sử cuộc trò chuyện"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span className="hidden sm:inline">Xóa lịch sử</span>
+        </button>
       </div>
 
       {/* Split screen content */}

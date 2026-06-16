@@ -9,26 +9,35 @@ export interface SpaceCitation {
   pageNumber: number;
 }
 
+export interface ChatHistoryMessage {
+  sender: 'user' | 'assistant';
+  text: string;
+}
+
 export interface DocumentChatRequest {
   documentId: number;
   question: string;
+  history?: ChatHistoryMessage[];
 }
 
 export interface DocumentChatResponse {
   answerFound: boolean;
   answer: string;
   citations: Citation[];
+  condensedQuestion?: string;
 }
 
 export interface SpaceChatRequest {
   spaceId: number;
   question: string;
+  history?: ChatHistoryMessage[];
 }
 
 export interface SpaceChatResponse {
   answerFound: boolean;
   answer: string;
   citations: SpaceCitation[];
+  condensedQuestion?: string;
 }
 
 export interface DocumentPageResponse {
@@ -55,6 +64,16 @@ export interface Message {
   text: string;
   citations?: (Citation | SpaceCitation)[];
   timestamp: Date;
+  condensedQuestion?: string;
+}
+
+export interface ChatMessageResponse {
+  id: number;
+  sender: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+  citations?: (Citation | SpaceCitation)[];
+  condensedQuestion?: string;
 }
 
 export interface SpaceResponse {
