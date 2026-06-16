@@ -3,6 +3,12 @@ export interface Citation {
   pageNumber: number;
 }
 
+export interface SpaceCitation {
+  quote: string;
+  documentId: number;
+  pageNumber: number;
+}
+
 export interface DocumentChatRequest {
   documentId: number;
   question: string;
@@ -12,6 +18,17 @@ export interface DocumentChatResponse {
   answerFound: boolean;
   answer: string;
   citations: Citation[];
+}
+
+export interface SpaceChatRequest {
+  spaceId: number;
+  question: string;
+}
+
+export interface SpaceChatResponse {
+  answerFound: boolean;
+  answer: string;
+  citations: SpaceCitation[];
 }
 
 export interface DocumentPageResponse {
@@ -34,7 +51,7 @@ export interface Message {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
-  citations?: Citation[];
+  citations?: (Citation | SpaceCitation)[];
   timestamp: Date;
 }
 

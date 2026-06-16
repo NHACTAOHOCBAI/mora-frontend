@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen } from 'lucide-react';
+import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles } from 'lucide-react';
 import { useSpaceDetail, useUploadDocument, useDeleteDocument } from '@/features/chat/hooks/useSpace';
-import { useDocumentDetails, useSendChatMessage } from '@/features/chat/hooks/useChat';
+import { useDocumentDetails, useSendChatMessage, useSendSpaceChatMessage } from '@/features/chat/hooks/useChat';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
 import type { Message } from '@/features/chat/types';
@@ -12,8 +12,10 @@ export const SpaceDetailPage: React.FC = () => {
   const spaceId = Number(spaceIdParam);
 
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
+  const [chatMode, setChatMode] = useState<'document' | 'space'>('space');
   const [activePage, setActivePage] = useState<number>(1);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [docMessages, setDocMessages] = useState<Record<number, Message[]>>({});
+  const [spaceMessages, setSpaceMessages] = useState<Message[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,12 +25,7 @@ export const SpaceDetailPage: React.FC = () => {
   const uploadDocMutation = useUploadDocument();
   const deleteDocMutation = useDeleteDocument();
   const sendMessageMutation = useSendChatMessage();
-
-  // Reset chat when document selection changes
-  useEffect(() => {
-    setMessages([]);
-    setActivePage(1);
-  }, [selectedDocId]);
+  const sendSpaceMessageMutation = useSendSpaceChatMessage();
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +45,8 @@ export const SpaceDetailPage: React.FC = () => {
           setIsUploading(false);
           if (data && data.id) {
             setSelectedDocId(data.id);
+            setChatMode('document');
+            setActivePage(1);
           }
         },
         onError: (err: any) => {
@@ -68,6 +67,7 @@ export const SpaceDetailPage: React.FC = () => {
           onSuccess: () => {
             if (selectedDocId === docId) {
               setSelectedDocId(null);
+              setChatMode('space');
             }
           },
           onError: (err: any) => {
@@ -80,8 +80,6 @@ export const SpaceDetailPage: React.FC = () => {
 
   // Handle chat messaging
   const handleSendMessage = (text: string) => {
-    if (!selectedDocId) return;
-
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       sender: 'user',
@@ -89,40 +87,88 @@ export const SpaceDetailPage: React.FC = () => {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    if (chatMode === 'space') {
+      setSpaceMessages((prev) => [...prev, userMessage]);
 
-    sendMessageMutation.mutate(
-      {
-        documentId: selectedDocId,
-        question: text,
-      },
-      {
-        onSuccess: (data) => {
-          const assistantMessage: Message = {
-            id: `ai-${Date.now()}`,
-            sender: 'assistant',
-            text: data.answerFound 
-              ? data.answer 
-              : 'Tôi không tìm thấy câu trả lời phù hợp trong tài liệu này.',
-            citations: data.citations || [],
-            timestamp: new Date(),
-          };
-          setMessages((prev) => [...prev, assistantMessage]);
+      sendSpaceMessageMutation.mutate(
+        {
+          spaceId,
+          question: text,
         },
-        onError: () => {
-          const errorMessage: Message = {
-            id: `err-${Date.now()}`,
-            sender: 'assistant',
-            text: 'Không thể kết nối với dịch vụ AI. Vui lòng kiểm tra lại dịch vụ backend.',
-            timestamp: new Date(),
-          };
-          setMessages((prev) => [...prev, errorMessage]);
+        {
+          onSuccess: (data) => {
+            const assistantMessage: Message = {
+              id: `ai-${Date.now()}`,
+              sender: 'assistant',
+              text: data.answerFound 
+                ? data.answer 
+                : 'Tôi không tìm thấy câu trả lời phù hợp trong các tài liệu của không gian học tập.',
+              citations: data.citations || [],
+              timestamp: new Date(),
+            };
+            setSpaceMessages((prev) => [...prev, assistantMessage]);
+          },
+          onError: () => {
+            const errorMessage: Message = {
+              id: `err-${Date.now()}`,
+              sender: 'assistant',
+              text: 'Không thể kết nối với dịch vụ AI. Vui lòng kiểm tra lại dịch vụ backend.',
+              timestamp: new Date(),
+            };
+            setSpaceMessages((prev) => [...prev, errorMessage]);
+          },
+        }
+      );
+    } else {
+      if (!selectedDocId) return;
+
+      setDocMessages((prev) => ({
+        ...prev,
+        [selectedDocId]: [...(prev[selectedDocId] || []), userMessage],
+      }));
+
+      sendMessageMutation.mutate(
+        {
+          documentId: selectedDocId,
+          question: text,
         },
-      }
-    );
+        {
+          onSuccess: (data) => {
+            const assistantMessage: Message = {
+              id: `ai-${Date.now()}`,
+              sender: 'assistant',
+              text: data.answerFound 
+                ? data.answer 
+                : 'Tôi không tìm thấy câu trả lời phù hợp trong tài liệu này.',
+              citations: data.citations || [],
+              timestamp: new Date(),
+            };
+            setDocMessages((prev) => ({
+              ...prev,
+              [selectedDocId]: [...(prev[selectedDocId] || []), assistantMessage],
+            }));
+          },
+          onError: () => {
+            const errorMessage: Message = {
+              id: `err-${Date.now()}`,
+              sender: 'assistant',
+              text: 'Không thể kết nối với dịch vụ AI. Vui lòng kiểm tra lại dịch vụ backend.',
+              timestamp: new Date(),
+            };
+            setDocMessages((prev) => ({
+              ...prev,
+              [selectedDocId]: [...(prev[selectedDocId] || []), errorMessage],
+            }));
+          },
+        }
+      );
+    }
   };
 
-  const handleCitationClick = (pageNumber: number) => {
+  const handleCitationClick = (pageNumber: number, docId?: number) => {
+    if (docId) {
+      setSelectedDocId(docId);
+    }
     setActivePage(pageNumber);
   };
 
@@ -209,8 +255,25 @@ export const SpaceDetailPage: React.FC = () => {
 
         {/* Documents list */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
-          <h3 className="px-2 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tài liệu trong Space</h3>
+          <h3 className="px-2 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tác vụ & Tài liệu</h3>
           
+          {/* Space Assistant entry */}
+          <div
+            onClick={() => {
+              setChatMode('space');
+            }}
+            className={`flex items-center gap-2.5 p-2.5 mb-2 rounded-xl cursor-pointer transition-all duration-200 border ${
+              chatMode === 'space'
+                ? 'bg-indigo-600/15 border-indigo-500/30 text-indigo-300'
+                : 'hover:bg-slate-800/60 border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Sparkles className={`w-4 h-4 shrink-0 ${chatMode === 'space' ? 'text-indigo-400' : 'text-indigo-500'}`} />
+            <span className="text-xs font-semibold">💬 Trợ lý Không gian</span>
+          </div>
+
+          <h3 className="px-2 pt-2 pb-1 text-[10px] font-bold text-slate-600 uppercase tracking-wider">Danh sách tài liệu</h3>
+
           {isSpaceLoading ? (
             <div className="flex justify-center py-10">
               <Loader2 className="w-5 h-5 animate-spin text-slate-600" />
@@ -222,11 +285,15 @@ export const SpaceDetailPage: React.FC = () => {
             </div>
           ) : (
             space?.documents.map((doc) => {
-              const isSelected = selectedDocId === doc.id;
+              const isSelected = selectedDocId === doc.id && chatMode === 'document';
               return (
                 <div
                   key={doc.id}
-                  onClick={() => setSelectedDocId(doc.id)}
+                  onClick={() => {
+                    setSelectedDocId(doc.id);
+                    setChatMode('document');
+                    setActivePage(1);
+                  }}
                   className={`group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
                     isSelected
                       ? 'bg-indigo-600/15 border border-indigo-500/30 text-indigo-300'
@@ -254,9 +321,16 @@ export const SpaceDetailPage: React.FC = () => {
 
       {/* 2. Middle Panel: AI Chat Panel */}
       <section className="w-[420px] lg:w-[480px] shrink-0 border-r border-slate-800 flex flex-col h-full bg-slate-900">
-        {selectedDocId ? (
+        {chatMode === 'space' ? (
           <ChatContainer
-            messages={messages}
+            messages={spaceMessages}
+            onSendMessage={handleSendMessage}
+            isLoading={sendSpaceMessageMutation.isPending}
+            onCitationClick={handleCitationClick}
+          />
+        ) : selectedDocId ? (
+          <ChatContainer
+            messages={docMessages[selectedDocId] || []}
             onSendMessage={handleSendMessage}
             isLoading={sendMessageMutation.isPending || isDocLoading}
             onCitationClick={handleCitationClick}

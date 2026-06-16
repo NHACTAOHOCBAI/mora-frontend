@@ -6,7 +6,7 @@ interface ChatContainerProps {
   messages: Message[];
   onSendMessage: (text: string) => void;
   isLoading: boolean;
-  onCitationClick: (pageNumber: number) => void;
+  onCitationClick: (pageNumber: number, documentId?: number) => void;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
@@ -98,16 +98,19 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                       <span className="text-xs text-slate-500 flex items-center gap-1 py-1">
                         <MapPin className="w-3.5 h-3.5" /> Nguồn trích dẫn:
                       </span>
-                      {message.citations.map((citation, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => onCitationClick(citation.pageNumber)}
-                          title={`"${citation.quote}"`}
-                          className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 transition-all duration-200 flex items-center gap-1 hover:scale-105 active:scale-95 cursor-pointer"
-                        >
-                          📍 Trang {citation.pageNumber}
-                        </button>
-                      ))}
+                      {message.citations.map((citation, idx) => {
+                        const docId = (citation as any).documentId;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => onCitationClick(citation.pageNumber, docId)}
+                            title={`"${citation.quote}"`}
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 transition-all duration-200 flex items-center gap-1 hover:scale-105 active:scale-95 cursor-pointer"
+                          >
+                            📍 {docId ? `Tài liệu #${docId} - ` : ''}Trang {citation.pageNumber}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
