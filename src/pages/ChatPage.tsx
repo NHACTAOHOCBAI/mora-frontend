@@ -40,6 +40,7 @@ export const ChatPage: React.FC = () => {
         timestamp: new Date(msg.timestamp),
         citations: msg.citations || [],
         condensedQuestion: msg.condensedQuestion,
+        promptSent: msg.promptSent,
       }));
       setMessages(formattedHistory);
     } else {
@@ -82,6 +83,7 @@ export const ChatPage: React.FC = () => {
             citations: data.citations || [],
             timestamp: new Date(),
             condensedQuestion: data.condensedQuestion,
+            promptSent: data.promptSent,
           };
           setMessages((prev) => [...prev, assistantMessage]);
         },
@@ -175,6 +177,7 @@ export const ChatPage: React.FC = () => {
         <div className="hidden md:block flex-1 h-full">
           <PdfViewer
             fileUrl={document?.storageUrl}
+            fileType={document?.fileType}
             activePage={activePage}
             onPageChange={setActivePage}
           />

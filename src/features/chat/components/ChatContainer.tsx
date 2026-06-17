@@ -1,6 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, MapPin, Loader2, Search } from 'lucide-react';
 import type { Message } from '../types';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface ChatContainerProps {
   messages: Message[];
@@ -16,6 +23,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   onCitationClick,
 }) => {
   const [inputValue, setInputValue] = useState('');
+  const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -83,9 +91,15 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                 {/* Bubble */}
                 <div className="space-y-2">
                   <div
+                    onDoubleClick={() => {
+                      if (isAI && message.promptSent) {
+                        setSelectedPrompt(message.promptSent);
+                      }
+                    }}
+                    title={isAI && message.promptSent ? "Double click để xem chi tiết prompt đã gửi" : undefined}
                     className={`p-4 rounded-2xl text-sm leading-relaxed border ${
                       isAI
-                        ? 'bg-white border-slate-200/80 text-slate-800 shadow-sm'
+                        ? 'bg-white border-slate-200/80 text-slate-800 shadow-sm hover:border-indigo-300 transition-colors select-none cursor-pointer'
                         : 'bg-indigo-600/5 border-indigo-500/10 text-indigo-950 font-medium'
                     }`}
                   >
@@ -96,6 +110,28 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                     <div className="text-[11px] text-slate-400 pl-1 italic flex items-center gap-1">
                       <Search className="w-3.5 h-3.5 text-indigo-400" />
                       <span>Câu hỏi tối ưu: {message.condensedQuestion}</span>
+                    </div>
+                  )}
+
+                  {isAI && message.promptSent && (
+                    <div className="flex pl-1">
+                      <div className="relative group">
+                        <button type="button" className="text-[11px] text-slate-400 hover:text-indigo-600 font-semibold cursor-help flex items-center gap-1 transition-colors">
+                          <span className="w-3.5 h-3.5 rounded-full border border-slate-350 flex items-center justify-center text-[9px] font-bold">i</span>
+                          Xem Prompt gửi Gemini
+                        </button>
+                        
+                        {/* Custom Hover Card */}
+                        <div className="absolute left-0 bottom-6 hidden group-hover:flex flex-col w-[350px] sm:w-[480px] p-4 bg-slate-900 text-slate-100 rounded-xl shadow-xl border border-slate-800 text-left z-50">
+                          <div className="text-xs font-bold mb-2 border-b border-slate-800 pb-1.5 text-indigo-400 flex items-center justify-between">
+                            <span>Nội dung thực tế gửi tới Gemini:</span>
+                            <span className="text-[9px] text-slate-500 font-mono">1.5 Flash</span>
+                          </div>
+                          <div className="text-[10px] font-mono whitespace-pre-wrap leading-relaxed max-h-[220px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800 pr-1 select-text">
+                            {message.promptSent}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -167,6 +203,23 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
           <Send className="w-4 h-4" />
         </button>
       </form>
+      <Dialog open={selectedPrompt !== null} onOpenChange={(open) => !open && setSelectedPrompt(null)}>
+        <DialogContent className="sm:max-w-[700px] w-[90vw] bg-slate-900 text-slate-100 border-slate-800 max-h-[85vh] flex flex-col p-6 rounded-2xl shadow-2xl z-50">
+          <DialogHeader className="border-b border-slate-800 pb-3 flex flex-col">
+            <DialogTitle className="text-sm font-bold text-indigo-400">
+              Chi tiết Prompt gửi tới Gemini (1.5 Flash)
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 text-[11px] mt-1">
+              Nội dung đầy đủ của System Prompt và User Message chứa ngữ cảnh tài liệu
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto mt-4 pr-1 select-text">
+            <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-850 max-h-[50vh] overflow-y-auto">
+              {selectedPrompt}
+            </pre>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

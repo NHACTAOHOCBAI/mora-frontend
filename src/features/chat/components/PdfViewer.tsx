@@ -11,18 +11,22 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 interface PdfViewerProps {
   fileUrl: string | undefined;
+  fileType?: string;
   activePage: number;
   onPageChange: (pageNumber: number) => void;
 }
 
 export const PdfViewer: React.FC<PdfViewerProps> = ({
   fileUrl,
+  fileType = 'pdf',
   activePage,
   onPageChange,
 }) => {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [scale, setScale] = useState<number>(1.0);
   const [jumpPage, setJumpPage] = useState<string>(activePage.toString());
+
+  const isImage = fileType !== 'pdf' && fileType !== 'PDF';
 
   // Đồng bộ ô nhập trang khi trang active thay đổi từ bên ngoài
   useEffect(() => {
@@ -38,6 +42,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({
 
   // Lắng nghe sự kiện bàn phím (Phím mũi tên Trái/Phải để chuyển trang)
   useEffect(() => {
+    if (isImage) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
@@ -55,7 +60,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activePage, numPages, onPageChange]);
+  }, [activePage, numPages, onPageChange, isImage]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -95,6 +100,49 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({
       <div className="h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500 p-6">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
         <span className="text-sm font-medium">Đang tải thông tin tài liệu...</span>
+      </div>
+    );
+  }
+
+  if (isImage) {
+    return (
+      <div className="flex flex-col h-full bg-slate-100/60 text-slate-800">
+        {/* Toolbar for Image (only zoom controls) */}
+        <div className="flex items-center justify-end px-6 py-3 bg-white border-b border-slate-200/80 shadow-sm z-10">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleZoomOut}
+              disabled={scale <= 0.5}
+              className="p-1.5 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer text-slate-600"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="text-xs text-slate-500 font-semibold w-12 text-center">
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              onClick={handleZoomIn}
+              disabled={scale >= 2.0}
+              className="p-1.5 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer text-slate-600"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Image view container */}
+        <div className="flex-1 overflow-auto p-6 flex justify-center items-start scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-300">
+          <div 
+            className="shadow-xl border border-slate-200 rounded-xl overflow-hidden bg-white max-w-full"
+            style={{ transform: `scale(${scale})`, transformOrigin: 'top center', transition: 'transform 0.1s ease-out' }}
+          >
+            <img 
+              src={fileUrl} 
+              alt="Document Image" 
+              className="max-h-[80vh] w-auto object-contain"
+            />
+          </div>
+        </div>
       </div>
     );
   }

@@ -28,6 +28,7 @@ export interface DocumentChatResponse {
   answer: string;
   citations: Citation[];
   condensedQuestion?: string;
+  promptSent?: string;
 }
 
 export interface SpaceChatRequest {
@@ -41,12 +42,14 @@ export interface SpaceChatResponse {
   answer: string;
   citations: SpaceCitation[];
   condensedQuestion?: string;
+  promptSent?: string;
 }
 
 export interface DocumentPageResponse {
   id: number;
   pageNumber: number;
   content: string;
+  hasImage?: boolean;
 }
 
 export interface DocumentDetailResponse {
@@ -68,6 +71,7 @@ export interface Message {
   citations?: (Citation | SpaceCitation)[];
   timestamp: Date;
   condensedQuestion?: string;
+  promptSent?: string;
 }
 
 export interface ChatMessageResponse {
@@ -77,6 +81,7 @@ export interface ChatMessageResponse {
   timestamp: string;
   citations?: (Citation | SpaceCitation)[];
   condensedQuestion?: string;
+  promptSent?: string;
 }
 
 export interface SpaceResponse {

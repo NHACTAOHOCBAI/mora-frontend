@@ -66,6 +66,7 @@ export const SpaceDetailPage: React.FC = () => {
         timestamp: new Date(msg.timestamp),
         citations: msg.citations || [],
         condensedQuestion: msg.condensedQuestion,
+        promptSent: msg.promptSent,
       }));
       setSpaceMessages(formattedHistory);
     } else {
@@ -83,6 +84,7 @@ export const SpaceDetailPage: React.FC = () => {
         timestamp: new Date(msg.timestamp),
         citations: msg.citations || [],
         condensedQuestion: msg.condensedQuestion,
+        promptSent: msg.promptSent,
       }));
       setDocMessages((prev) => ({
         ...prev,
@@ -113,8 +115,14 @@ export const SpaceDetailPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || isNaN(spaceId)) return;
 
-    if (file.type !== 'application/pdf') {
-      alert('Vui lòng chỉ tải lên file PDF.');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage = file.type.startsWith('image/') || 
+                    file.name.toLowerCase().endsWith('.png') || 
+                    file.name.toLowerCase().endsWith('.jpg') || 
+                    file.name.toLowerCase().endsWith('.jpeg');
+
+    if (!isPdf && !isImage) {
+      alert('Vui lòng chỉ tải lên tài liệu PDF hoặc hình ảnh (PNG, JPG, JPEG).');
       return;
     }
 
@@ -219,6 +227,7 @@ export const SpaceDetailPage: React.FC = () => {
               citations: data.citations || [],
               timestamp: new Date(),
               condensedQuestion: data.condensedQuestion,
+              promptSent: data.promptSent,
             };
             setSpaceMessages((prev) => [...prev, assistantMessage]);
           },
@@ -257,6 +266,7 @@ export const SpaceDetailPage: React.FC = () => {
               citations: data.citations || [],
               timestamp: new Date(),
               condensedQuestion: data.condensedQuestion,
+              promptSent: data.promptSent,
             };
             setDocMessages((prev) => ({
               ...prev,
@@ -395,7 +405,7 @@ export const SpaceDetailPage: React.FC = () => {
             <button
               onClick={() => fileInputRef.current?.click()}
               className="p-2.5 bg-indigo-50 border border-indigo-150 text-indigo-600 rounded-xl hover:bg-indigo-100 transition cursor-pointer"
-              title="Tải lên tài liệu PDF"
+              title="Tải tài liệu (PDF/Ảnh)"
             >
               <Upload className="w-4 h-4" />
             </button>
@@ -442,12 +452,12 @@ export const SpaceDetailPage: React.FC = () => {
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Đang xử lý PDF...
+                  Đang xử lý tài liệu...
                 </>
               ) : (
                 <>
                   <Upload className="w-4 h-4" />
-                  Tải lên tài liệu PDF
+                  Tải tài liệu (PDF/Ảnh)
                 </>
               )}
             </button>
@@ -455,7 +465,7 @@ export const SpaceDetailPage: React.FC = () => {
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
-              accept=".pdf"
+              accept=".pdf,.png,.jpg,.jpeg"
               className="hidden"
             />
           </div>
@@ -489,7 +499,7 @@ export const SpaceDetailPage: React.FC = () => {
             ) : space?.documents && space.documents.length === 0 ? (
               <div className="py-10 text-center px-4 space-y-2">
                 <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
-                <p className="text-xs text-slate-400">Chưa có tài liệu nào. Hãy tải lên file PDF để bắt đầu học tập.</p>
+                <p className="text-xs text-slate-400">Chưa có tài liệu nào. Hãy tải tài liệu PDF hoặc hình ảnh để bắt đầu học tập.</p>
               </div>
             ) : (
               space?.documents.map((doc) => {
@@ -870,13 +880,14 @@ export const SpaceDetailPage: React.FC = () => {
         {selectedDocId && document ? (
           <PdfViewer
             fileUrl={document.storageUrl}
+            fileType={document.fileType}
             activePage={activePage}
             onPageChange={setActivePage}
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-400 text-center bg-slate-50/50">
             <FileText className="w-12 h-12 text-slate-300 mb-2" />
-            <p className="text-xs text-slate-500">Trình xem tài liệu PDF sẽ hiển thị tại đây.</p>
+            <p className="text-xs text-slate-500">Trình xem tài liệu PDF/Hình ảnh sẽ hiển thị tại đây.</p>
           </div>
         )}
       </section>
