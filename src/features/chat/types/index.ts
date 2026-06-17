@@ -1,11 +1,14 @@
 export interface Citation {
   quote: string;
   pageNumber: number;
+  documentId?: number;
+  documentName?: string;
 }
 
 export interface SpaceCitation {
   quote: string;
   documentId: number;
+  documentName?: string;
   pageNumber: number;
 }
 

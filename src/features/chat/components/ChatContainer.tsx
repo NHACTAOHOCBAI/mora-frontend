@@ -115,7 +115,12 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                             className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-600 transition-all duration-200 flex items-center gap-1 hover:scale-105 active:scale-95 cursor-pointer"
                           >
                             <MapPin className="w-3 h-3 text-indigo-500" />
-                            {docId ? `Tài liệu #${docId} - ` : ''}Trang {citation.pageNumber}
+                            {citation.documentName 
+                              ? `${citation.documentName} - ` 
+                              : docId 
+                                ? `Tài liệu #${docId} - ` 
+                                : ''
+                            }Trang {citation.pageNumber}
                           </button>
                         );
                       })}

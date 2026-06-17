@@ -36,3 +36,8 @@ export const uploadDocument = async (file: File, spaceId: number): Promise<any> 
 export const deleteDocument = async (id: number): Promise<void> => {
   await apiClient.delete(`/documents/${id}`);
 };
+
+export const renameDocument = async (id: number, fileName: string): Promise<any> => {
+  const response = await apiClient.patch(`/documents/${id}/rename`, { fileName });
+  return response.data;
+};

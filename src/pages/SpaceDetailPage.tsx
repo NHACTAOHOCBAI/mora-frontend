@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck, Layers, RotateCw } from 'lucide-react';
-import { useSpaceDetail, useUploadDocument, useDeleteDocument } from '@/features/chat/hooks/useSpace';
+import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck, Layers, RotateCw, Edit2, Check, X } from 'lucide-react';
+import { useSpaceDetail, useUploadDocument, useDeleteDocument, useRenameDocument } from '@/features/chat/hooks/useSpace';
 import { 
   useDocumentDetails, 
   useSendChatMessage, 
@@ -35,6 +35,8 @@ export const SpaceDetailPage: React.FC = () => {
   const [studySubTab, setStudySubTab] = useState<'summary' | 'flashcards'>('summary');
   const [currentFlashIndex, setCurrentFlashIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [editingDocId, setEditingDocId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   // Queries & Mutations
   const { data: space, isLoading: isSpaceLoading, error: spaceError } = useSpaceDetail(spaceId);
@@ -42,6 +44,7 @@ export const SpaceDetailPage: React.FC = () => {
   const generateNotesMutation = useGenerateStudyNotes();
   const uploadDocMutation = useUploadDocument();
   const deleteDocMutation = useDeleteDocument();
+  const renameDocMutation = useRenameDocument();
   const sendMessageMutation = useSendChatMessage();
   const sendSpaceMessageMutation = useSendSpaceChatMessage();
 
@@ -154,6 +157,38 @@ export const SpaceDetailPage: React.FC = () => {
         }
       );
     }
+  };
+
+  // Handle document renaming
+  const handleRenameClick = (e: React.MouseEvent, docId: number, currentName: string) => {
+    e.stopPropagation();
+    setEditingDocId(docId);
+    setRenameValue(currentName.toLowerCase().endsWith('.pdf') ? currentName.slice(0, -4) : currentName);
+  };
+
+  const handleRenameConfirm = (e: React.FormEvent | React.MouseEvent, docId: number) => {
+    e.stopPropagation();
+    if (e.type === 'submit') {
+      e.preventDefault();
+    }
+    if (!renameValue.trim()) return;
+
+    renameDocMutation.mutate(
+      { id: docId, fileName: renameValue.trim() + '.pdf', spaceId },
+      {
+        onSuccess: () => {
+          setEditingDocId(null);
+        },
+        onError: (err: any) => {
+          alert('Đổi tên tài liệu thất bại: ' + (err.message || 'Lỗi kết nối'));
+        },
+      }
+    );
+  };
+
+  const handleRenameCancel = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    setEditingDocId(null);
   };
 
   // Handle chat messaging
@@ -474,18 +509,71 @@ export const SpaceDetailPage: React.FC = () => {
                         : 'hover:bg-slate-200/60 border-transparent text-slate-600 hover:text-slate-800'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <FileText className={`w-4 h-4 shrink-0 ${isSelected && !isChatCollapsed ? 'text-indigo-600' : 'text-slate-400'}`} />
-                      <span className="text-xs truncate">{doc.fileName}</span>
-                    </div>
-                    
-                    <button
-                      onClick={(e) => handleDeleteDoc(e, doc.id)}
-                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all duration-200 border border-transparent hover:border-rose-100"
-                      title="Xóa tài liệu"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {editingDocId === doc.id ? (
+                      <form
+                        onSubmit={(e) => handleRenameConfirm(e, doc.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 min-w-0 flex-1 mr-2"
+                      >
+                        <FileText className="w-4 h-4 shrink-0 text-indigo-600" />
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              setEditingDocId(null);
+                            }
+                          }}
+                          className="flex-1 bg-white border border-indigo-300 rounded px-1.5 py-0.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        />
+                        <button
+                          type="submit"
+                          disabled={renameDocMutation.isPending}
+                          className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition cursor-pointer"
+                          title="Xác nhận"
+                        >
+                          {renameDocMutation.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Check className="w-3 h-3" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRenameCancel}
+                          className="p-1 text-rose-500 hover:bg-rose-50 rounded transition cursor-pointer"
+                          title="Hủy"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </form>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <FileText className={`w-4 h-4 shrink-0 ${isSelected && !isChatCollapsed ? 'text-indigo-600' : 'text-slate-400'}`} />
+                          <span className="text-xs truncate" title={doc.fileName}>{doc.fileName}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                          <button
+                            onClick={(e) => handleRenameClick(e, doc.id, doc.fileName)}
+                            className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition border border-transparent hover:border-indigo-100"
+                            title="Đổi tên"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteDoc(e, doc.id)}
+                            className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-100"
+                            title="Xóa tài liệu"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })
