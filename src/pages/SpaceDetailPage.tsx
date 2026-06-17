@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck } from 'lucide-react';
+import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck, Layers, RotateCw } from 'lucide-react';
 import { useSpaceDetail, useUploadDocument, useDeleteDocument } from '@/features/chat/hooks/useSpace';
 import { 
   useDocumentDetails, 
@@ -442,7 +442,7 @@ export const SpaceDetailPage: React.FC = () => {
               }`}
             >
               <Sparkles className={`w-4 h-4 shrink-0 ${chatMode === 'space' && !isChatCollapsed ? 'text-indigo-600' : 'text-slate-400'}`} />
-              <span className="text-xs">💬 Trợ lý Không gian</span>
+              <span className="text-xs">Trợ lý Không gian</span>
             </div>
 
             <h3 className="px-2 pt-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Danh sách tài liệu</h3>
@@ -496,7 +496,7 @@ export const SpaceDetailPage: React.FC = () => {
 
       {/* 2. Middle Panel: AI Chat Panel or Study Notes Tab */}
       {!isChatCollapsed && (
-        <section className="w-[420px] lg:w-[480px] shrink-0 border-r border-slate-200 bg-white flex flex-col h-full relative shadow-sm">
+        <section className="w-[420px] lg:w-[480px] shrink-0 border-r border-slate-200 bg-white flex flex-col h-full min-h-0 relative overflow-hidden shadow-sm">
           {/* Tabs header (Chỉ hiển thị khi đã chọn 1 tài liệu cụ thể) */}
           {chatMode === 'document' && selectedDocId ? (
             <div className="flex items-center justify-between px-6 pt-3 bg-white border-b border-slate-100">
@@ -623,13 +623,14 @@ export const SpaceDetailPage: React.FC = () => {
                   <div className="flex px-4 py-2 border-b border-slate-100 bg-white gap-2">
                     <button
                       onClick={() => setStudySubTab('summary')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-all ${
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 ${
                         studySubTab === 'summary'
                           ? 'bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100'
                           : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
                       }`}
                     >
-                      📝 Bản tóm tắt
+                      <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                      Bản tóm tắt
                     </button>
                     <button
                       onClick={() => {
@@ -637,13 +638,14 @@ export const SpaceDetailPage: React.FC = () => {
                         setCurrentFlashIndex(0);
                         setIsFlipped(false);
                       }}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-all ${
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 ${
                         studySubTab === 'flashcards'
                           ? 'bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100'
                           : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
                       }`}
                     >
-                      🎴 Flashcards ({flashcardsList.length})
+                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                      Flashcards ({flashcardsList.length})
                     </button>
                   </div>
 
@@ -675,7 +677,10 @@ export const SpaceDetailPage: React.FC = () => {
                                   <p className="text-sm font-bold text-slate-800 leading-relaxed px-2">
                                     {flashcardsList[currentFlashIndex]?.question}
                                   </p>
-                                  <span className="text-[10px] text-indigo-500 block pt-4 font-medium">👉 Click để xem đáp án</span>
+                                  <span className="text-[10px] text-indigo-500 flex items-center justify-center gap-1 pt-4 font-medium">
+                                    <RotateCw className="w-3.5 h-3.5" />
+                                    Click để xem đáp án
+                                  </span>
                                 </div>
                               ) : (
                                 <div className="space-y-3">
@@ -685,7 +690,10 @@ export const SpaceDetailPage: React.FC = () => {
                                   <p className="text-xs font-semibold text-slate-700 leading-relaxed px-2">
                                     {flashcardsList[currentFlashIndex]?.answer}
                                   </p>
-                                  <span className="text-[10px] text-slate-400 block pt-4 font-medium">👈 Click để xem câu hỏi</span>
+                                  <span className="text-[10px] text-slate-400 flex items-center justify-center gap-1 pt-4 font-medium">
+                                    <RotateCw className="w-3.5 h-3.5" />
+                                    Click để xem câu hỏi
+                                  </span>
                                 </div>
                               )}
                             </div>

@@ -162,7 +162,7 @@ export const ChatPage: React.FC = () => {
       {/* Split screen content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left pane: Chat */}
-        <div className="w-full md:w-1/2 lg:w-[45%] shrink-0 h-full">
+        <div className="w-full md:w-1/2 lg:w-[45%] shrink-0 h-full flex flex-col">
           <ChatContainer
             messages={messages}
             onSendMessage={handleSendMessage}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, MapPin, Loader2 } from 'lucide-react';
+import { Send, Bot, User, MapPin, Loader2, Search } from 'lucide-react';
 import type { Message } from '../types';
 
 interface ChatContainerProps {
@@ -30,7 +30,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   }, [messages, isLoading]);
 
   return (
-    <div className="flex flex-col h-full bg-slate-50/30 border-r border-slate-200/80 text-slate-800">
+    <div className="flex flex-col flex-1 min-h-0 bg-slate-50/30 border-r border-slate-200/80 text-slate-800">
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200/80 backdrop-blur-md">
         <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">
@@ -46,9 +46,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       </div>
 
       {/* Messages List */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200 flex flex-col">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-4">
+          <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-4">
             <div className="p-4 bg-indigo-50 rounded-full border border-indigo-100 text-indigo-600 animate-bounce">
               <Bot className="w-8 h-8" />
             </div>
@@ -93,8 +93,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                   </div>
                   
                   {isAI && message.condensedQuestion && (
-                    <div className="text-[11px] text-slate-400 pl-1 italic">
-                      🔍 Câu hỏi tối ưu: {message.condensedQuestion}
+                    <div className="text-[11px] text-slate-400 pl-1 italic flex items-center gap-1">
+                      <Search className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Câu hỏi tối ưu: {message.condensedQuestion}</span>
                     </div>
                   )}
 
@@ -113,7 +114,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                             title={`"${citation.quote}"`}
                             className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-600 transition-all duration-200 flex items-center gap-1 hover:scale-105 active:scale-95 cursor-pointer"
                           >
-                            📍 {docId ? `Tài liệu #${docId} - ` : ''}Trang {citation.pageNumber}
+                            <MapPin className="w-3 h-3 text-indigo-500" />
+                            {docId ? `Tài liệu #${docId} - ` : ''}Trang {citation.pageNumber}
                           </button>
                         );
                       })}
