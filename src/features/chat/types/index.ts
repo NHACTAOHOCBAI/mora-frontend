@@ -105,6 +105,7 @@ export interface SpaceDetailResponse {
     storageUrl: string;
     createdAt: string;
     updatedAt: string;
+    pagesWithImages?: number[];
   }[];
 }
 
@@ -112,4 +113,18 @@ export interface ApiResponse<T> {
   code: number;
   message: string;
   result: T;
+}
+
+export interface ImageDebugInfo {
+  name: string;
+  type: string;
+  width: number;
+  height: number;
+  accepted: boolean;
+  filterReason?: string;
+}
+
+export interface DocumentImageDebugResponse {
+  pageNumber: number;
+  images: ImageDebugInfo[];
 }

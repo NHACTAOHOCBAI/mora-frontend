@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck, Layers, RotateCw, Edit2, Check, X } from 'lucide-react';
+import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck, Layers, RotateCw, Edit2, Check, X, Bug } from 'lucide-react';
 import { useSpaceDetail, useUploadDocument, useDeleteDocument, useRenameDocument } from '@/features/chat/hooks/useSpace';
 import { 
   useDocumentDetails, 
@@ -15,6 +15,65 @@ import {
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
 import type { Message } from '@/features/chat/types';
+import { apiClient } from '@/services/api-client';
+import { debugDocumentImages } from '@/features/chat/services/chat-api';
+import type { DocumentImageDebugResponse } from '@/features/chat/types';
+
+interface DebugImageProps {
+  docId: number;
+  pageNumber: number;
+  imgName: string;
+  onZoom: (url: string) => void;
+}
+
+const DebugImage: React.FC<DebugImageProps> = ({ docId, pageNumber, imgName, onZoom }) => {
+  const [src, setSrc] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get(`/documents/${docId}/pages/${pageNumber}/images/${imgName}`, { responseType: 'blob' })
+      .then(res => {
+        if (active) {
+          const url = URL.createObjectURL(res.data);
+          setSrc(url);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [docId, pageNumber, imgName]);
+
+  if (loading) {
+    return (
+      <div className="w-12 h-12 bg-slate-100 animate-pulse rounded-lg border border-slate-200/50 flex items-center justify-center text-[9px] text-slate-400 shrink-0">
+        Tải...
+      </div>
+    );
+  }
+
+  if (!src) {
+    return (
+      <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-lg border border-rose-100 flex items-center justify-center text-[9px] font-medium shrink-0">
+        Lỗi
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={src} 
+      alt={imgName} 
+      className="w-12 h-12 object-cover rounded-lg border border-slate-200/80 shadow-sm cursor-zoom-in hover:scale-105 active:scale-95 transition-all duration-150 shrink-0 bg-slate-50" 
+      onClick={() => onZoom(src)}
+    />
+  );
+};
 
 export const SpaceDetailPage: React.FC = () => {
   const { spaceId: spaceIdParam } = useParams<{ spaceId: string }>();
@@ -37,6 +96,12 @@ export const SpaceDetailPage: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [editingDocId, setEditingDocId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [isDebugMode, setIsDebugMode] = useState(false);
+  const [showDebugModal, setShowDebugModal] = useState(false);
+  const [debugImagesData, setDebugImagesData] = useState<DocumentImageDebugResponse[]>([]);
+  const [isDebugImagesLoading, setIsDebugImagesLoading] = useState(false);
+  const [debugDocName, setDebugDocName] = useState('');
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
 
   // Queries & Mutations
   const { data: space, isLoading: isSpaceLoading, error: spaceError } = useSpaceDetail(spaceId);
@@ -197,6 +262,22 @@ export const SpaceDetailPage: React.FC = () => {
   const handleRenameCancel = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     setEditingDocId(null);
+  };
+
+  const handleOpenDebugModal = async (e: React.MouseEvent, docId: number, fileName: string) => {
+    e.stopPropagation();
+    setDebugDocName(fileName);
+    setIsDebugImagesLoading(true);
+    setShowDebugModal(true);
+    try {
+      const data = await debugDocumentImages(docId);
+      setDebugImagesData(data);
+    } catch (err) {
+      console.error(err);
+      alert('Không thể tải dữ liệu debug hình ảnh');
+    } finally {
+      setIsDebugImagesLoading(false);
+    }
   };
 
   // Handle chat messaging
@@ -474,6 +555,23 @@ export const SpaceDetailPage: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-3 space-y-1">
             <h3 className="px-2 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tác vụ & Tài liệu</h3>
             
+            {/* Debug Mode Toggle */}
+            <div className="flex items-center justify-between px-2.5 py-1.5 mb-2 rounded-xl bg-slate-100 border border-slate-200/60 shadow-sm">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Chế độ Debug</span>
+              <button
+                onClick={() => setIsDebugMode(!isDebugMode)}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isDebugMode ? 'bg-indigo-600' : 'bg-slate-300'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    isDebugMode ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
             {/* Space Assistant entry */}
             <div
               onClick={() => {
@@ -505,84 +603,125 @@ export const SpaceDetailPage: React.FC = () => {
               space?.documents.map((doc) => {
                 const isSelected = selectedDocId === doc.id && chatMode === 'document';
                 return (
-                  <div
-                    key={doc.id}
-                    onClick={() => {
-                      setSelectedDocId(doc.id);
-                      setChatMode('document');
-                      setActivePage(1);
-                      setIsChatCollapsed(false);
-                    }}
-                    className={`group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-200 border ${
-                      isSelected && !isChatCollapsed
-                        ? 'bg-indigo-50 border-indigo-100 text-indigo-700 font-semibold shadow-sm'
-                        : 'hover:bg-slate-200/60 border-transparent text-slate-600 hover:text-slate-800'
-                    }`}
-                  >
-                    {editingDocId === doc.id ? (
-                      <form
-                        onSubmit={(e) => handleRenameConfirm(e, doc.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 min-w-0 flex-1 mr-2"
-                      >
-                        <FileText className="w-4 h-4 shrink-0 text-indigo-600" />
-                        <input
-                          type="text"
-                          value={renameValue}
-                          onChange={(e) => setRenameValue(e.target.value)}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                              setEditingDocId(null);
-                            }
-                          }}
-                          className="flex-1 bg-white border border-indigo-300 rounded px-1.5 py-0.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
-                        <button
-                          type="submit"
-                          disabled={renameDocMutation.isPending}
-                          className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition cursor-pointer"
-                          title="Xác nhận"
+                  <div key={doc.id} className="space-y-1 bg-white/40 rounded-xl p-0.5 border border-slate-200/30">
+                    <div
+                      onClick={() => {
+                        setSelectedDocId(doc.id);
+                        setChatMode('document');
+                        setActivePage(1);
+                        setIsChatCollapsed(false);
+                      }}
+                      className={`group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-200 border ${
+                        isSelected && !isChatCollapsed
+                          ? 'bg-indigo-50 border-indigo-100 text-indigo-700 font-semibold shadow-sm'
+                          : 'hover:bg-slate-200/60 border-transparent text-slate-600 hover:text-slate-800'
+                      }`}
+                    >
+                      {editingDocId === doc.id ? (
+                        <form
+                          onSubmit={(e) => handleRenameConfirm(e, doc.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1.5 min-w-0 flex-1 mr-2"
                         >
-                          {renameDocMutation.isPending ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Check className="w-3 h-3" />
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleRenameCancel}
-                          className="p-1 text-rose-500 hover:bg-rose-50 rounded transition cursor-pointer"
-                          title="Hủy"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <FileText className={`w-4 h-4 shrink-0 ${isSelected && !isChatCollapsed ? 'text-indigo-600' : 'text-slate-400'}`} />
-                          <span className="text-xs truncate" title={doc.fileName}>{doc.fileName}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                          <FileText className="w-4 h-4 shrink-0 text-indigo-600" />
+                          <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') {
+                               setEditingDocId(null);
+                              }
+                            }}
+                            className="flex-1 bg-white border border-indigo-300 rounded px-1.5 py-0.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
                           <button
-                            onClick={(e) => handleRenameClick(e, doc.id, doc.fileName)}
-                            className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition border border-transparent hover:border-indigo-100"
-                            title="Đổi tên"
+                            type="submit"
+                            disabled={renameDocMutation.isPending}
+                            className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition cursor-pointer"
+                            title="Xác nhận"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            {renameDocMutation.isPending ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Check className="w-3 h-3" />
+                            )}
                           </button>
                           <button
-                            onClick={(e) => handleDeleteDoc(e, doc.id)}
-                            className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-100"
-                            title="Xóa tài liệu"
+                            type="button"
+                            onClick={handleRenameCancel}
+                            className="p-1 text-rose-500 hover:bg-rose-50 rounded transition cursor-pointer"
+                            title="Hủy"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <X className="w-3 h-3" />
                           </button>
+                        </form>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <FileText className={`w-4 h-4 shrink-0 ${isSelected && !isChatCollapsed ? 'text-indigo-600' : 'text-slate-400'}`} />
+                            <span className="text-xs truncate" title={doc.fileName}>{doc.fileName}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                            <button
+                              onClick={(e) => handleOpenDebugModal(e, doc.id, doc.fileName)}
+                              className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition border border-transparent hover:border-indigo-100"
+                              title="Debug hình ảnh"
+                            >
+                              <Bug className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => handleRenameClick(e, doc.id, doc.fileName)}
+                              className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition border border-transparent hover:border-indigo-100"
+                              title="Đổi tên"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteDoc(e, doc.id)}
+                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-100"
+                              title="Xóa tài liệu"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {isDebugMode && doc.pagesWithImages && doc.pagesWithImages.length > 0 && (
+                      <div className="pl-9 pr-2.5 pb-2 text-[10px] text-slate-500 flex flex-wrap items-center gap-1.5 bg-slate-50/70 rounded-lg p-2 border border-slate-200/40">
+                        <span className="font-bold flex items-center gap-0.5 text-[10px] text-indigo-600 uppercase tracking-wider shrink-0">
+                          🖼️ Trang:
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {doc.pagesWithImages.map((pNum) => (
+                            <button
+                              key={pNum}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDocId(doc.id);
+                                setChatMode('document');
+                                setActivePage(pNum);
+                                setIsChatCollapsed(false);
+                              }}
+                              className={`px-1.5 py-0.5 rounded font-bold border transition cursor-pointer text-[9px] ${
+                                isSelected && activePage === pNum
+                                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                  : 'bg-white hover:bg-indigo-50 border-slate-200 text-slate-600 hover:text-indigo-600'
+                              }`}
+                            >
+                              Trang {pNum}
+                            </button>
+                          ))}
                         </div>
-                      </>
+                      </div>
+                    )}
+                    {isDebugMode && (!doc.pagesWithImages || doc.pagesWithImages.length === 0) && (
+                      <div className="pl-9 pb-1.5 text-[9px] text-slate-400 italic">
+                        Không phát hiện ảnh trên trang nào
+                      </div>
                     )}
                   </div>
                 );
@@ -891,6 +1030,123 @@ export const SpaceDetailPage: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* Debug Modal */}
+      {showDebugModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <Bug className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-bold text-slate-800 text-sm">
+                  Debug Chi tiết Ảnh: <span className="text-indigo-600 font-semibold">{debugDocName}</span>
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowDebugModal(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0 scrollbar-thin">
+              {isDebugImagesLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                  <span className="text-xs text-slate-500 font-medium">Đang bóc tách và phân tích các trang PDF...</span>
+                </div>
+              ) : debugImagesData.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 text-xs">
+                  Không tìm thấy dữ liệu debug.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+                    💡 <strong>Nguyên lý lọc 2 tầng:</strong> Hệ thống bóc tách các hình ảnh từ file PDF. <strong>Tầng 1 (Kích thước & Tỉ lệ):</strong> Lọc bỏ ảnh nhỏ hơn hoặc bằng 200x200 px hoặc có tỉ lệ dị (dẹt/dọc &gt; 3.0). <strong>Tầng 2 (MD5 trùng):</strong> Lọc bỏ các ảnh xuất hiện từ 2 lần trở lên ở các trang khác nhau (như logo, header, footer lặp lại).
+                  </p>
+                  
+                  <div className="divide-y divide-slate-100">
+                    {debugImagesData.map((page) => (
+                      <div key={page.pageNumber} className="py-3 flex flex-col sm:flex-row sm:items-start gap-2 justify-between">
+                        <div className="font-bold text-xs text-slate-700 min-w-[80px]">
+                          Trang {page.pageNumber}
+                        </div>
+                        <div className="flex-1">
+                          {page.images.length === 0 ? (
+                            <span className="text-[11px] text-slate-400 italic">Không phát hiện ảnh hay đối tượng đồ họa nào</span>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-1.5">
+                              {page.images.map((img, idx) => (
+                                <div key={idx} className="flex items-center justify-between gap-4 text-[11px] bg-slate-50 hover:bg-slate-100/80 p-2 rounded-lg border border-slate-100 transition-colors">
+                                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    {img.type === 'PDImageXObject' && selectedDocId && (
+                                      <DebugImage 
+                                        docId={selectedDocId} 
+                                        pageNumber={page.pageNumber} 
+                                        imgName={img.name} 
+                                        onZoom={setZoomImageUrl} 
+                                      />
+                                    )}
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                                      <span className="font-mono bg-slate-200/60 px-1 py-0.5 rounded text-[10px] text-slate-600 font-semibold truncate max-w-[80px]" title={img.name}>{img.name}</span>
+                                      <span className="text-slate-500 shrink-0">Kiểu: <strong className="text-slate-600">{img.type}</strong></span>
+                                      {img.width > 0 && img.height > 0 && (
+                                        <span className="text-slate-500 shrink-0">Kích thước: <strong className="text-slate-600">{img.width}x{img.height} px</strong></span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 uppercase tracking-wider ${
+                                    img.accepted 
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                                      : 'bg-slate-200/80 text-slate-500 border border-slate-300/30'
+                                  }`}>
+                                    {img.accepted ? 'Hợp lệ' : `Bị lọc: ${img.filterReason || 'Kích thước/Tỉ lệ dị'}`}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button 
+                onClick={() => setShowDebugModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-md transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zoom Image Lightbox */}
+      {zoomImageUrl && (
+        <div 
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setZoomImageUrl(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-2xl overflow-hidden p-2 shadow-2xl animate-in zoom-in-95 duration-200">
+            <img src={zoomImageUrl} alt="Zoomed Debug View" className="max-h-[80vh] max-w-full object-contain rounded-xl" />
+            <button 
+              onClick={() => setZoomImageUrl(null)}
+              className="absolute top-4 right-4 bg-slate-900/80 hover:bg-slate-950 text-white p-2 rounded-full shadow-lg transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { apiClient } from '@/services/api-client';
-import type { DocumentChatRequest, DocumentChatResponse, DocumentDetailResponse, SpaceChatRequest, SpaceChatResponse, ChatMessageResponse } from '../types';
+import type { DocumentChatRequest, DocumentChatResponse, DocumentDetailResponse, SpaceChatRequest, SpaceChatResponse, ChatMessageResponse, DocumentImageDebugResponse } from '../types';
 
 export const getDocumentDetails = async (id: number): Promise<DocumentDetailResponse> => {
   const response = await apiClient.get<DocumentDetailResponse>(`/documents/${id}`);
@@ -39,3 +39,7 @@ export const clearSpaceChatHistory = async (spaceId: number): Promise<void> => {
   await apiClient.delete(`/chat/space/${spaceId}`);
 };
 
+export const debugDocumentImages = async (id: number): Promise<DocumentImageDebugResponse[]> => {
+  const response = await apiClient.get<DocumentImageDebugResponse[]>(`/documents/${id}/debug-images`);
+  return response.data;
+};
