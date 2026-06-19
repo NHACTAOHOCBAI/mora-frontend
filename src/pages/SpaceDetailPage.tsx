@@ -32,11 +32,12 @@ const DebugImage: React.FC<DebugImageProps> = ({ docId, pageNumber, imgName, onZ
 
   useEffect(() => {
     let active = true;
+    let localUrl = '';
     apiClient.get(`/documents/${docId}/pages/${pageNumber}/images/${imgName}`, { responseType: 'blob' })
       .then(res => {
         if (active) {
-          const url = URL.createObjectURL(res.data);
-          setSrc(url);
+          localUrl = URL.createObjectURL(res.data);
+          setSrc(localUrl);
           setLoading(false);
         }
       })
@@ -46,6 +47,9 @@ const DebugImage: React.FC<DebugImageProps> = ({ docId, pageNumber, imgName, onZ
       });
     return () => {
       active = false;
+      if (localUrl) {
+        URL.revokeObjectURL(localUrl);
+      }
     };
   }, [docId, pageNumber, imgName]);
 
@@ -266,6 +270,8 @@ export const SpaceDetailPage: React.FC = () => {
 
   const handleOpenDebugModal = async (e: React.MouseEvent, docId: number, fileName: string) => {
     e.stopPropagation();
+    setSelectedDocId(docId);
+    setChatMode('document');
     setDebugDocName(fileName);
     setIsDebugImagesLoading(true);
     setShowDebugModal(true);
@@ -1040,7 +1046,7 @@ export const SpaceDetailPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Bug className="w-5 h-5 text-indigo-600" />
                 <h3 className="font-bold text-slate-800 text-sm">
-                  Debug Chi tiết Ảnh: <span className="text-indigo-600 font-semibold">{debugDocName}</span>
+                  Debug Chi tiết Trang: <span className="text-indigo-600 font-semibold">{debugDocName}</span>
                 </h3>
               </div>
               <button 
@@ -1070,45 +1076,68 @@ export const SpaceDetailPage: React.FC = () => {
                   
                   <div className="divide-y divide-slate-100">
                     {debugImagesData.map((page) => (
-                      <div key={page.pageNumber} className="py-3 flex flex-col sm:flex-row sm:items-start gap-2 justify-between">
+                      <div key={page.pageNumber} className="py-4 flex flex-col sm:flex-row sm:items-start gap-2 justify-between">
                         <div className="font-bold text-xs text-slate-700 min-w-[80px]">
                           Trang {page.pageNumber}
                         </div>
-                        <div className="flex-1">
-                          {page.images.length === 0 ? (
-                            <span className="text-[11px] text-slate-400 italic">Không phát hiện ảnh hay đối tượng đồ họa nào</span>
-                          ) : (
-                            <div className="grid grid-cols-1 gap-1.5">
-                              {page.images.map((img, idx) => (
-                                <div key={idx} className="flex items-center justify-between gap-4 text-[11px] bg-slate-50 hover:bg-slate-100/80 p-2 rounded-lg border border-slate-100 transition-colors">
-                                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    {img.type === 'PDImageXObject' && selectedDocId && (
-                                      <DebugImage 
-                                        docId={selectedDocId} 
-                                        pageNumber={page.pageNumber} 
-                                        imgName={img.name} 
-                                        onZoom={setZoomImageUrl} 
-                                      />
-                                    )}
-                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-                                      <span className="font-mono bg-slate-200/60 px-1 py-0.5 rounded text-[10px] text-slate-600 font-semibold truncate max-w-[80px]" title={img.name}>{img.name}</span>
-                                      <span className="text-slate-500 shrink-0">Kiểu: <strong className="text-slate-600">{img.type}</strong></span>
-                                      {img.width > 0 && img.height > 0 && (
-                                        <span className="text-slate-500 shrink-0">Kích thước: <strong className="text-slate-600">{img.width}x{img.height} px</strong></span>
+                        <div className="flex-1 space-y-3">
+                          {/* Văn bản trích xuất */}
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Văn bản trích xuất:</span>
+                            {page.pageContent ? (
+                              <div className="bg-slate-50 border border-slate-200/60 rounded-lg p-2.5 max-h-32 overflow-y-auto text-xs text-slate-600 font-mono whitespace-pre-wrap">
+                                {page.pageContent}
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic">Không có văn bản trích xuất trên trang này</span>
+                            )}
+                          </div>
+
+                          {/* Hình ảnh phát hiện */}
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 font-semibold">Hình ảnh:</span>
+                            {page.images.length === 0 ? (
+                              <span className="text-[11px] text-slate-400 italic block mt-0.5">Không phát hiện ảnh hay đối tượng đồ họa nào</span>
+                            ) : (
+                              <div className="grid grid-cols-1 gap-1.5 mt-1">
+                                {page.images.map((img, idx) => (
+                                  <div key={idx} className="flex items-center justify-between gap-4 text-[11px] bg-slate-50 hover:bg-slate-100/80 p-2 rounded-lg border border-slate-100 transition-colors">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                      {img.type === 'PDImageXObject' && selectedDocId && (
+                                        <DebugImage 
+                                          docId={selectedDocId} 
+                                          pageNumber={page.pageNumber} 
+                                          imgName={img.name} 
+                                          onZoom={setZoomImageUrl} 
+                                        />
                                       )}
+                                      {img.type === 'VectorGraphics' && (
+                                        <div className="w-12 h-12 bg-indigo-50 border border-indigo-150 rounded-lg flex items-center justify-center text-indigo-500 shrink-0">
+                                          <Layers className="w-5 h-5" />
+                                        </div>
+                                      )}
+                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                                        <span className="font-mono bg-slate-200/60 px-1 py-0.5 rounded text-[10px] text-slate-600 font-semibold truncate max-w-[80px]" title={img.name}>{img.name}</span>
+                                        <span className="text-slate-500 shrink-0">Kiểu: <strong className="text-slate-600">{img.type === 'VectorGraphics' ? 'Sơ đồ Vector' : img.type}</strong></span>
+                                        {img.width > 0 && img.height > 0 && (
+                                          <span className="text-slate-500 shrink-0">Kích thước: <strong className="text-slate-600">{img.width}x{img.height} px</strong></span>
+                                        )}
+                                      </div>
                                     </div>
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 uppercase tracking-wider ${
+                                        img.type === 'VectorGraphics'
+                                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-150 shadow-sm'
+                                          : img.accepted 
+                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                                            : 'bg-slate-200/80 text-slate-500 border border-slate-300/30'
+                                    }`}>
+                                      {img.type === 'VectorGraphics' ? 'Hợp lệ (Sơ đồ Vector)' : img.accepted ? 'Hợp lệ' : `Bị lọc: ${img.filterReason || 'Kích thước/Tỉ lệ dị'}`}
+                                    </span>
                                   </div>
-                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 uppercase tracking-wider ${
-                                    img.accepted 
-                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
-                                      : 'bg-slate-200/80 text-slate-500 border border-slate-300/30'
-                                  }`}>
-                                    {img.accepted ? 'Hợp lệ' : `Bị lọc: ${img.filterReason || 'Kích thước/Tỉ lệ dị'}`}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

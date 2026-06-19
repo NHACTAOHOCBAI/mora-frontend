@@ -126,5 +126,6 @@ export interface ImageDebugInfo {
 
 export interface DocumentImageDebugResponse {
   pageNumber: number;
+  pageContent?: string;
   images: ImageDebugInfo[];
 }
