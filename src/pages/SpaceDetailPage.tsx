@@ -418,9 +418,7 @@ export const SpaceDetailPage: React.FC = () => {
             const assistantMessage: Message = {
               id: `ai-${Date.now()}`,
               sender: 'assistant',
-              text: data.answerFound
-                ? data.answer
-                : 'Tôi không tìm thấy câu trả lời phù hợp trong các tài liệu của không gian học tập.',
+              text: data.answer,
               citations: data.citations || [],
               timestamp: new Date(),
               condensedQuestion: data.condensedQuestion,
@@ -457,9 +455,7 @@ export const SpaceDetailPage: React.FC = () => {
             const assistantMessage: Message = {
               id: `ai-${Date.now()}`,
               sender: 'assistant',
-              text: data.answerFound
-                ? data.answer
-                : 'Tôi không tìm thấy câu trả lời phù hợp trong tài liệu này.',
+              text: data.answer,
               citations: data.citations || [],
               timestamp: new Date(),
               condensedQuestion: data.condensedQuestion,

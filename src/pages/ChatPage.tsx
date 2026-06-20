@@ -104,9 +104,7 @@ export const ChatPage: React.FC = () => {
           const assistantMessage: Message = {
             id: `ai-${Date.now()}`,
             sender: 'assistant',
-            text: data.answerFound
-              ? data.answer
-              : 'Tôi không thể tìm thấy câu trả lời cho câu hỏi này trong nội dung tài liệu.',
+            text: data.answer,
             citations: data.citations || [],
             timestamp: new Date(),
             condensedQuestion: data.condensedQuestion,
