@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, MapPin, Loader2, Search } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import type { Message } from '../types';
 import {
   Dialog,
@@ -128,13 +129,47 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                       }
                     }}
                     title={isDebugMode && isAI && message.promptSent ? 'Double click để xem chi tiết prompt đã gửi' : undefined}
-                    className={`p-4 rounded-2xl text-sm leading-relaxed border ${
+                    className={`p-4 rounded-2xl text-sm leading-relaxed border select-text ${
                       isAI
-                        ? 'bg-card border-border text-foreground shadow-xs hover:border-primary/30 transition-colors select-none cursor-pointer'
+                        ? 'bg-card border-border text-foreground shadow-xs hover:border-primary/30 transition-colors cursor-default'
                         : 'bg-muted border-border/80 text-foreground font-medium'
                     }`}
                   >
-                    {message.text}
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                        h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-1.5 text-foreground">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-sm font-bold mt-2.5 mb-1.5 text-foreground">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1 text-foreground">{children}</h3>,
+                        ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
+                        li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                        strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        code: ({ className, children, ...props }) => {
+                          const match = /language-(\w+)/.exec(className || '');
+                          const isInline = !match;
+                          return isInline ? (
+                            <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-primary" {...props}>
+                              {children}
+                            </code>
+                          ) : (
+                            <pre className="bg-muted/80 p-3 rounded-lg font-mono text-xs overflow-x-auto my-2 border border-border">
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            </pre>
+                          );
+                        },
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 transition-colors">
+                            {children}
+                          </a>
+                        ),
+                      }}
+                    >
+                      {message.text}
+                    </ReactMarkdown>
                   </div>
 
                   {isDebugMode && isAI && message.condensedQuestion && (
