@@ -1,16 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck, Layers, RotateCw, Edit2, Check, X, Bug } from 'lucide-react';
-import { useSpaceDetail, useUploadDocument, useDeleteDocument, useRenameDocument, useUpdateDocumentThreshold } from '@/features/chat/hooks/useSpace';
-import { 
-  useDocumentDetails, 
-  useSendChatMessage, 
-  useSendSpaceChatMessage, 
+import {
+  ArrowLeft,
+  FileText,
+  Trash2,
+  Upload,
+  Loader2,
+  Bot,
+  AlertCircle,
+  BookOpen,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  BookOpenCheck,
+  Layers,
+  RotateCw,
+  Edit2,
+  Check,
+  X,
+  Bug,
+  Image,
+} from 'lucide-react';
+import {
+  useSpaceDetail,
+  useUploadDocument,
+  useDeleteDocument,
+  useRenameDocument,
+  useUpdateDocumentThreshold,
+} from '@/features/chat/hooks/useSpace';
+import {
+  useDocumentDetails,
+  useSendChatMessage,
+  useSendSpaceChatMessage,
   useGenerateStudyNotes,
   useDocumentChatHistory,
   useSpaceChatHistory,
   useClearDocumentChatHistory,
-  useClearSpaceChatHistory
+  useClearSpaceChatHistory,
 } from '@/features/chat/hooks/useChat';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
@@ -18,6 +45,20 @@ import type { Message } from '@/features/chat/types';
 import { apiClient } from '@/services/api-client';
 import { debugDocumentImages } from '@/features/chat/services/chat-api';
 import type { DocumentImageDebugResponse } from '@/features/chat/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { toast } from 'sonner';
 
 interface DebugImageProps {
   docId: number;
@@ -33,15 +74,16 @@ const DebugImage: React.FC<DebugImageProps> = ({ docId, pageNumber, imgName, onZ
   useEffect(() => {
     let active = true;
     let localUrl = '';
-    apiClient.get(`/documents/${docId}/pages/${pageNumber}/images/${imgName}`, { responseType: 'blob' })
-      .then(res => {
+    apiClient
+      .get(`/documents/${docId}/pages/${pageNumber}/images/${imgName}`, { responseType: 'blob' })
+      .then((res) => {
         if (active) {
           localUrl = URL.createObjectURL(res.data);
           setSrc(localUrl);
           setLoading(false);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
         if (active) setLoading(false);
       });
@@ -55,7 +97,7 @@ const DebugImage: React.FC<DebugImageProps> = ({ docId, pageNumber, imgName, onZ
 
   if (loading) {
     return (
-      <div className="w-12 h-12 bg-slate-100 animate-pulse rounded-lg border border-slate-200/50 flex items-center justify-center text-[9px] text-slate-400 shrink-0">
+      <div className="w-12 h-12 bg-muted animate-pulse rounded-lg border border-border flex items-center justify-center text-[9px] text-muted-foreground shrink-0">
         Tải...
       </div>
     );
@@ -63,17 +105,17 @@ const DebugImage: React.FC<DebugImageProps> = ({ docId, pageNumber, imgName, onZ
 
   if (!src) {
     return (
-      <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-lg border border-rose-100 flex items-center justify-center text-[9px] font-medium shrink-0">
+      <div className="w-12 h-12 bg-destructive/10 text-destructive rounded-lg border border-destructive/20 flex items-center justify-center text-[9px] font-medium shrink-0">
         Lỗi
       </div>
     );
   }
 
   return (
-    <img 
-      src={src} 
-      alt={imgName} 
-      className="w-12 h-12 object-cover rounded-lg border border-slate-200/80 shadow-sm cursor-zoom-in hover:scale-105 active:scale-95 transition-all duration-150 shrink-0 bg-slate-50" 
+    <img
+      src={src}
+      alt={imgName}
+      className="w-12 h-12 object-cover rounded-lg border border-border shadow-xs cursor-zoom-in hover:scale-105 active:scale-95 transition-all duration-150 shrink-0 bg-muted"
       onClick={() => onZoom(src)}
     />
   );
@@ -108,6 +150,10 @@ export const SpaceDetailPage: React.FC = () => {
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
   const [vectorPathThreshold, setVectorPathThreshold] = useState<number>(30);
 
+  // AlertDialog states
+  const [showClearHistoryAlert, setShowClearHistoryAlert] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<{ id: number; name: string } | null>(null);
+
   // Queries & Mutations
   const { data: space, isLoading: isSpaceLoading, error: spaceError } = useSpaceDetail(spaceId);
   const { data: document, isLoading: isDocLoading } = useDocumentDetails(selectedDocId || 0);
@@ -119,10 +165,15 @@ export const SpaceDetailPage: React.FC = () => {
   const sendSpaceMessageMutation = useSendSpaceChatMessage();
   const updateThresholdMutation = useUpdateDocumentThreshold();
 
-  const currentDoc = space?.documents?.find(d => d.id === selectedDocId);
+  const currentDoc = space?.documents?.find((d) => d.id === selectedDocId);
 
   useEffect(() => {
-    if (chatMode === 'document' && currentDoc && currentDoc.vectorPathThreshold !== undefined && currentDoc.vectorPathThreshold !== null) {
+    if (
+      chatMode === 'document' &&
+      currentDoc &&
+      currentDoc.vectorPathThreshold !== undefined &&
+      currentDoc.vectorPathThreshold !== null
+    ) {
       setVectorPathThreshold(currentDoc.vectorPathThreshold);
     } else {
       setVectorPathThreshold(30);
@@ -135,19 +186,21 @@ export const SpaceDetailPage: React.FC = () => {
         updateThresholdMutation.mutate(
           { id: selectedDocId, threshold: val, spaceId },
           {
-            onSuccess: (updatedDoc) => {
+            onSuccess: () => {
+              toast.success('Đã cập nhật ngưỡng vector path!');
               // Reload debug details if debug modal is active
               if (showDebugModal) {
                 setIsDebugImagesLoading(true);
-                apiClient.get(`/documents/${selectedDocId}/debug-images`)
-                  .then(res => setDebugImagesData(res.data))
-                  .catch(err => console.error(err))
+                apiClient
+                  .get(`/documents/${selectedDocId}/debug-images`)
+                  .then((res) => setDebugImagesData(res.data))
+                  .catch((err) => console.error(err))
                   .finally(() => setIsDebugImagesLoading(false));
               }
             },
             onError: (err: any) => {
-              alert('Cập nhật ngưỡng thất bại: ' + (err.response?.data?.message || err.message || 'Lỗi kết nối'));
-            }
+              toast.error('Cập nhật ngưỡng thất bại: ' + (err.response?.data?.message || err.message || 'Lỗi kết nối'));
+            },
           }
         );
       }
@@ -204,15 +257,29 @@ export const SpaceDetailPage: React.FC = () => {
     }
   }, [docHistoryData, selectedDocId]);
 
-  const handleClearHistory = () => {
+  const handleClearHistoryConfirm = () => {
     if (chatMode === 'space') {
-      if (confirm('Bạn có chắc chắn muốn xóa lịch sử cuộc trò chuyện của Không gian học tập này?')) {
-        clearSpaceHistoryMutation.mutate(spaceId);
-      }
-    } else {
-      if (selectedDocId && confirm('Bạn có chắc chắn muốn xóa lịch sử cuộc trò chuyện của tài liệu này?')) {
-        clearDocHistoryMutation.mutate(selectedDocId);
-      }
+      clearSpaceHistoryMutation.mutate(spaceId, {
+        onSuccess: () => {
+          toast.success('Đã xóa lịch sử chat của Không gian!');
+          setShowClearHistoryAlert(false);
+        },
+        onError: (err: any) => {
+          toast.error('Không thể xóa lịch sử chat: ' + (err.message || 'Lỗi kết nối'));
+          setShowClearHistoryAlert(false);
+        },
+      });
+    } else if (selectedDocId) {
+      clearDocHistoryMutation.mutate(selectedDocId, {
+        onSuccess: () => {
+          toast.success('Đã xóa lịch sử chat của tài liệu!');
+          setShowClearHistoryAlert(false);
+        },
+        onError: (err: any) => {
+          toast.error('Không thể xóa lịch sử chat: ' + (err.message || 'Lỗi kết nối'));
+          setShowClearHistoryAlert(false);
+        },
+      });
     }
   };
 
@@ -222,13 +289,14 @@ export const SpaceDetailPage: React.FC = () => {
     if (!file || isNaN(spaceId)) return;
 
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    const isImage = file.type.startsWith('image/') || 
-                    file.name.toLowerCase().endsWith('.png') || 
-                    file.name.toLowerCase().endsWith('.jpg') || 
-                    file.name.toLowerCase().endsWith('.jpeg');
+    const isImage =
+      file.type.startsWith('image/') ||
+      file.name.toLowerCase().endsWith('.png') ||
+      file.name.toLowerCase().endsWith('.jpg') ||
+      file.name.toLowerCase().endsWith('.jpeg');
 
     if (!isPdf && !isImage) {
-      alert('Vui lòng chỉ tải lên tài liệu PDF hoặc hình ảnh (PNG, JPG, JPEG).');
+      toast.error('Vui lòng chỉ tải lên tài liệu PDF hoặc hình ảnh (PNG, JPG, JPEG).');
       return;
     }
 
@@ -238,6 +306,7 @@ export const SpaceDetailPage: React.FC = () => {
       {
         onSuccess: (data) => {
           setIsUploading(false);
+          toast.success('Đã tải tài liệu lên thành công!');
           if (data && data.id) {
             setSelectedDocId(data.id);
             setChatMode('document');
@@ -246,31 +315,32 @@ export const SpaceDetailPage: React.FC = () => {
         },
         onError: (err: any) => {
           setIsUploading(false);
-          alert('Tải tài liệu lên thất bại: ' + (err.response?.data?.message || err.message || 'Lỗi kết nối'));
+          toast.error('Tải tài liệu lên thất bại: ' + (err.response?.data?.message || err.message || 'Lỗi kết nối'));
         },
       }
     );
   };
 
   // Handle document deletion
-  const handleDeleteDoc = (e: React.MouseEvent, docId: number) => {
-    e.stopPropagation();
-    if (confirm('Bạn có chắc chắn muốn xóa tài liệu này không?')) {
-      deleteDocMutation.mutate(
-        { id: docId, spaceId },
-        {
-          onSuccess: () => {
-            if (selectedDocId === docId) {
-              setSelectedDocId(null);
-              setChatMode('space');
-            }
-          },
-          onError: (err: any) => {
-            alert('Xóa tài liệu thất bại: ' + (err.message || 'Lỗi kết nối'));
-          },
-        }
-      );
-    }
+  const handleDeleteDocConfirm = () => {
+    if (!docToDelete) return;
+    deleteDocMutation.mutate(
+      { id: docToDelete.id, spaceId },
+      {
+        onSuccess: () => {
+          toast.success('Đã xóa tài liệu thành công!');
+          if (selectedDocId === docToDelete.id) {
+            setSelectedDocId(null);
+            setChatMode('space');
+          }
+          setDocToDelete(null);
+        },
+        onError: (err: any) => {
+          toast.error('Xóa tài liệu thất bại: ' + (err.message || 'Lỗi kết nối'));
+          setDocToDelete(null);
+        },
+      }
+    );
   };
 
   // Handle document renaming
@@ -291,10 +361,11 @@ export const SpaceDetailPage: React.FC = () => {
       { id: docId, fileName: renameValue.trim() + '.pdf', spaceId },
       {
         onSuccess: () => {
+          toast.success('Đổi tên tài liệu thành công!');
           setEditingDocId(null);
         },
         onError: (err: any) => {
-          alert('Đổi tên tài liệu thất bại: ' + (err.message || 'Lỗi kết nối'));
+          toast.error('Đổi tên tài liệu thất bại: ' + (err.message || 'Lỗi kết nối'));
         },
       }
     );
@@ -317,7 +388,7 @@ export const SpaceDetailPage: React.FC = () => {
       setDebugImagesData(data);
     } catch (err) {
       console.error(err);
-      alert('Không thể tải dữ liệu debug hình ảnh');
+      toast.error('Không thể tải dữ liệu debug hình ảnh');
     } finally {
       setIsDebugImagesLoading(false);
     }
@@ -345,8 +416,8 @@ export const SpaceDetailPage: React.FC = () => {
             const assistantMessage: Message = {
               id: `ai-${Date.now()}`,
               sender: 'assistant',
-              text: data.answerFound 
-                ? data.answer 
+              text: data.answerFound
+                ? data.answer
                 : 'Tôi không tìm thấy câu trả lời phù hợp trong các tài liệu của không gian học tập.',
               citations: data.citations || [],
               timestamp: new Date(),
@@ -384,8 +455,8 @@ export const SpaceDetailPage: React.FC = () => {
             const assistantMessage: Message = {
               id: `ai-${Date.now()}`,
               sender: 'assistant',
-              text: data.answerFound 
-                ? data.answer 
+              text: data.answerFound
+                ? data.answer
                 : 'Tôi không tìm thấy câu trả lời phù hợp trong tài liệu này.',
               citations: data.citations || [],
               timestamp: new Date(),
@@ -427,31 +498,51 @@ export const SpaceDetailPage: React.FC = () => {
     return text.split('\n').map((line, idx) => {
       const trimmed = line.trim();
       if (trimmed.startsWith('### ')) {
-        return <h4 key={idx} className="text-sm font-bold text-slate-800 mt-4 mb-2">{trimmed.replace('### ', '')}</h4>;
+        return (
+          <h4 key={idx} className="text-sm font-bold text-foreground mt-4 mb-2">
+            {trimmed.replace('### ', '')}
+          </h4>
+        );
       }
       if (trimmed.startsWith('## ')) {
-        return <h3 key={idx} className="text-base font-bold text-indigo-600 mt-5 mb-2 border-b border-slate-100 pb-1">{trimmed.replace('## ', '')}</h3>;
+        return (
+          <h3 key={idx} className="text-base font-bold text-foreground mt-5 mb-2 border-b border-border pb-1">
+            {trimmed.replace('## ', '')}
+          </h3>
+        );
       }
       if (trimmed.startsWith('# ')) {
-        return <h2 key={idx} className="text-lg font-black text-slate-900 mt-6 mb-3">{trimmed.replace('# ', '')}</h2>;
+        return (
+          <h2 key={idx} className="text-lg font-black text-foreground mt-6 mb-3">
+            {trimmed.replace('# ', '')}
+          </h2>
+        );
       }
       if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        return <li key={idx} className="text-xs text-slate-600 ml-4 list-disc mb-1.5">{trimmed.substring(2)}</li>;
+        return (
+          <li key={idx} className="text-xs text-muted-foreground ml-4 list-disc mb-1.5">
+            {trimmed.substring(2)}
+          </li>
+        );
       }
       if (trimmed === '') return <div key={idx} className="h-2" />;
-      return <p key={idx} className="text-xs text-slate-600 leading-relaxed mb-2">{trimmed}</p>;
+      return (
+        <p key={idx} className="text-xs text-muted-foreground leading-relaxed mb-2">
+          {trimmed}
+        </p>
+      );
     });
   };
 
   // Error handling (Light Mode)
   if (isNaN(spaceId) || spaceId <= 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-800 p-6">
-        <div className="max-w-md text-center space-y-4 bg-white p-8 rounded-2xl shadow-md border border-slate-200">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-xl font-bold text-slate-800">Mã Không gian học tập không hợp lệ</h2>
-          <Link to="/dashboard" className="inline-block px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium">
-            Quay lại Dashboard
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground p-6">
+        <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-bold text-foreground">Mã Không gian học tập không hợp lệ</h2>
+          <Link to="/dashboard">
+            <Button className="cursor-pointer">Quay lại Dashboard</Button>
           </Link>
         </div>
       </div>
@@ -460,13 +551,13 @@ export const SpaceDetailPage: React.FC = () => {
 
   if (spaceError) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-800 p-6">
-        <div className="max-w-md text-center space-y-4 bg-white p-8 rounded-2xl shadow-md border border-slate-200">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-xl font-bold text-slate-800">Lỗi tải dữ liệu Space</h2>
-          <p className="text-slate-500 text-sm">Không thể tải thông tin Không gian học tập từ máy chủ.</p>
-          <Link to="/dashboard" className="inline-block px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition text-sm font-medium">
-            Quay lại Dashboard
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground p-6">
+        <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-bold text-foreground">Lỗi tải dữ liệu Space</h2>
+          <p className="text-muted-foreground text-sm">Không thể tải thông tin Không gian học tập từ máy chủ.</p>
+          <Link to="/dashboard">
+            <Button className="cursor-pointer">Quay lại Dashboard</Button>
           </Link>
         </div>
       </div>
@@ -489,89 +580,89 @@ export const SpaceDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-100 text-slate-800">
-      
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground transition-colors duration-200">
       {/* 1. Left Sidebar: Collapsible */}
       {isSidebarCollapsed ? (
-        <aside className="w-16 border-r border-slate-200 bg-slate-50 flex flex-col items-center py-4 shrink-0 justify-between">
+        <aside className="w-16 border-r border-border bg-card flex flex-col items-center py-4 shrink-0 justify-between">
           <div className="flex flex-col items-center gap-4 w-full">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setIsSidebarCollapsed(false)}
-              className="p-2 rounded-lg hover:bg-slate-200 text-slate-600 transition cursor-pointer"
+              className="cursor-pointer"
               title="Mở rộng thanh bên"
             >
               <ChevronRight className="w-4 h-4" />
-            </button>
-            <Link 
-              to="/dashboard" 
-              className="p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition"
-              title="Quay lại Dashboard"
-            >
-              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <Link to="/dashboard">
+              <Button variant="ghost" size="icon" title="Quay lại Dashboard" className="cursor-pointer">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
             </Link>
-            <div className="w-8 h-px bg-slate-200 my-1" />
-            <button
+            <div className="w-8 h-px bg-border my-1" />
+            <Button
               onClick={() => {
                 setChatMode('space');
                 setIsChatCollapsed(false);
               }}
-              className={`p-2.5 rounded-xl cursor-pointer transition-all border ${
-                chatMode === 'space' && !isChatCollapsed
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-600'
-              }`}
+              variant={chatMode === 'space' && !isChatCollapsed ? 'default' : 'outline'}
+              size="icon"
+              className="rounded-xl cursor-pointer"
               title="Trợ lý Không gian"
             >
               <Sparkles className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
           <div className="flex flex-col items-center gap-3">
-            <button
+            <Button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2.5 bg-indigo-50 border border-indigo-150 text-indigo-600 rounded-xl hover:bg-indigo-100 transition cursor-pointer"
+              variant="outline"
+              size="icon"
+              className="rounded-xl cursor-pointer"
               title="Tải tài liệu (PDF/Ảnh)"
             >
               <Upload className="w-4 h-4" />
-            </button>
+            </Button>
+            <ThemeToggle />
           </div>
         </aside>
       ) : (
-        <aside className="w-80 border-r border-slate-200 bg-slate-50 flex flex-col shrink-0">
+        <aside className="w-80 border-r border-border bg-card flex flex-col shrink-0">
           {/* Header section */}
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between gap-3">
+          <div className="px-4 h-14 border-b border-border flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <Link 
-                to="/dashboard" 
-                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition"
-                title="Quay lại Dashboard"
-              >
-                <ArrowLeft className="w-4 h-4" />
+              <Link to="/dashboard">
+                <Button variant="ghost" size="icon" title="Quay lại Dashboard" className="cursor-pointer">
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
               </Link>
               <div className="min-w-0 flex-1">
-                <h2 className="font-bold text-slate-800 truncate text-sm">
+                <h2 className="font-bold text-foreground truncate text-sm">
                   {isSpaceLoading ? 'Đang tải...' : space?.name}
                 </h2>
-                <p className="text-[10px] text-slate-500 truncate">
+                <p className="text-[10px] text-muted-foreground truncate">
                   {isSpaceLoading ? 'Vui lòng đợi' : space?.description || 'Không gian học tập riêng biệt'}
                 </p>
               </div>
             </div>
-            
-            <button
+
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setIsSidebarCollapsed(true)}
-              className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              className="cursor-pointer"
               title="Thu nhỏ thanh bên"
             >
               <ChevronLeft className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
 
           {/* Upload widget */}
-          <div className="p-4 border-b border-slate-200">
-            <button
+          <div className="p-4 border-b border-border space-y-3">
+            <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 rounded-xl text-indigo-600 font-semibold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer disabled:opacity-50"
+              className="w-full font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isUploading ? (
                 <>
@@ -584,7 +675,7 @@ export const SpaceDetailPage: React.FC = () => {
                   Tải tài liệu (PDF/Ảnh)
                 </>
               )}
-            </button>
+            </Button>
             <input
               type="file"
               ref={fileInputRef}
@@ -594,13 +685,13 @@ export const SpaceDetailPage: React.FC = () => {
             />
 
             {/* Vector Path Threshold Setting */}
-            <div className="mt-3 bg-slate-100/70 border border-slate-200/50 rounded-xl p-2.5 space-y-1.5">
+            <div className="bg-muted border border-border rounded-xl p-2.5 space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   Ngưỡng Vector Path
                 </label>
-                <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                  {updateThresholdMutation.isPending && <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />}
+                <span className="text-[10px] font-extrabold text-foreground bg-background border border-border px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                  {updateThresholdMutation.isPending && <Loader2 className="w-3 h-3 animate-spin text-foreground" />}
                   {vectorPathThreshold}
                 </span>
               </div>
@@ -614,14 +705,14 @@ export const SpaceDetailPage: React.FC = () => {
                 onMouseUp={(e) => handleThresholdChangeFinished(Number((e.target as HTMLInputElement).value))}
                 onTouchEnd={(e) => handleThresholdChangeFinished(Number((e.target as HTMLInputElement).value))}
                 disabled={updateThresholdMutation.isPending}
-                className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 disabled:opacity-50"
+                className="w-full h-1 bg-border rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
               />
-              <div className="flex justify-between text-[9px] text-slate-400 font-medium px-0.5">
+              <div className="flex justify-between text-[9px] text-muted-foreground font-medium px-0.5">
                 <span>Nhỏ (Nhạy)</span>
                 <span>Lớn</span>
               </div>
               {chatMode === 'document' && selectedDocId && (
-                <div className="text-[9px] text-indigo-500 font-medium text-center pt-0.5 animate-pulse">
+                <div className="text-[9px] text-foreground font-medium text-center pt-0.5 animate-pulse">
                   Kéo thả để cập nhật lại tài liệu hiện tại
                 </div>
               )}
@@ -630,19 +721,21 @@ export const SpaceDetailPage: React.FC = () => {
 
           {/* Documents list */}
           <div className="flex-1 overflow-y-auto p-3 space-y-1">
-            <h3 className="px-2 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tác vụ & Tài liệu</h3>
-            
+            <h3 className="px-2 pb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              Tác vụ & Tài liệu
+            </h3>
+
             {/* Debug Mode Toggle */}
-            <div className="flex items-center justify-between px-2.5 py-1.5 mb-2 rounded-xl bg-slate-100 border border-slate-200/60 shadow-sm">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Chế độ Debug</span>
+            <div className="flex items-center justify-between px-2.5 py-1.5 mb-2 rounded-xl bg-muted border border-border shadow-xs">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Chế độ Debug</span>
               <button
                 onClick={() => setIsDebugMode(!isDebugMode)}
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  isDebugMode ? 'bg-indigo-600' : 'bg-slate-300'
+                  isDebugMode ? 'bg-primary' : 'bg-border'
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-background shadow-sm transition duration-200 ease-in-out ${
                     isDebugMode ? 'translate-x-4' : 'translate-x-0'
                   }`}
                 />
@@ -657,30 +750,38 @@ export const SpaceDetailPage: React.FC = () => {
               }}
               className={`flex items-center gap-2.5 p-2.5 mb-2 rounded-xl cursor-pointer transition-all duration-200 border ${
                 chatMode === 'space' && !isChatCollapsed
-                  ? 'bg-indigo-50 border-indigo-100 text-indigo-700 font-semibold shadow-sm'
-                  : 'hover:bg-slate-200/60 border-transparent text-slate-600 hover:text-slate-800'
+                  ? 'bg-muted border-border text-foreground font-semibold shadow-xs'
+                  : 'hover:bg-muted/65 border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Sparkles className={`w-4 h-4 shrink-0 ${chatMode === 'space' && !isChatCollapsed ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <Sparkles
+                className={`w-4 h-4 shrink-0 ${
+                  chatMode === 'space' && !isChatCollapsed ? 'text-foreground' : 'text-muted-foreground'
+                }`}
+              />
               <span className="text-xs">Trợ lý Không gian</span>
             </div>
 
-            <h3 className="px-2 pt-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Danh sách tài liệu</h3>
+            <h3 className="px-2 pt-2 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              Danh sách tài liệu
+            </h3>
 
             {isSpaceLoading ? (
               <div className="flex justify-center py-10">
-                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             ) : space?.documents && space.documents.length === 0 ? (
               <div className="py-10 text-center px-4 space-y-2">
-                <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
-                <p className="text-xs text-slate-400">Chưa có tài liệu nào. Hãy tải tài liệu PDF hoặc hình ảnh để bắt đầu học tập.</p>
+                <BookOpen className="w-8 h-8 text-muted-foreground/50 mx-auto" />
+                <p className="text-xs text-muted-foreground">
+                  Chưa có tài liệu nào. Hãy tải tài liệu PDF hoặc hình ảnh để bắt đầu học tập.
+                </p>
               </div>
             ) : (
               space?.documents.map((doc) => {
                 const isSelected = selectedDocId === doc.id && chatMode === 'document';
                 return (
-                  <div key={doc.id} className="space-y-1 bg-white/40 rounded-xl p-0.5 border border-slate-200/30">
+                  <div key={doc.id} className="space-y-1 bg-card rounded-xl p-0.5 border border-border/30">
                     <div
                       onClick={() => {
                         setSelectedDocId(doc.id);
@@ -690,8 +791,8 @@ export const SpaceDetailPage: React.FC = () => {
                       }}
                       className={`group flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-200 border ${
                         isSelected && !isChatCollapsed
-                          ? 'bg-indigo-50 border-indigo-100 text-indigo-700 font-semibold shadow-sm'
-                          : 'hover:bg-slate-200/60 border-transparent text-slate-600 hover:text-slate-800'
+                          ? 'bg-muted border-border text-foreground font-semibold shadow-xs'
+                          : 'hover:bg-muted/65 border-transparent text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {editingDocId === doc.id ? (
@@ -700,23 +801,25 @@ export const SpaceDetailPage: React.FC = () => {
                           onClick={(e) => e.stopPropagation()}
                           className="flex items-center gap-1.5 min-w-0 flex-1 mr-2"
                         >
-                          <FileText className="w-4 h-4 shrink-0 text-indigo-600" />
-                          <input
+                          <FileText className="w-4 h-4 shrink-0 text-foreground" />
+                          <Input
                             type="text"
                             value={renameValue}
                             onChange={(e) => setRenameValue(e.target.value)}
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Escape') {
-                               setEditingDocId(null);
+                                setEditingDocId(null);
                               }
                             }}
-                            className="flex-1 bg-white border border-indigo-300 rounded px-1.5 py-0.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="flex-1 h-7 text-xs px-2"
                           />
-                          <button
+                          <Button
                             type="submit"
+                            variant="ghost"
+                            size="icon"
                             disabled={renameDocMutation.isPending}
-                            className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition cursor-pointer"
+                            className="h-6 w-6 text-emerald-600 cursor-pointer"
                             title="Xác nhận"
                           >
                             {renameDocMutation.isPending ? (
@@ -724,56 +827,76 @@ export const SpaceDetailPage: React.FC = () => {
                             ) : (
                               <Check className="w-3 h-3" />
                             )}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={handleRenameCancel}
-                            className="p-1 text-rose-500 hover:bg-rose-50 rounded transition cursor-pointer"
+                            className="h-6 w-6 text-destructive cursor-pointer"
                             title="Hủy"
                           >
                             <X className="w-3 h-3" />
-                          </button>
+                          </Button>
                         </form>
                       ) : (
                         <>
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <FileText className={`w-4 h-4 shrink-0 ${isSelected && !isChatCollapsed ? 'text-indigo-600' : 'text-slate-400'}`} />
-                            <span className="text-xs truncate" title={doc.fileName}>{doc.fileName}</span>
-                            <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50/60 border border-indigo-100/60 px-1 py-0.2 rounded shrink-0 ml-1" title="Vector Path Threshold">
+                            <FileText
+                              className={`w-4 h-4 shrink-0 ${
+                                isSelected && !isChatCollapsed ? 'text-foreground' : 'text-muted-foreground'
+                              }`}
+                            />
+                            <span className="text-xs truncate" title={doc.fileName}>
+                              {doc.fileName}
+                            </span>
+                            <span
+                              className="text-[9px] font-extrabold text-foreground bg-muted border border-border px-1 py-0.2 rounded shrink-0 ml-1"
+                              title="Vector Path Threshold"
+                            >
                               {doc.vectorPathThreshold ?? 30}
                             </span>
                           </div>
-                          
+
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={(e) => handleOpenDebugModal(e, doc.id, doc.fileName)}
-                              className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition border border-transparent hover:border-indigo-100"
+                              className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer"
                               title="Debug hình ảnh"
                             >
                               <Bug className="w-3.5 h-3.5" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={(e) => handleRenameClick(e, doc.id, doc.fileName)}
-                              className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition border border-transparent hover:border-indigo-100"
+                              className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer"
                               title="Đổi tên"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteDoc(e, doc.id)}
-                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-100"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDocToDelete({ id: doc.id, name: doc.fileName });
+                              }}
+                              className="h-6 w-6 text-muted-foreground hover:text-destructive cursor-pointer"
                               title="Xóa tài liệu"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         </>
                       )}
                     </div>
                     {isDebugMode && doc.pagesWithImages && doc.pagesWithImages.length > 0 && (
-                      <div className="pl-9 pr-2.5 pb-2 text-[10px] text-slate-500 flex flex-wrap items-center gap-1.5 bg-slate-50/70 rounded-lg p-2 border border-slate-200/40">
-                        <span className="font-bold flex items-center gap-0.5 text-[10px] text-indigo-600 uppercase tracking-wider shrink-0">
-                          🖼️ Trang:
+                      <div className="pl-9 pr-2.5 pb-2 text-[10px] text-muted-foreground flex flex-wrap items-center gap-1.5 bg-muted rounded-lg p-2 border border-border">
+                        <span className="font-bold flex items-center gap-1 text-[10px] text-foreground uppercase tracking-wider shrink-0">
+                          <Image className="w-3.5 h-3.5" /> Trang:
                         </span>
                         <div className="flex flex-wrap gap-1">
                           {doc.pagesWithImages.map((pNum) => (
@@ -788,8 +911,8 @@ export const SpaceDetailPage: React.FC = () => {
                               }}
                               className={`px-1.5 py-0.5 rounded font-bold border transition cursor-pointer text-[9px] ${
                                 isSelected && activePage === pNum
-                                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                                  : 'bg-white hover:bg-indigo-50 border-slate-200 text-slate-600 hover:text-indigo-600'
+                                  ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                                  : 'bg-card hover:bg-muted border-border text-muted-foreground hover:text-foreground'
                               }`}
                             >
                               Trang {pNum}
@@ -799,7 +922,7 @@ export const SpaceDetailPage: React.FC = () => {
                       </div>
                     )}
                     {isDebugMode && (!doc.pagesWithImages || doc.pagesWithImages.length === 0) && (
-                      <div className="pl-9 pb-1.5 text-[9px] text-slate-400 italic">
+                      <div className="pl-9 pb-1.5 text-[9px] text-muted-foreground/60 italic">
                         Không phát hiện ảnh trên trang nào
                       </div>
                     )}
@@ -808,22 +931,26 @@ export const SpaceDetailPage: React.FC = () => {
               })
             )}
           </div>
+          <div className="p-4 border-t border-border flex justify-between items-center bg-muted/20">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">Theme</span>
+            <ThemeToggle />
+          </div>
         </aside>
       )}
 
       {/* 2. Middle Panel: AI Chat Panel or Study Notes Tab */}
       {!isChatCollapsed && (
-        <section className="w-[420px] lg:w-[480px] shrink-0 border-r border-slate-200 bg-white flex flex-col h-full min-h-0 relative overflow-hidden shadow-sm">
+        <section className="w-[420px] lg:w-[480px] shrink-0 border-r border-border bg-card flex flex-col h-full min-h-0 relative overflow-hidden shadow-xs">
           {/* Tabs header (Chỉ hiển thị khi đã chọn 1 tài liệu cụ thể) */}
           {chatMode === 'document' && selectedDocId ? (
-            <div className="flex items-center justify-between px-6 pt-3 bg-white border-b border-slate-100">
-              <div className="flex gap-4">
+            <div className="flex items-center justify-between px-6 h-16 bg-card border-b border-border/60 shrink-0">
+              <div className="flex gap-4 h-full">
                 <button
                   onClick={() => setActiveTab('chat')}
-                  className={`pb-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
+                  className={`h-full border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'chat'
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
@@ -831,10 +958,10 @@ export const SpaceDetailPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('study')}
-                  className={`pb-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
+                  className={`h-full border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'study'
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <BookOpenCheck className="w-3.5 h-3.5" />
@@ -842,46 +969,54 @@ export const SpaceDetailPage: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 mb-2">
-                <button
-                  onClick={handleClearHistory}
-                  disabled={activeTab !== 'chat' || (selectedDocId ? (docMessages[selectedDocId] || []) : []).length === 0}
-                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-rose-600 transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowClearHistoryAlert(true)}
+                  disabled={activeTab !== 'chat' || (selectedDocId ? docMessages[selectedDocId] || [] : []).length === 0}
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer disabled:opacity-30"
                   title="Xóa lịch sử cuộc trò chuyện"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setIsChatCollapsed(true)}
-                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
                   title="Thu gọn khung này"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-100">
-              <span className="text-xs font-bold text-indigo-600 tracking-wider flex items-center gap-1.5">
+            <div className="flex items-center justify-between px-6 h-16 bg-card border-b border-border/60 shrink-0">
+              <span className="text-xs font-bold text-foreground tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 TRỢ LÝ KHÔNG GIAN
               </span>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleClearHistory}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowClearHistoryAlert(true)}
                   disabled={spaceMessages.length === 0}
-                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-rose-600 transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer disabled:opacity-30"
                   title="Xóa lịch sử cuộc trò chuyện"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setIsChatCollapsed(true)}
-                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
                   title="Thu gọn khung chat"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -903,13 +1038,13 @@ export const SpaceDetailPage: React.FC = () => {
                 onCitationClick={handleCitationClick}
               />
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
-                <div className="p-4 bg-indigo-50 rounded-full border border-indigo-100 text-indigo-600 shadow-sm">
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4 bg-muted/10">
+                <div className="p-4 bg-muted rounded-full border border-border text-foreground shadow-xs">
                   <Bot className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800">Bắt đầu Trò chuyện</h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                  <h3 className="font-bold text-foreground">Bắt đầu Trò chuyện</h3>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
                     Vui lòng chọn một tài liệu PDF từ thanh bên trái hoặc tải file mới lên để khởi chạy Trợ lý AI.
                   </p>
                 </div>
@@ -917,59 +1052,56 @@ export const SpaceDetailPage: React.FC = () => {
             )
           ) : (
             // Tab Study Helper: Tóm tắt & Flashcards
-            <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50/20">
+            <div className="flex-1 flex flex-col h-full overflow-hidden bg-muted/5">
               {/* Nếu đang gọi API sinh dữ liệu */}
               {generateNotesMutation.isPending ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
-                  <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4 bg-card">
+                  <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
                   <div className="space-y-1">
-                    <h3 className="font-bold text-slate-800">AI đang phân tích tài liệu...</h3>
-                    <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                      Quá trình này bóc tách toàn bộ tài liệu để viết tóm tắt học thuật & sinh flashcards ôn tập. Vui lòng đợi trong giây lát.
+                    <h3 className="font-bold text-foreground">AI đang phân tích tài liệu...</h3>
+                    <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                      Quá trình này bóc tách toàn bộ tài liệu để viết tóm tắt học thuật & sinh flashcards ôn tập. Vui
+                      lòng đợi trong giây lát.
                     </p>
                   </div>
                 </div>
               ) : isDocLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                <div className="flex-1 flex flex-col items-center justify-center p-8 bg-card">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : document && (document.summary || document.flashcards) ? (
                 // Đã có dữ liệu
                 <div className="flex-1 flex flex-col h-full overflow-hidden">
                   {/* Sub-tabs: Tóm tắt vs Flashcards */}
-                  <div className="flex px-4 py-2 border-b border-slate-100 bg-white gap-2">
-                    <button
+                  <div className="flex px-4 py-2 border-b border-border bg-card gap-2">
+                    <Button
                       onClick={() => setStudySubTab('summary')}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 ${
-                        studySubTab === 'summary'
-                          ? 'bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100'
-                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
-                      }`}
+                      variant={studySubTab === 'summary' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      className="cursor-pointer"
                     >
-                      <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                      <FileText className="w-3.5 h-3.5 mr-1" />
                       Bản tóm tắt
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         setStudySubTab('flashcards');
                         setCurrentFlashIndex(0);
                         setIsFlipped(false);
                       }}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 ${
-                        studySubTab === 'flashcards'
-                          ? 'bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100'
-                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent'
-                      }`}
+                      variant={studySubTab === 'flashcards' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      className="cursor-pointer"
                     >
-                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                      <Layers className="w-3.5 h-3.5 mr-1" />
                       Flashcards ({flashcardsList.length})
-                    </button>
+                    </Button>
                   </div>
 
                   {/* Nội dung Sub-tab */}
                   <div className="flex-1 overflow-y-auto p-5">
                     {studySubTab === 'summary' ? (
-                      <div className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm prose prose-sm max-w-none">
+                      <div className="bg-card border border-border p-5 rounded-2xl shadow-xs prose prose-sm max-w-none dark:prose-invert">
                         {renderMarkdown(document.summary || '')}
                       </div>
                     ) : (
@@ -978,36 +1110,36 @@ export const SpaceDetailPage: React.FC = () => {
                         {flashcardsList.length > 0 ? (
                           <div className="space-y-6">
                             {/* The Interactive Card */}
-                            <div 
+                            <div
                               onClick={() => setIsFlipped(!isFlipped)}
-                              className={`w-full min-h-[200px] bg-white border border-slate-200 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col justify-center items-center text-center relative overflow-hidden select-none hover:border-indigo-200`}
+                              className="w-full min-h-[200px] bg-card border border-border rounded-2xl p-6 shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-center items-center text-center relative overflow-hidden select-none hover:border-primary/40"
                             >
-                              <div className="absolute top-3 right-3 text-[10px] text-slate-400 font-semibold uppercase bg-slate-100 px-2 py-0.5 rounded border">
+                              <div className="absolute top-3 right-3 text-[10px] text-muted-foreground font-semibold uppercase bg-muted px-2 py-0.5 rounded border border-border">
                                 {isFlipped ? 'Đáp án' : 'Câu hỏi'}
                               </div>
 
                               {!isFlipped ? (
                                 <div className="space-y-3">
-                                  <div className="w-fit mx-auto px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full border border-indigo-100 uppercase tracking-wide">
+                                  <div className="w-fit mx-auto px-2.5 py-1 bg-muted text-foreground text-[10px] font-bold rounded-full border border-border uppercase tracking-wide">
                                     Question
                                   </div>
-                                  <p className="text-sm font-bold text-slate-800 leading-relaxed px-2">
+                                  <p className="text-sm font-bold text-foreground leading-relaxed px-2">
                                     {flashcardsList[currentFlashIndex]?.question}
                                   </p>
-                                  <span className="text-[10px] text-indigo-500 flex items-center justify-center gap-1 pt-4 font-medium">
+                                  <span className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-4 font-medium">
                                     <RotateCw className="w-3.5 h-3.5" />
                                     Click để xem đáp án
                                   </span>
                                 </div>
                               ) : (
                                 <div className="space-y-3">
-                                  <div className="w-fit mx-auto px-2.5 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full border border-emerald-100 uppercase tracking-wide">
+                                  <div className="w-fit mx-auto px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded-full border border-emerald-500/20 uppercase tracking-wide">
                                     Answer
                                   </div>
-                                  <p className="text-xs font-semibold text-slate-700 leading-relaxed px-2">
+                                  <p className="text-xs font-semibold text-muted-foreground leading-relaxed px-2">
                                     {flashcardsList[currentFlashIndex]?.answer}
                                   </p>
-                                  <span className="text-[10px] text-slate-400 flex items-center justify-center gap-1 pt-4 font-medium">
+                                  <span className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-4 font-medium">
                                     <RotateCw className="w-3.5 h-3.5" />
                                     Click để xem câu hỏi
                                   </span>
@@ -1017,39 +1149,43 @@ export const SpaceDetailPage: React.FC = () => {
 
                             {/* Deck controls */}
                             <div className="flex items-center justify-between px-4">
-                              <button
+                              <Button
                                 onClick={() => {
                                   if (currentFlashIndex > 0) {
-                                    setCurrentFlashIndex(prev => prev - 1);
+                                    setCurrentFlashIndex((prev) => prev - 1);
                                     setIsFlipped(false);
                                   }
                                 }}
                                 disabled={currentFlashIndex === 0}
-                                className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 disabled:opacity-40 disabled:hover:bg-white cursor-pointer shadow-sm"
+                                variant="outline"
+                                size="icon"
+                                className="cursor-pointer"
                               >
                                 <ChevronLeft className="w-5 h-5" />
-                              </button>
-                              
-                              <span className="text-xs font-bold text-slate-500">
+                              </Button>
+
+                              <span className="text-xs font-bold text-muted-foreground">
                                 {currentFlashIndex + 1} / {flashcardsList.length}
                               </span>
 
-                              <button
+                              <Button
                                 onClick={() => {
                                   if (currentFlashIndex < flashcardsList.length - 1) {
-                                    setCurrentFlashIndex(prev => prev + 1);
+                                    setCurrentFlashIndex((prev) => prev + 1);
                                     setIsFlipped(false);
                                   }
                                 }}
                                 disabled={currentFlashIndex === flashcardsList.length - 1}
-                                className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 disabled:opacity-40 disabled:hover:bg-white cursor-pointer shadow-sm"
+                                variant="outline"
+                                size="icon"
+                                className="cursor-pointer"
                               >
                                 <ChevronRight className="w-5 h-5" />
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         ) : (
-                          <div className="text-center py-12 text-slate-400 text-xs">
+                          <div className="text-center py-12 text-muted-foreground text-xs">
                             Không có Flashcards nào được tạo.
                           </div>
                         )}
@@ -1059,23 +1195,24 @@ export const SpaceDetailPage: React.FC = () => {
                 </div>
               ) : (
                 // Chưa sinh dữ liệu -> Show card mời bấm
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-5">
-                  <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-600 shadow-sm animate-pulse">
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-5 bg-card">
+                  <div className="p-4 bg-muted border border-border rounded-full text-foreground shadow-xs animate-pulse">
                     <BookOpenCheck className="w-8 h-8" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-slate-800">Tạo Tóm tắt & Flashcards</h3>
-                    <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                      Đúc kết các điểm mấu chốt trong tài liệu và tạo bộ câu hỏi ôn luyện thông minh tự động bằng mô hình AI Gemini.
+                    <h3 className="font-bold text-foreground">Tạo Tóm tắt & Flashcards</h3>
+                    <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                      Đúc kết các điểm mấu chốt trong tài liệu và tạo bộ câu hỏi ôn luyện thông minh tự động bằng mô
+                      hình AI Gemini.
                     </p>
                   </div>
-                  <button
+                  <Button
                     onClick={handleTriggerGenerateNotes}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold rounded-xl shadow-md shadow-indigo-600/10 transition-all duration-200 cursor-pointer text-sm"
+                    className="flex items-center gap-2 px-5 py-2.5 font-semibold rounded-xl cursor-pointer text-sm shadow-sm"
                   >
                     <Sparkles className="w-4 h-4" />
                     Bắt đầu tạo bằng AI
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -1084,12 +1221,12 @@ export const SpaceDetailPage: React.FC = () => {
       )}
 
       {/* 3. Right Panel: PDF Viewer Panel */}
-      <section className="flex-1 h-full bg-slate-100 overflow-hidden flex flex-col relative">
+      <section className="flex-1 h-full bg-muted/40 overflow-hidden flex flex-col relative">
         {/* Nút Floating để mở lại panel chat nếu đã collapse */}
         {isChatCollapsed && (
           <button
             onClick={() => setIsChatCollapsed(false)}
-            className="absolute left-4 top-4 bg-white hover:bg-slate-50 border border-slate-200 p-2.5 rounded-xl shadow-lg z-20 text-indigo-600 flex items-center gap-2 text-xs font-bold hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+            className="absolute left-4 top-4 bg-card hover:bg-muted border border-border p-2.5 rounded-xl shadow-lg z-20 text-foreground flex items-center gap-2 text-xs font-bold hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
           >
             <MessageSquare className="w-4 h-4 animate-bounce" />
             Hiện Trợ lý & Tóm tắt
@@ -1104,111 +1241,154 @@ export const SpaceDetailPage: React.FC = () => {
             onPageChange={setActivePage}
           />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-400 text-center bg-slate-50/50">
-            <FileText className="w-12 h-12 text-slate-300 mb-2" />
-            <p className="text-xs text-slate-500">Trình xem tài liệu PDF/Hình ảnh sẽ hiển thị tại đây.</p>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-muted-foreground text-center bg-muted/10">
+            <FileText className="w-12 h-12 text-muted-foreground/45 mb-2" />
+            <p className="text-xs text-muted-foreground">Trình xem tài liệu PDF/Hình ảnh sẽ hiển thị tại đây.</p>
           </div>
         )}
       </section>
 
       {/* Debug Modal */}
       {showDebugModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl shadow-2xl border border-border max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/40">
               <div className="flex items-center gap-2">
-                <Bug className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-800 text-sm">
-                  Debug Chi tiết Trang: <span className="text-indigo-600 font-semibold">{debugDocName}</span>
+                <Bug className="w-5 h-5 text-foreground" />
+                <h3 className="font-bold text-foreground text-sm">
+                  Debug Chi tiết Trang: <span className="text-primary font-semibold">{debugDocName}</span>
                 </h3>
               </div>
-              <button 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowDebugModal(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             {/* Modal Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0 scrollbar-thin">
               {isDebugImagesLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                  <span className="text-xs text-slate-500 font-medium">Đang bóc tách và phân tích các trang PDF...</span>
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Đang bóc tách và phân tích các trang PDF...
+                  </span>
                 </div>
               ) : debugImagesData.length === 0 ? (
-                <div className="text-center py-10 text-slate-400 text-xs">
-                  Không tìm thấy dữ liệu debug.
-                </div>
+                <div className="text-center py-10 text-muted-foreground text-xs">Không tìm thấy dữ liệu debug.</div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
-                    💡 <strong>Nguyên lý lọc 2 tầng:</strong> Hệ thống bóc tách các hình ảnh từ file PDF. <strong>Tầng 1 (Kích thước & Tỉ lệ):</strong> Lọc bỏ ảnh nhỏ hơn hoặc bằng 200x200 px hoặc có tỉ lệ dị (dẹt/dọc &gt; 3.0). <strong>Tầng 2 (MD5 trùng):</strong> Lọc bỏ các ảnh xuất hiện từ 2 lần trở lên ở các trang khác nhau (như logo, header, footer lặp lại).
+                  <p className="text-[11px] text-muted-foreground bg-muted p-2.5 rounded-lg border border-border leading-relaxed">
+                    💡 <strong>Nguyên lý lọc 2 tầng:</strong> Hệ thống bóc tách các hình ảnh từ file PDF.{' '}
+                    <strong>Tầng 1 (Kích thước & Tỉ lệ):</strong> Lọc bỏ ảnh nhỏ hơn hoặc bằng 200x200 px hoặc có tỉ
+                    lệ dị (dẹt/dọc &gt; 3.0). <strong>Tầng 2 (MD5 trùng):</strong> Lọc bỏ các ảnh xuất hiện từ 2 lần
+                    trở lên ở các trang khác nhau (như logo, header, footer lặp lại).
                   </p>
-                  
-                  <div className="divide-y divide-slate-100">
+
+                  <div className="divide-y divide-border">
                     {debugImagesData.map((page) => (
-                      <div key={page.pageNumber} className="py-4 flex flex-col sm:flex-row sm:items-start gap-2 justify-between">
-                        <div className="font-bold text-xs text-slate-700 min-w-[80px] flex flex-col gap-1">
+                      <div
+                        key={page.pageNumber}
+                        className="py-4 flex flex-col sm:flex-row sm:items-start gap-2 justify-between"
+                      >
+                        <div className="font-bold text-xs text-foreground min-w-[80px] flex flex-col gap-1">
                           <span>Trang {page.pageNumber}</span>
-                          <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50/50 border border-indigo-100/60 rounded px-1.5 py-0.5 w-max" title="Tổng số Vector Path đếm được">
+                          <span
+                            className="text-[10px] text-foreground font-semibold bg-muted border border-border rounded px-1.5 py-0.5 w-max"
+                            title="Tổng số Vector Path đếm được"
+                          >
                             Vector: {page.vectorPathCount ?? 0}
                           </span>
                         </div>
                         <div className="flex-1 space-y-3">
                           {/* Văn bản trích xuất */}
                           <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Văn bản trích xuất:</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                              Văn bản trích xuất:
+                            </span>
                             {page.pageContent ? (
-                              <div className="bg-slate-50 border border-slate-200/60 rounded-lg p-2.5 max-h-32 overflow-y-auto text-xs text-slate-600 font-mono whitespace-pre-wrap">
+                              <div className="bg-muted border border-border rounded-lg p-2.5 max-h-32 overflow-y-auto text-xs text-muted-foreground font-mono whitespace-pre-wrap">
                                 {page.pageContent}
                               </div>
                             ) : (
-                              <span className="text-[11px] text-slate-400 italic">Không có văn bản trích xuất trên trang này</span>
+                              <span className="text-[11px] text-muted-foreground italic">
+                                Không có văn bản trích xuất trên trang này
+                              </span>
                             )}
                           </div>
 
                           {/* Hình ảnh phát hiện */}
                           <div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 font-semibold">Hình ảnh:</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1 font-semibold">
+                              Hình ảnh:
+                            </span>
                             {page.images.length === 0 ? (
-                              <span className="text-[11px] text-slate-400 italic block mt-0.5">Không phát hiện ảnh hay đối tượng đồ họa nào</span>
+                              <span className="text-[11px] text-muted-foreground italic block mt-0.5">
+                                Không phát hiện ảnh hay đối tượng đồ họa nào
+                              </span>
                             ) : (
                               <div className="grid grid-cols-1 gap-1.5 mt-1">
                                 {page.images.map((img, idx) => (
-                                  <div key={idx} className="flex items-center justify-between gap-4 text-[11px] bg-slate-50 hover:bg-slate-100/80 p-2 rounded-lg border border-slate-100 transition-colors">
+                                  <div
+                                    key={idx}
+                                    className="flex items-center justify-between gap-4 text-[11px] bg-muted hover:bg-muted/80 p-2 rounded-lg border border-border/60 transition-colors"
+                                  >
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
                                       {img.type === 'PDImageXObject' && selectedDocId && (
-                                        <DebugImage 
-                                          docId={selectedDocId} 
-                                          pageNumber={page.pageNumber} 
-                                          imgName={img.name} 
-                                          onZoom={setZoomImageUrl} 
+                                        <DebugImage
+                                          docId={selectedDocId}
+                                          pageNumber={page.pageNumber}
+                                          imgName={img.name}
+                                          onZoom={setZoomImageUrl}
                                         />
                                       )}
                                       {img.type === 'VectorGraphics' && (
-                                        <div className="w-12 h-12 bg-indigo-50 border border-indigo-150 rounded-lg flex items-center justify-center text-indigo-500 shrink-0">
+                                        <div className="w-12 h-12 bg-muted border border-border rounded-lg flex items-center justify-center text-foreground shrink-0">
                                           <Layers className="w-5 h-5" />
                                         </div>
                                       )}
                                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-                                        <span className="font-mono bg-slate-200/60 px-1 py-0.5 rounded text-[10px] text-slate-600 font-semibold truncate max-w-[80px]" title={img.name}>{img.name}</span>
-                                        <span className="text-slate-500 shrink-0">Kiểu: <strong className="text-slate-600">{img.type === 'VectorGraphics' ? 'Sơ đồ Vector' : img.type}</strong></span>
+                                        <span
+                                          className="font-mono bg-border/40 px-1 py-0.5 rounded text-[10px] text-foreground font-semibold truncate max-w-[80px]"
+                                          title={img.name}
+                                        >
+                                          {img.name}
+                                        </span>
+                                        <span className="text-muted-foreground shrink-0">
+                                          Kiểu:{' '}
+                                          <strong className="text-foreground">
+                                            {img.type === 'VectorGraphics' ? 'Sơ đồ Vector' : img.type}
+                                          </strong>
+                                        </span>
                                         {img.width > 0 && img.height > 0 && (
-                                          <span className="text-slate-500 shrink-0">Kích thước: <strong className="text-slate-600">{img.width}x{img.height} px</strong></span>
+                                          <span className="text-muted-foreground shrink-0">
+                                            Kích thước:{' '}
+                                            <strong className="text-foreground">
+                                              {img.width}x{img.height} px
+                                            </strong>
+                                          </span>
                                         )}
                                       </div>
                                     </div>
-                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 uppercase tracking-wider ${
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 uppercase tracking-wider ${
                                         img.type === 'VectorGraphics'
-                                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-150 shadow-sm'
-                                          : img.accepted 
-                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
-                                            : 'bg-slate-200/80 text-slate-500 border border-slate-300/30'
-                                    }`}>
-                                      {img.type === 'VectorGraphics' ? 'Hợp lệ (Sơ đồ Vector)' : img.accepted ? 'Hợp lệ' : `Bị lọc: ${img.filterReason || 'Kích thước/Tỉ lệ dị'}`}
+                                          ? 'bg-muted text-foreground border border-border shadow-xs'
+                                          : img.accepted
+                                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                            : 'bg-border/60 text-muted-foreground border border-border/30'
+                                      }`}
+                                    >
+                                      {img.type === 'VectorGraphics'
+                                        ? 'Hợp lệ (Sơ đồ Vector)'
+                                        : img.accepted
+                                          ? 'Hợp lệ'
+                                          : `Bị lọc: ${img.filterReason || 'Kích thước/Tỉ lệ dị'}`}
                                     </span>
                                   </div>
                                 ))}
@@ -1224,13 +1404,10 @@ export const SpaceDetailPage: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
-              <button 
-                onClick={() => setShowDebugModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-md transition cursor-pointer"
-              >
+            <div className="px-6 py-4 border-t border-border bg-muted/40 flex justify-end">
+              <Button onClick={() => setShowDebugModal(false)} className="cursor-pointer">
                 Đóng
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1238,21 +1415,65 @@ export const SpaceDetailPage: React.FC = () => {
 
       {/* Zoom Image Lightbox */}
       {zoomImageUrl && (
-        <div 
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 cursor-zoom-out"
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 cursor-zoom-out"
           onClick={() => setZoomImageUrl(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-2xl overflow-hidden p-2 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="relative max-w-4xl max-h-[90vh] bg-card rounded-2xl overflow-hidden p-2 shadow-2xl animate-in zoom-in-95 duration-200">
             <img src={zoomImageUrl} alt="Zoomed Debug View" className="max-h-[80vh] max-w-full object-contain rounded-xl" />
-            <button 
+            <Button
               onClick={() => setZoomImageUrl(null)}
-              className="absolute top-4 right-4 bg-slate-900/80 hover:bg-slate-950 text-white p-2 rounded-full shadow-lg transition cursor-pointer"
+              variant="outline"
+              size="icon"
+              className="absolute top-4 right-4 bg-background/80 hover:bg-background text-foreground shadow-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
-            </button>
+            </Button>
           </div>
         </div>
       )}
+
+      {/* Clear Chat History AlertDialog */}
+      <AlertDialog open={showClearHistoryAlert} onOpenChange={setShowClearHistoryAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc muốn xóa lịch sử trò chuyện này?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ xóa sạch toàn bộ nội dung tin nhắn và câu hỏi đáp của cuộc trò chuyện hiện tại. Không thể hoàn tác hành động này.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearHistoryConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+            >
+              Xác nhận xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Document AlertDialog */}
+      <AlertDialog open={docToDelete !== null} onOpenChange={(open) => !open && setDocToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có muốn xóa tài liệu này?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tài liệu &rdquo;{docToDelete?.name}&rdquo; sẽ bị xóa vĩnh viễn khỏi không gian học tập cùng tất cả dữ liệu hình ảnh, tóm tắt, flashcard và lịch sử chat liên quan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteDocConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+            >
+              Xác nhận xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

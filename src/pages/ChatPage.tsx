@@ -1,10 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, AlertCircle, Trash2 } from 'lucide-react';
-import { useDocumentDetails, useSendChatMessage, useDocumentChatHistory, useClearDocumentChatHistory } from '@/features/chat/hooks/useChat';
+import {
+  useDocumentDetails,
+  useSendChatMessage,
+  useDocumentChatHistory,
+  useClearDocumentChatHistory,
+} from '@/features/chat/hooks/useChat';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
 import type { Message } from '@/features/chat/types';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { toast } from 'sonner';
 
 export const ChatPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +30,7 @@ export const ChatPage: React.FC = () => {
 
   const [activePage, setActivePage] = useState<number>(1);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [showClearAlert, setShowClearAlert] = useState(false);
 
   // Fetch document details (includes storage URL)
   const { data: document, isLoading: isDocLoading, error: docError } = useDocumentDetails(documentId);
@@ -48,10 +67,17 @@ export const ChatPage: React.FC = () => {
     }
   }, [historyData]);
 
-  const handleClearHistory = () => {
-    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử cuộc trò chuyện này không?')) {
-      clearHistoryMutation.mutate(documentId);
-    }
+  const handleClearHistoryConfirm = () => {
+    clearHistoryMutation.mutate(documentId, {
+      onSuccess: () => {
+        toast.success('Đã xóa toàn bộ lịch sử trò chuyện của tài liệu này!');
+        setShowClearAlert(false);
+      },
+      onError: (err: any) => {
+        toast.error('Không thể xóa lịch sử: ' + (err.message || 'Lỗi kết nối'));
+        setShowClearAlert(false);
+      },
+    });
   };
 
   const handleSendMessage = (text: string) => {
@@ -77,8 +103,8 @@ export const ChatPage: React.FC = () => {
           const assistantMessage: Message = {
             id: `ai-${Date.now()}`,
             sender: 'assistant',
-            text: data.answerFound 
-              ? data.answer 
+            text: data.answerFound
+              ? data.answer
               : 'Tôi không thể tìm thấy câu trả lời cho câu hỏi này trong nội dung tài liệu.',
             citations: data.citations || [],
             timestamp: new Date(),
@@ -106,13 +132,13 @@ export const ChatPage: React.FC = () => {
 
   if (isNaN(documentId) || documentId <= 0) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-200 p-6">
-        <div className="max-w-md text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground p-6">
+        <div className="max-w-md text-center space-y-4 bg-card border border-border p-8 rounded-2xl shadow-sm">
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
           <h2 className="text-xl font-bold">Mã tài liệu không hợp lệ</h2>
-          <p className="text-slate-400 text-sm">Vui lòng kiểm tra lại đường dẫn liên kết của tài liệu.</p>
-          <Link to="/dashboard" className="inline-block px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition text-sm">
-            Quay lại Dashboard
+          <p className="text-muted-foreground text-sm">Vui lòng kiểm tra lại đường dẫn liên kết của tài liệu.</p>
+          <Link to="/dashboard">
+            <Button className="cursor-pointer">Quay lại Dashboard</Button>
           </Link>
         </div>
       </div>
@@ -121,13 +147,13 @@ export const ChatPage: React.FC = () => {
 
   if (docError) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-200 p-6">
-        <div className="max-w-md text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground p-6">
+        <div className="max-w-md text-center space-y-4 bg-card border border-border p-8 rounded-2xl shadow-sm">
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
           <h2 className="text-xl font-bold">Lỗi tải tài liệu</h2>
-          <p className="text-slate-400 text-sm">Không thể tải được thông tin tài liệu từ máy chủ.</p>
-          <Link to="/dashboard" className="inline-block px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition text-sm">
-            Quay lại Dashboard
+          <p className="text-muted-foreground text-sm">Không thể tải được thông tin tài liệu từ máy chủ.</p>
+          <Link to="/dashboard">
+            <Button className="cursor-pointer">Quay lại Dashboard</Button>
           </Link>
         </div>
       </div>
@@ -135,30 +161,33 @@ export const ChatPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-950">
+    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground transition-colors duration-200">
       {/* Top Navbar */}
-      <div className="flex items-center gap-4 px-6 h-14 bg-slate-900 border-b border-slate-800 shrink-0">
-        <Link 
-          to="/dashboard" 
-          className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition"
-        >
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-center gap-4 px-6 h-14 bg-card border-b border-border shrink-0">
+        <Link to="/dashboard">
+          <Button variant="ghost" size="icon" title="Quay lại Dashboard" className="cursor-pointer">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
         </Link>
-        <div className="h-4 w-[1px] bg-slate-800" />
+        <div className="h-4 w-[1px] bg-border" />
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-slate-100 truncate text-sm sm:text-base">
+          <h1 className="font-semibold truncate text-sm sm:text-base">
             {isDocLoading ? 'Đang tải tên tài liệu...' : document?.fileName}
           </h1>
         </div>
-        <button
-          onClick={handleClearHistory}
-          disabled={messages.length === 0}
-          className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-450 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1.5 text-xs font-semibold"
-          title="Xóa lịch sử cuộc trò chuyện"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span className="hidden sm:inline">Xóa lịch sử</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            onClick={() => setShowClearAlert(true)}
+            disabled={messages.length === 0}
+            className="text-muted-foreground hover:text-destructive flex items-center gap-1.5 text-xs font-semibold cursor-pointer disabled:opacity-30"
+            title="Xóa lịch sử cuộc trò chuyện"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Xóa lịch sử</span>
+          </Button>
+        </div>
       </div>
 
       {/* Split screen content */}
@@ -183,6 +212,27 @@ export const ChatPage: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* Clear Chat History AlertDialog */}
+      <AlertDialog open={showClearAlert} onOpenChange={setShowClearAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc muốn xóa lịch sử cuộc trò chuyện này không?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này sẽ xóa sạch toàn bộ tin nhắn hỏi đáp của tài liệu hiện tại. Bạn sẽ không thể phục hồi lại nội dung này.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearHistoryConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+            >
+              Xác nhận xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

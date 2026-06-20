@@ -121,7 +121,7 @@ export const LoginForm = () => {
 ### 2.4. Styling & Tailwind CSS
 
 - Sử dụng Tailwind CSS v4 để styling. Định nghĩa các CSS variables cho theme (colors, fonts...) trong file `src/index.css` nếu cần thiết.
-- Tận dụng các component của **shadcn/ui** đặt trong `src/components/ui/` để xây dựng giao diện thống nhất.
+- Ưu tiên sử dụng các component của **shadcn/ui** (đặt trong `src/components/ui/`) trước. Nếu không có component phù hợp trong thư viện thì mới tiến hành tự custom.
 - Khi cần custom class phức tạp hoặc có điều kiện (conditional classes), sử dụng utility helper `cn` được định nghĩa trong `src/lib/utils.ts` (kết hợp `clsx` và `tailwind-merge` để giải quyết xung đột CSS classes).
   ```typescript
   import { cn } from '@/lib/utils';

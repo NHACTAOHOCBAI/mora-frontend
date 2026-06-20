@@ -1,11 +1,16 @@
 import { QueryProvider } from '@/providers/QueryProvider';
+import { ThemeProvider } from '@/providers/ThemeProvider';
 import { AppRoutes } from '@/routes/AppRoutes';
+import { Toaster } from '@/components/ui/sonner';
 
 function App() {
   return (
-    <QueryProvider>
-      <AppRoutes />
-    </QueryProvider>
+    <ThemeProvider defaultTheme="light" storageKey="mora-theme">
+      <QueryProvider>
+        <AppRoutes />
+        <Toaster />
+      </QueryProvider>
+    </ThemeProvider>
   )
 }
 
