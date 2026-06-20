@@ -50,10 +50,13 @@ src/
 1.  **Giao diện Split-Screen hiện đại (Chia đôi màn hình):**
     *   **Bên trái (AI Chat & Study helper):** Khung hội thoại AI, cho phép chuyển đổi mượt mà giữa các tab hỏi đáp và học tập.
     *   **Bên phải (Document PDF Viewer):** Tải trực tiếp file PDF từ Object Storage đám mây, hỗ trợ điều hướng, lật trang chính xác.
-2.  **Trích dẫn tương tác (Interactive Citation):**
+2.  **Kết xuất Bảng biểu Premium (Markdown Tables / GFM Support):**
+    *   Tích hợp thư viện `remark-gfm` trong `ReactMarkdown` tại `ChatContainer` và `SpaceDetailPage`.
+    *   Tự động phát hiện và render các bảng Markdown so sánh, đối chiếu do AI trả về với định dạng UI cao cấp (rounded borders, shadow, alternating row background, hover effects).
+3.  **Trích dẫn tương tác (Interactive Citation):**
     *   Nhận kết quả cấu trúc kèm định vị vị trí trích dẫn của câu trả lời AI từ backend.
     *   Khi người dùng click vào các nhãn trích dẫn (ví dụ: `📍 Trang 5`), trình xem PDF bên phải sẽ tự động nhảy đến đúng trang số 5 ngay lập tức.
-3.  **Hỏi đáp Đa tài liệu (Space-Wide Chat):**
+4.  **Hỏi đáp Đa tài liệu (Space-Wide Chat):**
     *   Cho phép đặt câu hỏi trên toàn bộ Không gian học tập (nhiều tài liệu). AI sẽ tổng hợp câu trả lời kèm nhãn chỉ định rõ tài liệu nào và trang số mấy đã trích dẫn thông tin.
 4.  **Tóm tắt & Flashcards học tập tự động:**
     *   Tự động sinh bản tóm tắt học thuật đầy đủ cho tài liệu.

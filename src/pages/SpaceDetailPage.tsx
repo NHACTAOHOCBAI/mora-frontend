@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   ArrowLeft,
   FileText,
@@ -490,46 +492,39 @@ export const SpaceDetailPage: React.FC = () => {
     setActivePage(pageNumber);
   };
 
-  // Helper render Markdown thủ công
+  // Helper render Markdown sử dụng ReactMarkdown chuẩn hóa
   const renderMarkdown = (text: string) => {
     if (!text) return null;
-    return text.split('\n').map((line, idx) => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('### ')) {
-        return (
-          <h4 key={idx} className="text-sm font-bold text-foreground mt-4 mb-2">
-            {trimmed.replace('### ', '')}
-          </h4>
-        );
-      }
-      if (trimmed.startsWith('## ')) {
-        return (
-          <h3 key={idx} className="text-base font-bold text-foreground mt-5 mb-2 border-b border-border pb-1">
-            {trimmed.replace('## ', '')}
-          </h3>
-        );
-      }
-      if (trimmed.startsWith('# ')) {
-        return (
-          <h2 key={idx} className="text-lg font-black text-foreground mt-6 mb-3">
-            {trimmed.replace('# ', '')}
-          </h2>
-        );
-      }
-      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        return (
-          <li key={idx} className="text-xs text-muted-foreground ml-4 list-disc mb-1.5">
-            {trimmed.substring(2)}
-          </li>
-        );
-      }
-      if (trimmed === '') return <div key={idx} className="h-2" />;
-      return (
-        <p key={idx} className="text-xs text-muted-foreground leading-relaxed mb-2">
-          {trimmed}
-        </p>
-      );
-    });
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => <p className="text-xs text-muted-foreground leading-relaxed mb-2 last:mb-0">{children}</p>,
+          h1: ({ children }) => <h2 className="text-lg font-black text-foreground mt-6 mb-3">{children}</h2>,
+          h2: ({ children }) => <h3 className="text-base font-bold text-foreground mt-5 mb-2 border-b border-border pb-1">{children}</h3>,
+          h3: ({ children }) => <h4 className="text-sm font-bold text-foreground mt-4 mb-2">{children}</h4>,
+          h4: ({ children }) => <h5 className="text-xs font-bold text-foreground mt-3 mb-1.5">{children}</h5>,
+          ul: ({ children }) => <ul className="list-disc pl-5 mb-2.5 space-y-1">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-5 mb-2.5 space-y-1">{children}</ol>,
+          li: ({ children }) => <li className="text-xs text-muted-foreground mb-1.5">{children}</li>,
+          strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+          em: ({ children }) => <em className="italic">{children}</em>,
+          table: ({ children }) => (
+            <div className="overflow-x-auto my-3 border border-border rounded-xl shadow-xs">
+              <table className="w-full border-collapse text-left text-xs">
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children }) => <thead className="bg-muted/80 border-b border-border font-semibold">{children}</thead>,
+          th: ({ children }) => <th className="px-4 py-2.5 font-bold text-foreground border-r border-border last:border-r-0">{children}</th>,
+          td: ({ children }) => <td className="px-4 py-2 border-b border-border/50 border-r border-border/50 last:border-r-0 last:border-b-0 align-top">{children}</td>,
+          tr: ({ children }) => <tr className="hover:bg-muted/30 transition-colors last:border-b-0">{children}</tr>,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    );
   };
 
   // Error handling (Light Mode)

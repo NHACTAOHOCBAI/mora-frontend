@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, MapPin, Loader2, Search } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Message } from '../types';
 import {
   Dialog,
@@ -136,6 +137,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                     }`}
                   >
                     <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
                       components={{
                         p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
                         h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-1.5 text-foreground">{children}</h1>,
@@ -166,6 +168,17 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                             {children}
                           </a>
                         ),
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto my-3 border border-border rounded-xl shadow-xs">
+                            <table className="w-full border-collapse text-left text-xs">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        thead: ({ children }) => <thead className="bg-muted/80 border-b border-border font-semibold">{children}</thead>,
+                        th: ({ children }) => <th className="px-4 py-2.5 font-bold text-foreground border-r border-border last:border-r-0">{children}</th>,
+                        td: ({ children }) => <td className="px-4 py-2 border-b border-border/50 border-r border-border/50 last:border-r-0 last:border-b-0 align-top">{children}</td>,
+                        tr: ({ children }) => <tr className="hover:bg-muted/30 transition-colors last:border-b-0">{children}</tr>,
                       }}
                     >
                       {message.text}
