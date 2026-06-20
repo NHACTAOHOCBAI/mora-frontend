@@ -62,6 +62,7 @@ export interface DocumentDetailResponse {
   pages: DocumentPageResponse[];
   summary?: string;
   flashcards?: string;
+  vectorPathThreshold?: number;
 }
 
 export interface Message {
@@ -106,6 +107,7 @@ export interface SpaceDetailResponse {
     createdAt: string;
     updatedAt: string;
     pagesWithImages?: number[];
+    vectorPathThreshold?: number;
   }[];
 }
 
@@ -128,4 +130,5 @@ export interface DocumentImageDebugResponse {
   pageNumber: number;
   pageContent?: string;
   images: ImageDebugInfo[];
+  vectorPathCount?: number;
 }

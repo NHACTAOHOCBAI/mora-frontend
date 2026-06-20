@@ -20,10 +20,13 @@ export const deleteSpace = async (id: number): Promise<void> => {
   await apiClient.delete<ApiResponse<void>>(`/spaces/${id}`);
 };
 
-export const uploadDocument = async (file: File, spaceId: number): Promise<any> => {
+export const uploadDocument = async (file: File, spaceId: number, vectorPathThreshold?: number): Promise<any> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('spaceId', spaceId.toString());
+  if (vectorPathThreshold !== undefined) {
+    formData.append('vectorPathThreshold', vectorPathThreshold.toString());
+  }
   
   const response = await apiClient.post('/documents/upload', formData, {
     headers: {
@@ -39,5 +42,10 @@ export const deleteDocument = async (id: number): Promise<void> => {
 
 export const renameDocument = async (id: number, fileName: string): Promise<any> => {
   const response = await apiClient.patch(`/documents/${id}/rename`, { fileName });
+  return response.data;
+};
+
+export const updateDocumentThreshold = async (id: number, threshold: number): Promise<any> => {
+  const response = await apiClient.patch(`/documents/${id}/threshold?threshold=${threshold}`);
   return response.data;
 };

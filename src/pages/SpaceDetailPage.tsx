@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Trash2, Upload, Loader2, Bot, AlertCircle, BookOpen, Sparkles, ChevronLeft, ChevronRight, MessageSquare, BookOpenCheck, Layers, RotateCw, Edit2, Check, X, Bug } from 'lucide-react';
-import { useSpaceDetail, useUploadDocument, useDeleteDocument, useRenameDocument } from '@/features/chat/hooks/useSpace';
+import { useSpaceDetail, useUploadDocument, useDeleteDocument, useRenameDocument, useUpdateDocumentThreshold } from '@/features/chat/hooks/useSpace';
 import { 
   useDocumentDetails, 
   useSendChatMessage, 
@@ -106,6 +106,7 @@ export const SpaceDetailPage: React.FC = () => {
   const [isDebugImagesLoading, setIsDebugImagesLoading] = useState(false);
   const [debugDocName, setDebugDocName] = useState('');
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
+  const [vectorPathThreshold, setVectorPathThreshold] = useState<number>(30);
 
   // Queries & Mutations
   const { data: space, isLoading: isSpaceLoading, error: spaceError } = useSpaceDetail(spaceId);
@@ -116,6 +117,42 @@ export const SpaceDetailPage: React.FC = () => {
   const renameDocMutation = useRenameDocument();
   const sendMessageMutation = useSendChatMessage();
   const sendSpaceMessageMutation = useSendSpaceChatMessage();
+  const updateThresholdMutation = useUpdateDocumentThreshold();
+
+  const currentDoc = space?.documents?.find(d => d.id === selectedDocId);
+
+  useEffect(() => {
+    if (chatMode === 'document' && currentDoc && currentDoc.vectorPathThreshold !== undefined && currentDoc.vectorPathThreshold !== null) {
+      setVectorPathThreshold(currentDoc.vectorPathThreshold);
+    } else {
+      setVectorPathThreshold(30);
+    }
+  }, [selectedDocId, chatMode, currentDoc]);
+
+  const handleThresholdChangeFinished = (val: number) => {
+    if (chatMode === 'document' && selectedDocId && currentDoc) {
+      if (val !== currentDoc.vectorPathThreshold) {
+        updateThresholdMutation.mutate(
+          { id: selectedDocId, threshold: val, spaceId },
+          {
+            onSuccess: (updatedDoc) => {
+              // Reload debug details if debug modal is active
+              if (showDebugModal) {
+                setIsDebugImagesLoading(true);
+                apiClient.get(`/documents/${selectedDocId}/debug-images`)
+                  .then(res => setDebugImagesData(res.data))
+                  .catch(err => console.error(err))
+                  .finally(() => setIsDebugImagesLoading(false));
+              }
+            },
+            onError: (err: any) => {
+              alert('Cập nhật ngưỡng thất bại: ' + (err.response?.data?.message || err.message || 'Lỗi kết nối'));
+            }
+          }
+        );
+      }
+    }
+  };
 
   // Chat History hooks
   const { data: spaceHistoryData } = useSpaceChatHistory(spaceId);
@@ -197,7 +234,7 @@ export const SpaceDetailPage: React.FC = () => {
 
     setIsUploading(true);
     uploadDocMutation.mutate(
-      { file, spaceId },
+      { file, spaceId, vectorPathThreshold },
       {
         onSuccess: (data) => {
           setIsUploading(false);
@@ -555,6 +592,40 @@ export const SpaceDetailPage: React.FC = () => {
               accept=".pdf,.png,.jpg,.jpeg"
               className="hidden"
             />
+
+            {/* Vector Path Threshold Setting */}
+            <div className="mt-3 bg-slate-100/70 border border-slate-200/50 rounded-xl p-2.5 space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  Ngưỡng Vector Path
+                </label>
+                <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                  {updateThresholdMutation.isPending && <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />}
+                  {vectorPathThreshold}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="200"
+                step="5"
+                value={vectorPathThreshold}
+                onChange={(e) => setVectorPathThreshold(Number(e.target.value))}
+                onMouseUp={(e) => handleThresholdChangeFinished(Number((e.target as HTMLInputElement).value))}
+                onTouchEnd={(e) => handleThresholdChangeFinished(Number((e.target as HTMLInputElement).value))}
+                disabled={updateThresholdMutation.isPending}
+                className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 disabled:opacity-50"
+              />
+              <div className="flex justify-between text-[9px] text-slate-400 font-medium px-0.5">
+                <span>Nhỏ (Nhạy)</span>
+                <span>Lớn</span>
+              </div>
+              {chatMode === 'document' && selectedDocId && (
+                <div className="text-[9px] text-indigo-500 font-medium text-center pt-0.5 animate-pulse">
+                  Kéo thả để cập nhật lại tài liệu hiện tại
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Documents list */}
@@ -668,6 +739,9 @@ export const SpaceDetailPage: React.FC = () => {
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             <FileText className={`w-4 h-4 shrink-0 ${isSelected && !isChatCollapsed ? 'text-indigo-600' : 'text-slate-400'}`} />
                             <span className="text-xs truncate" title={doc.fileName}>{doc.fileName}</span>
+                            <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50/60 border border-indigo-100/60 px-1 py-0.2 rounded shrink-0 ml-1" title="Vector Path Threshold">
+                              {doc.vectorPathThreshold ?? 30}
+                            </span>
                           </div>
                           
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
@@ -1077,8 +1151,11 @@ export const SpaceDetailPage: React.FC = () => {
                   <div className="divide-y divide-slate-100">
                     {debugImagesData.map((page) => (
                       <div key={page.pageNumber} className="py-4 flex flex-col sm:flex-row sm:items-start gap-2 justify-between">
-                        <div className="font-bold text-xs text-slate-700 min-w-[80px]">
-                          Trang {page.pageNumber}
+                        <div className="font-bold text-xs text-slate-700 min-w-[80px] flex flex-col gap-1">
+                          <span>Trang {page.pageNumber}</span>
+                          <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50/50 border border-indigo-100/60 rounded px-1.5 py-0.5 w-max" title="Tổng số Vector Path đếm được">
+                            Vector: {page.vectorPathCount ?? 0}
+                          </span>
                         </div>
                         <div className="flex-1 space-y-3">
                           {/* Văn bản trích xuất */}
