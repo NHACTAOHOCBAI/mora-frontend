@@ -31,6 +31,7 @@ export const ChatPage: React.FC = () => {
   const [activePage, setActivePage] = useState<number>(1);
   const [messages, setMessages] = useState<Message[]>([]);
   const [showClearAlert, setShowClearAlert] = useState(false);
+  const isDebugMode = localStorage.getItem('mora_dev_mode') === 'true';
 
   // Fetch document details (includes storage URL)
   const { data: document, isLoading: isDocLoading, error: docError } = useDocumentDetails(documentId);
@@ -199,6 +200,7 @@ export const ChatPage: React.FC = () => {
             onSendMessage={handleSendMessage}
             isLoading={sendMessageMutation.isPending}
             onCitationClick={handleCitationClick}
+            isDebugMode={isDebugMode}
           />
         </div>
 

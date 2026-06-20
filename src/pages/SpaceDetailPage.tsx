@@ -142,7 +142,9 @@ export const SpaceDetailPage: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [editingDocId, setEditingDocId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [isDebugMode, setIsDebugMode] = useState(false);
+  const [isDebugMode, setIsDebugMode] = useState<boolean>(() => {
+    return localStorage.getItem('mora_dev_mode') === 'true';
+  });
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [debugImagesData, setDebugImagesData] = useState<DocumentImageDebugResponse[]>([]);
   const [isDebugImagesLoading, setIsDebugImagesLoading] = useState(false);
@@ -685,38 +687,40 @@ export const SpaceDetailPage: React.FC = () => {
             />
 
             {/* Vector Path Threshold Setting */}
-            <div className="bg-muted border border-border rounded-xl p-2.5 space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Ngưỡng Vector Path
-                </label>
-                <span className="text-[10px] font-extrabold text-foreground bg-background border border-border px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                  {updateThresholdMutation.isPending && <Loader2 className="w-3 h-3 animate-spin text-foreground" />}
-                  {vectorPathThreshold}
-                </span>
-              </div>
-              <input
-                type="range"
-                min="5"
-                max="200"
-                step="5"
-                value={vectorPathThreshold}
-                onChange={(e) => setVectorPathThreshold(Number(e.target.value))}
-                onMouseUp={(e) => handleThresholdChangeFinished(Number((e.target as HTMLInputElement).value))}
-                onTouchEnd={(e) => handleThresholdChangeFinished(Number((e.target as HTMLInputElement).value))}
-                disabled={updateThresholdMutation.isPending}
-                className="w-full h-1 bg-border rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
-              />
-              <div className="flex justify-between text-[9px] text-muted-foreground font-medium px-0.5">
-                <span>Nhỏ (Nhạy)</span>
-                <span>Lớn</span>
-              </div>
-              {chatMode === 'document' && selectedDocId && (
-                <div className="text-[9px] text-foreground font-medium text-center pt-0.5 animate-pulse">
-                  Kéo thả để cập nhật lại tài liệu hiện tại
+            {isDebugMode && (
+              <div className="bg-muted border border-border rounded-xl p-2.5 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Ngưỡng Vector Path
+                  </label>
+                  <span className="text-[10px] font-extrabold text-foreground bg-background border border-border px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                    {updateThresholdMutation.isPending && <Loader2 className="w-3 h-3 animate-spin text-foreground" />}
+                    {vectorPathThreshold}
+                  </span>
                 </div>
-              )}
-            </div>
+                <input
+                  type="range"
+                  min="5"
+                  max="200"
+                  step="5"
+                  value={vectorPathThreshold}
+                  onChange={(e) => setVectorPathThreshold(Number(e.target.value))}
+                  onMouseUp={(e) => handleThresholdChangeFinished(Number((e.target as HTMLInputElement).value))}
+                  onTouchEnd={(e) => handleThresholdChangeFinished(Number((e.target as HTMLInputElement).value))}
+                  disabled={updateThresholdMutation.isPending}
+                  className="w-full h-1 bg-border rounded-lg appearance-none cursor-pointer accent-primary disabled:opacity-50"
+                />
+                <div className="flex justify-between text-[9px] text-muted-foreground font-medium px-0.5">
+                  <span>Nhỏ (Nhạy)</span>
+                  <span>Lớn</span>
+                </div>
+                {chatMode === 'document' && selectedDocId && (
+                  <div className="text-[9px] text-foreground font-medium text-center pt-0.5 animate-pulse">
+                    Kéo thả để cập nhật lại tài liệu hiện tại
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Documents list */}
@@ -729,7 +733,11 @@ export const SpaceDetailPage: React.FC = () => {
             <div className="flex items-center justify-between px-2.5 py-1.5 mb-2 rounded-xl bg-muted border border-border shadow-xs">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Chế độ Debug</span>
               <button
-                onClick={() => setIsDebugMode(!isDebugMode)}
+                onClick={() => {
+                  const newValue = !isDebugMode;
+                  setIsDebugMode(newValue);
+                  localStorage.setItem('mora_dev_mode', String(newValue));
+                }}
                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   isDebugMode ? 'bg-primary' : 'bg-border'
                 }`}
@@ -859,15 +867,17 @@ export const SpaceDetailPage: React.FC = () => {
                           </div>
 
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => handleOpenDebugModal(e, doc.id, doc.fileName)}
-                              className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer"
-                              title="Debug hình ảnh"
-                            >
-                              <Bug className="w-3.5 h-3.5" />
-                            </Button>
+                            {isDebugMode && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => handleOpenDebugModal(e, doc.id, doc.fileName)}
+                                className="h-6 w-6 text-muted-foreground hover:text-foreground cursor-pointer"
+                                title="Debug hình ảnh"
+                              >
+                                <Bug className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -1029,6 +1039,7 @@ export const SpaceDetailPage: React.FC = () => {
                 onSendMessage={handleSendMessage}
                 isLoading={sendSpaceMessageMutation.isPending}
                 onCitationClick={handleCitationClick}
+                isDebugMode={isDebugMode}
               />
             ) : selectedDocId ? (
               <ChatContainer
@@ -1036,6 +1047,7 @@ export const SpaceDetailPage: React.FC = () => {
                 onSendMessage={handleSendMessage}
                 isLoading={sendMessageMutation.isPending || isDocLoading}
                 onCitationClick={handleCitationClick}
+                isDebugMode={isDebugMode}
               />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4 bg-muted/10">

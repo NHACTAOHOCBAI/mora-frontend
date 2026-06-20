@@ -61,6 +61,15 @@ src/
 5.  **Lưu trữ & Dọn dẹp Lịch sử hội thoại:**
     *   Lịch sử chat được tự động tải từ database mỗi khi bạn truy cập trang.
     *   Cung cấp nút **Xóa lịch sử** (`Trash2` icon) đặt cạnh nút thu gọn khung chat giúp người dùng làm sạch hội thoại nhanh chóng.
+6.  **Chế độ Developer Mode (Chế độ Debug) & Trình gỡ lỗi nâng cao:**
+    *   **Quản lý Trạng thái:** Công tắc bật/tắt ở sidebar được lưu vào `localStorage` (`mora_dev_mode`) giúp duy trì trạng thái khi tải lại trang.
+    *   **Phân tách Giao diện:**
+        *   *Khi tắt (User Mode):* Cung cấp một giao diện học tập tối giản và sạch sẽ cho người dùng phổ thông, ẩn các tính năng kỹ thuật.
+        *   *Khi bật (Developer Mode):* Hiển thị các công cụ hỗ trợ gỡ lỗi và kiểm tra:
+            - **Slider Ngưỡng Vector Path:** Điều chỉnh độ nhạy phát hiện sơ đồ vector trực tiếp trên thanh bên từ 5 đến 200, tự động cập nhật và quét lại tài liệu trên hệ thống.
+            - **Icon Debug hình ảnh (Bug):** Mở Dialog Debug Hình Ảnh chi tiết để kiểm tra XObjects trích xuất từ PDF cùng chế độ Zoom View phóng to hình ảnh gốc.
+            - **Prompt Debugger:** Nhấp đúp (Double-click) vào câu trả lời của AI để xem chi tiết Prompt thô kèm các thẻ ảnh Base64 được gửi tới Gemini API.
+            - **Câu hỏi tối ưu:** Hiển thị câu hỏi đã được tối ưu hóa (condensed question) dưới tin nhắn trợ lý.
 
 ---
 

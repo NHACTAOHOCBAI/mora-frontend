@@ -47,6 +47,7 @@ interface ChatContainerProps {
   onSendMessage: (text: string) => void;
   isLoading: boolean;
   onCitationClick: (pageNumber: number, documentId?: number) => void;
+  isDebugMode?: boolean;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
@@ -54,6 +55,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   onSendMessage,
   isLoading,
   onCitationClick,
+  isDebugMode = false,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
@@ -121,11 +123,11 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                 <div className="space-y-2 max-w-full">
                   <div
                     onDoubleClick={() => {
-                      if (isAI && message.promptSent) {
+                      if (isDebugMode && isAI && message.promptSent) {
                         setSelectedPrompt(message.promptSent);
                       }
                     }}
-                    title={isAI && message.promptSent ? 'Double click để xem chi tiết prompt đã gửi' : undefined}
+                    title={isDebugMode && isAI && message.promptSent ? 'Double click để xem chi tiết prompt đã gửi' : undefined}
                     className={`p-4 rounded-2xl text-sm leading-relaxed border ${
                       isAI
                         ? 'bg-card border-border text-foreground shadow-xs hover:border-primary/30 transition-colors select-none cursor-pointer'
@@ -135,37 +137,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                     {message.text}
                   </div>
 
-                  {isAI && message.condensedQuestion && (
+                  {isDebugMode && isAI && message.condensedQuestion && (
                     <div className="text-[11px] text-muted-foreground pl-1 italic flex items-center gap-1">
                       <Search className="w-3.5 h-3.5 text-muted-foreground/80" />
                       <span>Câu hỏi tối ưu: {message.condensedQuestion}</span>
-                    </div>
-                  )}
-
-                  {isAI && message.promptSent && (
-                    <div className="flex pl-1">
-                      <div className="relative group">
-                        <button
-                          type="button"
-                          className="text-[11px] text-muted-foreground hover:text-foreground font-semibold cursor-help flex items-center gap-1 transition-colors"
-                        >
-                          <span className="w-3.5 h-3.5 rounded-full border border-border flex items-center justify-center text-[9px] font-bold">
-                            i
-                          </span>
-                          Xem Prompt gửi Gemini
-                        </button>
-
-                        {/* Custom Hover Card */}
-                        <div className="absolute left-0 bottom-6 hidden group-hover:flex flex-col w-[350px] sm:w-[480px] p-4 bg-card text-foreground rounded-xl shadow-xl border border-border text-left z-50">
-                          <div className="text-xs font-bold mb-2 border-b border-border pb-1.5 text-foreground flex items-center justify-between">
-                            <span>Nội dung thực tế gửi tới Gemini:</span>
-                            <span className="text-[9px] text-muted-foreground font-mono">1.5 Flash</span>
-                          </div>
-                          <div className="text-[10px] font-mono whitespace-pre-wrap leading-relaxed max-h-[220px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted pr-1 select-text">
-                            {renderPromptContent(message.promptSent)}
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   )}
 
