@@ -60,6 +60,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { UserMenu } from '@/components/shared/UserMenu';
 import { toast } from 'sonner';
 
 interface DebugImageProps {
@@ -616,6 +617,7 @@ export const SpaceDetailPage: React.FC = () => {
             >
               <Upload className="w-4 h-4" />
             </Button>
+            <UserMenu />
             <ThemeToggle />
           </div>
         </aside>
@@ -933,8 +935,11 @@ export const SpaceDetailPage: React.FC = () => {
             )}
           </div>
           <div className="p-4 border-t border-border flex justify-between items-center bg-muted/20">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase">Theme</span>
-            <ThemeToggle />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">Tài khoản</span>
+            <div className="flex items-center gap-2">
+              <UserMenu />
+              <ThemeToggle />
+            </div>
           </div>
         </aside>
       )}

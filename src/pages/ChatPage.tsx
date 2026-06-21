@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { UserMenu } from '@/components/shared/UserMenu';
 import { toast } from 'sonner';
 
 export const ChatPage: React.FC = () => {
@@ -175,6 +176,7 @@ export const ChatPage: React.FC = () => {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <UserMenu />
           <ThemeToggle />
           <Button
             variant="ghost"

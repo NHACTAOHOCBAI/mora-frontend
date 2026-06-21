@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { UserMenu } from '@/components/shared/UserMenu';
 import { toast } from 'sonner';
 
 export const DashboardPage: React.FC = () => {
@@ -74,7 +75,8 @@ export const DashboardPage: React.FC = () => {
           </div>
           <span className="font-bold text-lg tracking-wider text-foreground">Mora</span>
         </div>
-        <div>
+        <div className="flex items-center gap-3">
+          <UserMenu />
           <ThemeToggle />
         </div>
       </header>
