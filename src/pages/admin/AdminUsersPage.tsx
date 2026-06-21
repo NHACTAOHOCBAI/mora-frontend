@@ -59,57 +59,36 @@ export const AdminUsersPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-200">
-      {/* Navigation Header */}
-      <header className="border-b border-border bg-card/85 backdrop-blur-md sticky top-0 z-10 px-6 h-16 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/')}
-            className="h-9 w-9 rounded-lg border border-border cursor-pointer"
-            title="Quay lại Dashboard"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <div className="p-1 bg-muted rounded-lg border border-border flex items-center justify-center w-9 h-9 overflow-hidden">
-              <img src="/frog-logo.png" alt="Mora Logo" className="w-7 h-7 object-contain dark:invert" />
-            </div>
-            <span className="font-bold text-lg tracking-wider">Mora Admin</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              refetch();
-              toast.success('Đã tải lại danh sách!');
-            }}
-            className="h-9 w-9 rounded-lg cursor-pointer"
-            title="Tải lại dữ liệu"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-          <ThemeToggle />
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 space-y-6">
+    <div className="space-y-6">
+      {/* Title & Actions */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Quản Lý Thành Viên</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Danh sách tất cả người dùng hệ thống. Bạn có thể thay đổi vai trò hoặc khóa/mở khóa tài khoản thành viên.
           </p>
         </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              refetch();
+              toast.success('Đã tải lại danh sách!');
+            }}
+            className="rounded-lg cursor-pointer h-9 px-4 flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Tải lại dữ liệu
+          </Button>
+        </div>
+      </div>
 
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Đang tải danh sách người dùng...</p>
-          </div>
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Đang tải danh sách người dùng...</p>
+        </div>
         ) : isError ? (
           <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-2xl text-center">
             <p className="text-destructive font-medium">Lỗi tải danh sách người dùng. Vui lòng kiểm tra lại dịch vụ backend.</p>
@@ -222,7 +201,6 @@ export const AdminUsersPage: React.FC = () => {
             </Table>
           </Card>
         )}
-      </main>
     </div>
   );
 };

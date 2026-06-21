@@ -10,6 +10,7 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ de
 const SpaceDetailPage = lazy(() => import('@/pages/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
 const ChatPage = lazy(() => import('@/pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
+import { AdminLayout } from '@/layouts/AdminLayout';
 
 // Loading component tạm thời
 const LoadingFallback = () => (
@@ -77,12 +78,25 @@ const router = createBrowserRouter([
     element: <ProtectedRoute requireAdmin />,
     children: [
       {
-        path: '/admin/users',
-        element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <AdminUsersPage />
-          </Suspense>
-        ),
+        element: <AdminLayout />,
+        children: [
+          {
+            path: '/admin/users',
+            element: (
+              <Suspense fallback={<LoadingFallback />}>
+                <AdminUsersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/admin/user',
+            element: (
+              <Suspense fallback={<LoadingFallback />}>
+                <AdminUsersPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
     ],
   },
