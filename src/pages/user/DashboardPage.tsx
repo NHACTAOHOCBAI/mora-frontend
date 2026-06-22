@@ -20,8 +20,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ThemeToggle } from "@/components/shared/ThemeToggle";
-import { UserMenu } from "@/components/shared/UserMenu";
 import { toast } from "sonner";
 
 export const DashboardPage: React.FC = () => {
