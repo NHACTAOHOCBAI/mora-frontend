@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { DotPattern } from "@/components/ui/dot-pattern";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Tên đăng nhập không được để trống"),
@@ -83,8 +84,9 @@ export const LoginPage: React.FC = () => {
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md p-8 border border-border bg-card/90 shadow-lg rounded-2xl space-y-6 backdrop-blur-sm">
-          <div className="space-y-2 text-center">
+        <Card className=" relative overflow-hidden w-full max-w-md p-8 border border-border bg-card/90 rounded-2xl ">
+          <BorderBeam size={300} duration={8} />
+          <div className="space-y-2 text-center ">
             <h1 className="text-3xl font-extrabold tracking-tight">
               Chào mừng trở lại
             </h1>
@@ -144,7 +146,7 @@ export const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-muted-foreground mt-6">
             Chưa có tài khoản?{" "}
             <Link
               to="/register"
