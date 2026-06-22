@@ -1,4 +1,4 @@
-import * as React from "react"
+import { Link } from "react-router-dom"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -40,7 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
-              render={<a href="/admin/user" />}
+              render={<Link to="/admin/user" />}
             >
               <div className="p-0.5 bg-muted rounded-md border border-border flex items-center justify-center w-7 h-7 overflow-hidden">
                 <img src="/frog-logo.png" alt="Mora Logo" className="w-5 h-5 object-contain dark:invert" />
