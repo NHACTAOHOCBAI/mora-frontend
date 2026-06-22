@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
-const SpaceDetailPage = lazy(() => import('@/pages/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
+const SpaceDetailPage = lazy(() => import('@/pages/space-detail/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
 const ChatPage = lazy(() => import('@/pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 import { AdminLayout } from '@/layouts/AdminLayout';
