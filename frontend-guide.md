@@ -59,6 +59,7 @@ src/
   1. Tuyệt đối **KHÔNG** gọi trực tiếp các phương thức của `axios` hoặc `fetch` trong `useEffect` của Component để load dữ liệu.
   2. Mọi logic gọi API phải thông qua client cấu hình sẵn tại `src/services/api-client.ts`.
   3. Sử dụng `@tanstack/react-query` để quản lý Server State. Bọc các query/mutation trong custom hooks nằm tại folder `hooks/` của feature tương ứng.
+  4. **Phản hồi chuẩn từ Backend (ApiResponse Wrapping):** Mọi API từ Backend trả về định dạng JSON đều được bọc trong cấu trúc chuẩn của hệ thống: `{ code: number, message: string, result: T }`. Do đó, khi khai báo các hàm gọi API ở tầng `services/`, bắt buộc phải sử dụng interface `ApiResponse<T>` làm kiểu trả về cho Axios và trả ra thuộc tính `.result` (ví dụ: `return response.data.result;`). Ngoại lệ duy nhất là các API xử lý trực tiếp kiểu dữ liệu nhị phân (như luồng byte của tệp raw hoặc ảnh raw).
 
 ```typescript
 // ĐÚNG: Custom hook quản lý logic Server State

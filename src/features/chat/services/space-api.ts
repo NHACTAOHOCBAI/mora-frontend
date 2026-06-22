@@ -28,24 +28,24 @@ export const uploadDocument = async (file: File, spaceId: number, vectorPathThre
     formData.append('vectorPathThreshold', vectorPathThreshold.toString());
   }
   
-  const response = await apiClient.post('/documents/upload', formData, {
+  const response = await apiClient.post<ApiResponse<any>>('/documents/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
-  return response.data;
+  return response.data.result;
 };
 
 export const deleteDocument = async (id: number): Promise<void> => {
-  await apiClient.delete(`/documents/${id}`);
+  await apiClient.delete<ApiResponse<void>>(`/documents/${id}`);
 };
 
 export const renameDocument = async (id: number, fileName: string): Promise<any> => {
-  const response = await apiClient.patch(`/documents/${id}/rename`, { fileName });
-  return response.data;
+  const response = await apiClient.patch<ApiResponse<any>>(`/documents/${id}/rename`, { fileName });
+  return response.data.result;
 };
 
 export const updateDocumentThreshold = async (id: number, threshold: number): Promise<any> => {
-  const response = await apiClient.patch(`/documents/${id}/threshold?threshold=${threshold}`);
-  return response.data;
+  const response = await apiClient.patch<ApiResponse<any>>(`/documents/${id}/threshold?threshold=${threshold}`);
+  return response.data.result;
 };
