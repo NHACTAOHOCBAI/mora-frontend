@@ -4,11 +4,11 @@ import { ProtectedRoute, GuestRoute } from './RouteGuard';
 import { Loader2 } from 'lucide-react';
 
 // Lazy loading các trang
-const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
-const RegisterPage = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
-const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
-const SpaceDetailPage = lazy(() => import('@/pages/space-detail/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
-const ChatPage = lazy(() => import('@/pages/ChatPage').then(m => ({ default: m.ChatPage })));
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const DashboardPage = lazy(() => import('@/pages/user/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const SpaceDetailPage = lazy(() => import('@/pages/user/space-detail/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
+const ChatPage = lazy(() => import('@/pages/user/ChatPage').then(m => ({ default: m.ChatPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 import { AdminLayout } from '@/layouts/AdminLayout';
 
