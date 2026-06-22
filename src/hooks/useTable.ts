@@ -113,6 +113,7 @@ const useTable = <T,>({ use, columns, defaultPageSize = 10, dependencies = [] }:
     });
 
     const normalizedData = normalizePayload<T>(data);
+    console.log("useTable debugging - raw data:", data, "normalizedData:", normalizedData);
 
     const totalPages = useMemo(() => {
         return Math.max(

@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, UsersIcon } from "lucide-react"
+import { LayoutDashboardIcon, UsersIcon, BarChart2 } from "lucide-react"
 
 const data = {
   user: {
@@ -23,6 +23,11 @@ const data = {
       title: "Quản lý thành viên",
       url: "/admin/user",
       icon: <UsersIcon />,
+    },
+    {
+      title: "Đánh giá RAG (Benchmark)",
+      url: "/admin/benchmark",
+      icon: <BarChart2 />,
     },
     {
       title: "Quay lại Dashboard",
