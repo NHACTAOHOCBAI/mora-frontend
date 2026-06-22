@@ -74,29 +74,7 @@ export const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-200">
-      {/* Navigation Header */}
-      <header className="border-b border-border bg-card/85 backdrop-blur-md sticky top-0 z-10 px-6 h-16 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="p-1 bg-muted rounded-lg border border-border flex items-center justify-center w-9 h-9 overflow-hidden">
-            <img
-              src="/frog-logo.png"
-              alt="Mora Logo"
-              className="w-7 h-7 object-contain dark:invert"
-            />
-          </div>
-          <span className="font-bold text-lg tracking-wider text-foreground">
-            Mora
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <UserMenu />
-          <ThemeToggle />
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 space-y-8">
+    <div className="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
@@ -200,7 +178,7 @@ export const DashboardPage: React.FC = () => {
             ))}
           </div>
         )}
-      </main>
+
 
       {/* Create Space Dialog/Modal */}
       {isModalOpen && (

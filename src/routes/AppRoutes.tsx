@@ -11,6 +11,7 @@ const SpaceDetailPage = lazy(() => import('@/pages/user/space-detail/SpaceDetail
 const ChatPage = lazy(() => import('@/pages/user/ChatPage').then(m => ({ default: m.ChatPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { MainLayout } from '@/layouts/MainLayout';
 
 // Loading component tạm thời
 const LoadingFallback = () => (
@@ -26,20 +27,25 @@ const router = createBrowserRouter([
     element: <GuestRoute />,
     children: [
       {
-        path: '/login',
-        element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <LoginPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: '/register',
-        element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <RegisterPage />
-          </Suspense>
-        ),
+        element: <MainLayout />,
+        children: [
+          {
+            path: '/login',
+            element: (
+              <Suspense fallback={<LoadingFallback />}>
+                <LoginPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/register',
+            element: (
+              <Suspense fallback={<LoadingFallback />}>
+                <RegisterPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
     ],
   },
@@ -48,12 +54,17 @@ const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
-        path: '/',
-        element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <DashboardPage />
-          </Suspense>
-        ),
+        element: <MainLayout />,
+        children: [
+          {
+            path: '/',
+            element: (
+              <Suspense fallback={<LoadingFallback />}>
+                <DashboardPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: '/space/:spaceId',
