@@ -45,6 +45,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { DotPattern } from '@/components/ui/dot-pattern';
 
 // Import subcomponents
 import { SpaceSidebar } from './components/SpaceSidebar';
@@ -616,6 +617,15 @@ export const SpaceDetailPage: React.FC = () => {
 
       {/* 3. Right Panel: PDF Viewer Panel */}
       <section className="flex-1 h-full bg-muted/40 overflow-hidden flex flex-col relative">
+        <DotPattern
+          width={24}
+          height={24}
+          cx={1}
+          cy={1}
+          cr={1.5}
+          className="fill-neutral-300 text-neutral-300 dark:fill-neutral-600/50 dark:text-neutral-600/50 [mask-image:radial-gradient(800px_circle_at_center,white,transparent)]"
+          glow={true}
+        />
         {/* Nút Floating để mở lại panel chat nếu đã collapse */}
         {isChatCollapsed && (
           <button
@@ -635,7 +645,7 @@ export const SpaceDetailPage: React.FC = () => {
             onPageChange={setActivePage}
           />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-muted-foreground text-center bg-muted/10">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-muted-foreground text-center bg-transparent z-10">
             <FileText className="w-12 h-12 text-muted-foreground/45 mb-2" />
             <p className="text-xs text-muted-foreground">Trình xem tài liệu PDF/Hình ảnh sẽ hiển thị tại đây.</p>
           </div>

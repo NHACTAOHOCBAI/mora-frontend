@@ -85,7 +85,7 @@ export const RegisterPage: React.FC = () => {
         cx={1}
         cy={1}
         cr={1.5}
-        className="fill-neutral-300 dark:fill-neutral-800 [mask-image:radial-gradient(800px_circle_at_center,white,transparent)]"
+        className="fill-neutral-300 text-neutral-300 dark:fill-neutral-600/50 dark:text-neutral-600/50 [mask-image:radial-gradient(800px_circle_at_center,white,transparent)]"
         glow={true}
       />
       {/* Header */}

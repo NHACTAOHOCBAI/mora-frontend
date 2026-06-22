@@ -107,10 +107,9 @@ export const DashboardPage: React.FC = () => {
               và hỏi đáp AI.
             </p>
           </div>
-
           <Button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer text-sm font-semibold shadow-sm"
+            className="flex items-center gap-2 px-4 py-5 rounded-xl cursor-pointer text-sm font-semibold shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Tạo Space Mới
