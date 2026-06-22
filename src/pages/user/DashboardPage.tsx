@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Folder, Trash2, Loader2, BookOpen } from 'lucide-react';
-import { useSpaces, useCreateSpace, useDeleteSpace } from '@/features/chat/hooks/useSpace';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Folder, Trash2, Loader2, BookOpen } from "lucide-react";
+import {
+  useSpaces,
+  useCreateSpace,
+  useDeleteSpace,
+} from "@/features/chat/hooks/useSpace";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,10 +19,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
-import { UserMenu } from '@/components/shared/UserMenu';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { UserMenu } from "@/components/shared/UserMenu";
+import { toast } from "sonner";
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,8 +31,8 @@ export const DashboardPage: React.FC = () => {
   const deleteSpaceMutation = useDeleteSpace();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [spaceIdToDelete, setSpaceIdToDelete] = useState<number | null>(null);
 
   const handleCreateSpace = (e: React.FormEvent) => {
@@ -39,15 +43,17 @@ export const DashboardPage: React.FC = () => {
       { name: name.trim(), description: description.trim() },
       {
         onSuccess: () => {
-          toast.success('Tạo Không gian học tập thành công!');
-          setName('');
-          setDescription('');
+          toast.success("Tạo Không gian học tập thành công!");
+          setName("");
+          setDescription("");
           setIsModalOpen(false);
         },
         onError: (err: any) => {
-          toast.error('Tạo Không gian thất bại: ' + (err.message || 'Lỗi kết nối'));
-        }
-      }
+          toast.error(
+            "Tạo Không gian thất bại: " + (err.message || "Lỗi kết nối"),
+          );
+        },
+      },
     );
   };
 
@@ -55,13 +61,15 @@ export const DashboardPage: React.FC = () => {
     if (spaceIdToDelete === null) return;
     deleteSpaceMutation.mutate(spaceIdToDelete, {
       onSuccess: () => {
-        toast.success('Đã xóa Không gian học tập!');
+        toast.success("Đã xóa Không gian học tập!");
         setSpaceIdToDelete(null);
       },
       onError: (err: any) => {
-        toast.error('Xóa Không gian thất bại: ' + (err.message || 'Lỗi kết nối'));
+        toast.error(
+          "Xóa Không gian thất bại: " + (err.message || "Lỗi kết nối"),
+        );
         setSpaceIdToDelete(null);
-      }
+      },
     });
   };
 
@@ -71,9 +79,15 @@ export const DashboardPage: React.FC = () => {
       <header className="border-b border-border bg-card/85 backdrop-blur-md sticky top-0 z-10 px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="p-1 bg-muted rounded-lg border border-border flex items-center justify-center w-9 h-9 overflow-hidden">
-            <img src="/frog-logo.png" alt="Mora Logo" className="w-7 h-7 object-contain dark:invert" />
+            <img
+              src="/frog-logo.png"
+              alt="Mora Logo"
+              className="w-7 h-7 object-contain dark:invert"
+            />
           </div>
-          <span className="font-bold text-lg tracking-wider text-foreground">Mora</span>
+          <span className="font-bold text-lg tracking-wider text-foreground">
+            Mora
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <UserMenu />
@@ -89,7 +103,8 @@ export const DashboardPage: React.FC = () => {
               Không Gian Học Tập
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Chọn hoặc tạo mới một không gian học tập riêng biệt để tải lên PDF và hỏi đáp AI.
+              Chọn hoặc tạo mới một không gian học tập riêng biệt để tải lên PDF
+              và hỏi đáp AI.
             </p>
           </div>
 
@@ -101,16 +116,19 @@ export const DashboardPage: React.FC = () => {
             Tạo Space Mới
           </Button>
         </div>
-
         {/* Space List */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground animate-pulse">Đang tải danh sách Space...</p>
+            <p className="text-sm text-muted-foreground animate-pulse">
+              Đang tải danh sách Space...
+            </p>
           </div>
         ) : isError ? (
           <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-2xl text-center">
-            <p className="text-destructive font-medium">Lỗi tải danh sách Space. Vui lòng kiểm tra lại dịch vụ backend.</p>
+            <p className="text-destructive font-medium">
+              Lỗi tải danh sách Space. Vui lòng kiểm tra lại dịch vụ backend.
+            </p>
           </div>
         ) : spaces && spaces.length === 0 ? (
           <div className="border border-dashed border-border bg-card p-12 rounded-3xl text-center max-w-md mx-auto space-y-4 shadow-xs">
@@ -118,9 +136,12 @@ export const DashboardPage: React.FC = () => {
               <BookOpen className="w-8 h-8" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg text-foreground">Chưa có Space nào</h3>
+              <h3 className="font-semibold text-lg text-foreground">
+                Chưa có Space nào
+              </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Tạo Không gian học tập đầu tiên của bạn để tải lên các tài liệu ôn tập và bắt đầu chat với AI.
+                Tạo Không gian học tập đầu tiên của bạn để tải lên các tài liệu
+                ôn tập và bắt đầu chat với AI.
               </p>
             </div>
             <Button
@@ -163,12 +184,15 @@ export const DashboardPage: React.FC = () => {
                     {space.name}
                   </h3>
                   <p className="text-muted-foreground text-xs mt-1 line-clamp-2 min-h-[2.5rem]">
-                    {space.description || 'Không có mô tả nào.'}
+                    {space.description || "Không có mô tả nào."}
                   </p>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-border flex justify-between items-center text-[10px] text-muted-foreground font-medium">
-                  <span>Khởi tạo: {new Date(space.createdAt).toLocaleDateString('vi-VN')}</span>
+                  <span>
+                    Khởi tạo:{" "}
+                    {new Date(space.createdAt).toLocaleDateString("vi-VN")}
+                  </span>
                   <span className="text-foreground group-hover:underline font-semibold text-xs transition-colors">
                     Vào học tập &rarr;
                   </span>
@@ -246,7 +270,7 @@ export const DashboardPage: React.FC = () => {
                       Đang tạo...
                     </>
                   ) : (
-                    'Tạo ngay'
+                    "Tạo ngay"
                   )}
                 </Button>
               </div>
@@ -256,16 +280,24 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* Delete Confirmation Alert Dialog */}
-      <AlertDialog open={spaceIdToDelete !== null} onOpenChange={(open) => !open && setSpaceIdToDelete(null)}>
+      <AlertDialog
+        open={spaceIdToDelete !== null}
+        onOpenChange={(open) => !open && setSpaceIdToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Bạn có chắc chắn muốn xóa không?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này sẽ xóa vĩnh viễn Không gian học tập này cùng tất cả tài liệu và lịch sử chat đi kèm. Không thể hoàn tác hành động này.
+              Hành động này sẽ xóa vĩnh viễn Không gian học tập này cùng tất cả
+              tài liệu và lịch sử chat đi kèm. Không thể hoàn tác hành động này.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Hủy bỏ</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">
+              Hủy bỏ
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSpaceConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
