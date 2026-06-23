@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, ShieldAlert } from 'lucide-react';
+import { LogOut, ShieldAlert, User } from 'lucide-react';
 
 export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
@@ -25,8 +25,12 @@ export const UserMenu: React.FC = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="relative h-9 w-9 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-sm cursor-pointer select-none hover:bg-accent hover:text-accent-foreground transition-colors">
-        {getInitials(user.fullName || user.username)}
+      <DropdownMenuTrigger className="relative h-9 w-9 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-sm cursor-pointer select-none hover:bg-accent hover:text-accent-foreground transition-colors overflow-hidden">
+        {user.avatarUrl ? (
+          <img src={user.avatarUrl} alt={user.fullName || user.username} className="w-full h-full object-cover" />
+        ) : (
+          getInitials(user.fullName || user.username)
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-card border border-border">
         <DropdownMenuGroup>
@@ -42,6 +46,16 @@ export const UserMenu: React.FC = () => {
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="bg-border" />
         
+        <DropdownMenuItem
+          onClick={() => navigate('/profile')}
+          className="cursor-pointer font-medium"
+        >
+          <User className="mr-2 h-4 w-4" />
+          <span>Thông tin cá nhân</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator className="bg-border" />
+
         {user.role === 'ROLE_ADMIN' && (
           <>
             <DropdownMenuItem

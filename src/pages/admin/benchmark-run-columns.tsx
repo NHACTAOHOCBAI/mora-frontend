@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Trash2, ShieldAlert } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import type { BenchmarkRun } from "@/features/admin/services/benchmark-api";

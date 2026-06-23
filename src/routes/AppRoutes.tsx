@@ -11,6 +11,7 @@ const SpaceDetailPage = lazy(() => import('@/pages/user/space-detail/SpaceDetail
 const ChatPage = lazy(() => import('@/pages/user/ChatPage').then(m => ({ default: m.ChatPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 const BenchmarkPage = lazy(() => import('@/pages/admin/BenchmarkPage').then(m => ({ default: m.BenchmarkPage })));
+const ProfilePage = lazy(() => import('@/pages/user/ProfilePage').then(m => ({ default: m.ProfilePage })));
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { MainLayout } from '@/layouts/MainLayout';
 
@@ -62,6 +63,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<LoadingFallback />}>
                 <DashboardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/profile',
+            element: (
+              <Suspense fallback={<LoadingFallback />}>
+                <ProfilePage />
               </Suspense>
             ),
           },

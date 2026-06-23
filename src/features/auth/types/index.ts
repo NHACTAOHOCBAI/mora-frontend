@@ -5,6 +5,7 @@ export interface UserResponse {
   username: string;
   email: string;
   fullName: string;
+  avatarUrl?: string;
   role: Role;
   active: boolean;
   createdAt: string;
@@ -16,5 +17,6 @@ export interface AuthResponse {
   username: string;
   email: string;
   fullName: string;
+  avatarUrl?: string;
   role: Role;
 }

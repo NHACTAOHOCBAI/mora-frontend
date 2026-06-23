@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  Play, Plus, RefreshCw, BarChart2, Clock, TrendingUp, HelpCircle, AlertCircle 
+  Play, Plus, RefreshCw, BarChart2, Clock, AlertCircle 
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { BorderedCard } from '@/components/shared/BorderedCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +13,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar } from 'recharts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { DotPattern } from '@/components/ui/dot-pattern';
 import { BorderBeam } from '@/components/ui/border-beam';
 import CrudTable from '@/components/crud_table/crud-table';
 import { 
@@ -233,13 +232,13 @@ export const BenchmarkPage: React.FC = () => {
         <TabsContent value="comparison" className="space-y-6 mt-4 animate-in fade-in duration-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Chạy Benchmark Mới */}
-            <div className="relative md:col-span-1 border border-border/80 rounded-xl bg-card overflow-hidden">
+            <BorderedCard
+              className="relative md:col-span-1"
+              title="Chạy Benchmark Mới"
+              description="Nhập nhãn định dạng hướng tiếp cận để thực thi đánh giá."
+            >
               {runningBenchmark && <BorderBeam borderWidth={1.5} size={150} duration={8} />}
-              <div className="border-b border-border/80 p-6">
-                <h3 className="text-lg font-semibold text-foreground">Chạy Benchmark Mới</h3>
-                <p className="text-xs text-muted-foreground mt-1">Nhập nhãn định dạng hướng tiếp cận để thực thi đánh giá.</p>
-              </div>
-              <CardContent className="space-y-4 px-6 pb-6 pt-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-muted-foreground">Tên hướng tiếp cận / Cấu hình</label>
                   <Input 
@@ -273,332 +272,321 @@ export const BenchmarkPage: React.FC = () => {
                     Hệ thống sẽ chạy từng câu hỏi trong Golden Dataset, truy xuất ngữ cảnh và gọi Gemini để sinh câu trả lời. Sau đó Ragas sẽ chấm điểm các chỉ số.
                   </span>
                 </div>
-              </CardContent>
-            </div>
+              </div>
+            </BorderedCard>
 
             {/* Chọn Cấu Hình So Sánh */}
-            <div className="md:col-span-2 border border-border/80 rounded-xl bg-card overflow-hidden">
-              <div className="border-b border-border/80 p-6">
-                <h3 className="text-lg font-semibold text-foreground">Cấu hình So Sánh Đối Chiếu</h3>
-                <p className="text-xs text-muted-foreground mt-1">Chọn hai lượt chạy benchmark khác nhau để phân tích hiệu suất và chất lượng.</p>
-              </div>
-              <CardContent className="px-6 pb-6 pt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground">Lượt chạy A (Trước / Baseline)</label>
-                    <Select value={selectedRunAId} onValueChange={setSelectedRunAId}>
-                      <SelectTrigger className="w-full h-9 border-border/80 bg-background text-sm">
-                        <SelectValue placeholder="-- Chọn lượt chạy A --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {dropdownHistory.map((run) => (
-                          <SelectItem key={`a-${run.id}`} value={run.id.toString()}>
-                            {run.approachName} ({new Date(run.runAt).toLocaleDateString()} - {run.avgLatencyMs}ms)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground">Lượt chạy B (Sau / Optimized)</label>
-                    <Select value={selectedRunBId} onValueChange={setSelectedRunBId}>
-                      <SelectTrigger className="w-full h-9 border-border/80 bg-background text-sm">
-                        <SelectValue placeholder="-- Chọn lượt chạy B --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {dropdownHistory.map((run) => (
-                          <SelectItem key={`b-${run.id}`} value={run.id.toString()}>
-                            {run.approachName} ({new Date(run.runAt).toLocaleDateString()} - {run.avgLatencyMs}ms)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            <BorderedCard
+              className="md:col-span-2"
+              title="Cấu hình So Sánh Đối Chiếu"
+              description="Chọn hai lượt chạy benchmark khác nhau để phân tích hiệu suất và chất lượng."
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Lượt chạy A (Trước / Baseline)</label>
+                  <Select value={selectedRunAId} onValueChange={(val) => setSelectedRunAId(val || '')}>
+                    <SelectTrigger className="w-full h-9 border-border/80 bg-background text-sm">
+                      <SelectValue placeholder="-- Chọn lượt chạy A --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dropdownHistory.map((run) => (
+                        <SelectItem key={`a-${run.id}`} value={run.id.toString()}>
+                          {run.approachName} ({new Date(run.runAt).toLocaleDateString()} - {run.avgLatencyMs}ms)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Lượt chạy B (Sau / Optimized)</label>
+                  <Select value={selectedRunBId} onValueChange={(val) => setSelectedRunBId(val || '')}>
+                    <SelectTrigger className="w-full h-9 border-border/80 bg-background text-sm">
+                      <SelectValue placeholder="-- Chọn lượt chạy B --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dropdownHistory.map((run) => (
+                        <SelectItem key={`b-${run.id}`} value={run.id.toString()}>
+                          {run.approachName} ({new Date(run.runAt).toLocaleDateString()} - {run.avgLatencyMs}ms)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                {!runADetails && !runBDetails && (
-                  <div className="h-40 flex flex-col items-center justify-center text-muted-foreground border border-dashed border-border/80 rounded-lg mt-6 bg-muted/20">
-                    <BarChart2 className="size-8 text-muted-foreground/50 mb-2" />
-                    <p className="text-sm">Vui lòng chọn các lượt chạy ở trên để hiển thị biểu đồ đối chiếu.</p>
-                  </div>
-                )}
-              </CardContent>
-            </div>
+              {!runADetails && !runBDetails && (
+                <div className="h-40 flex flex-col items-center justify-center text-muted-foreground border border-dashed border-border/80 rounded-lg mt-6 bg-muted/20">
+                  <BarChart2 className="size-8 text-muted-foreground/50 mb-2" />
+                  <p className="text-sm">Vui lòng chọn các lượt chạy ở trên để hiển thị biểu đồ đối chiếu.</p>
+                </div>
+              )}
+            </BorderedCard>
           </div>
 
           {/* Biểu Đồ & Bảng Số Liệu So Sánh */}
           {(runADetails || runBDetails) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Biểu đồ Recharts */}
-              <div className="border border-border/80 rounded-xl bg-card overflow-hidden">
-                <div className="border-b border-border/80 p-6 pb-3">
-                  <h3 className="text-lg font-semibold text-foreground">So Sánh Điểm Chỉ Số Ragas (%)</h3>
-                </div>
-                <CardContent className="h-80 px-6 pb-6 pt-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={getChartData()} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                      <YAxis domain={[0, 100]} stroke="var(--muted-foreground)" />
-                      <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius-md)' }} />
-                      <Legend />
-                      {runADetails && <Bar dataKey={runADetails.approachName} fill="oklch(0.604 0.26 302)" radius={[4, 4, 0, 0]} />}
-                      {runBDetails && <Bar dataKey={runBDetails.approachName} fill="oklch(0.696 0.165 251)" radius={[4, 4, 0, 0]} />}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </div>
+              <BorderedCard
+                title="So Sánh Điểm Chỉ Số Ragas (%)"
+                headerClassName="pb-3"
+                contentClassName="h-80"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={getChartData()} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                    <YAxis domain={[0, 100]} stroke="var(--muted-foreground)" />
+                    <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: 'var(--radius-md)' }} />
+                    <Legend />
+                    {runADetails && <Bar dataKey={runADetails.approachName} fill="oklch(0.604 0.26 302)" radius={[4, 4, 0, 0]} />}
+                    {runBDetails && <Bar dataKey={runBDetails.approachName} fill="oklch(0.696 0.165 251)" radius={[4, 4, 0, 0]} />}
+                  </BarChart>
+                </ResponsiveContainer>
+              </BorderedCard>
 
               {/* Bảng so sánh tổng quan */}
-              <div className="border border-border/80 rounded-xl bg-card overflow-hidden">
-                <div className="border-b border-border/80 p-6 pb-3">
-                  <h3 className="text-lg font-semibold text-foreground">So Sánh Các Chỉ Số Tóm Tắt</h3>
-                </div>
-                <CardContent className="px-6 pb-6 pt-2">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent border-b border-border/80">
-                        <TableHead>Chỉ số</TableHead>
-                        <TableHead>{runADetails?.approachName || 'Lượt chạy A'}</TableHead>
-                        <TableHead>{runBDetails?.approachName || 'Lượt chạy B'}</TableHead>
-                        <TableHead>Chênh lệch</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* Faithfulness */}
-                      <TableRow className="border-b border-border/80">
-                        <TableCell className="font-medium text-sm">Faithfulness (Độ trung thực)</TableCell>
-                        <TableCell>{runADetails ? `${Math.round(runADetails.ragasFaithfulness * 100)}%` : '-'}</TableCell>
-                        <TableCell>{runBDetails ? `${Math.round(runBDetails.ragasFaithfulness * 100)}%` : '-'}</TableCell>
-                        <TableCell>
-                          {runADetails && runBDetails ? (
-                            <span className={runBDetails.ragasFaithfulness >= runADetails.ragasFaithfulness ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
-                              {runBDetails.ragasFaithfulness >= runADetails.ragasFaithfulness ? '+' : ''}
-                              {Math.round((runBDetails.ragasFaithfulness - runADetails.ragasFaithfulness) * 100)}%
-                            </span>
-                          ) : '-'}
-                        </TableCell>
-                      </TableRow>
+              <BorderedCard
+                title="So Sánh Các Chỉ Số Tóm Tắt"
+                headerClassName="pb-3"
+                contentClassName="pt-2"
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-b border-border/80">
+                      <TableHead>Chỉ số</TableHead>
+                      <TableHead>{runADetails?.approachName || 'Lượt chạy A'}</TableHead>
+                      <TableHead>{runBDetails?.approachName || 'Lượt chạy B'}</TableHead>
+                      <TableHead>Chênh lệch</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Faithfulness */}
+                    <TableRow className="border-b border-border/80">
+                      <TableCell className="font-medium text-sm">Faithfulness (Độ trung thực)</TableCell>
+                      <TableCell>{runADetails ? `${Math.round(runADetails.ragasFaithfulness * 100)}%` : '-'}</TableCell>
+                      <TableCell>{runBDetails ? `${Math.round(runBDetails.ragasFaithfulness * 100)}%` : '-'}</TableCell>
+                      <TableCell>
+                        {runADetails && runBDetails ? (
+                          <span className={runBDetails.ragasFaithfulness >= runADetails.ragasFaithfulness ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                            {runBDetails.ragasFaithfulness >= runADetails.ragasFaithfulness ? '+' : ''}
+                            {Math.round((runBDetails.ragasFaithfulness - runADetails.ragasFaithfulness) * 100)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                    </TableRow>
 
-                      {/* Answer Relevance */}
-                      <TableRow className="border-b border-border/80">
-                        <TableCell className="font-medium text-sm">Answer Relevance (Hợp lẽ)</TableCell>
-                        <TableCell>{runADetails ? `${Math.round(runADetails.ragasAnswerRelevance * 100)}%` : '-'}</TableCell>
-                        <TableCell>{runBDetails ? `${Math.round(runBDetails.ragasAnswerRelevance * 100)}%` : '-'}</TableCell>
-                        <TableCell>
-                          {runADetails && runBDetails ? (
-                            <span className={runBDetails.ragasAnswerRelevance >= runADetails.ragasAnswerRelevance ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
-                              {runBDetails.ragasAnswerRelevance >= runADetails.ragasAnswerRelevance ? '+' : ''}
-                              {Math.round((runBDetails.ragasAnswerRelevance - runADetails.ragasAnswerRelevance) * 100)}%
-                            </span>
-                          ) : '-'}
-                        </TableCell>
-                      </TableRow>
+                    {/* Answer Relevance */}
+                    <TableRow className="border-b border-border/80">
+                      <TableCell className="font-medium text-sm">Answer Relevance (Hợp lẽ)</TableCell>
+                      <TableCell>{runADetails ? `${Math.round(runADetails.ragasAnswerRelevance * 100)}%` : '-'}</TableCell>
+                      <TableCell>{runBDetails ? `${Math.round(runBDetails.ragasAnswerRelevance * 100)}%` : '-'}</TableCell>
+                      <TableCell>
+                        {runADetails && runBDetails ? (
+                          <span className={runBDetails.ragasAnswerRelevance >= runADetails.ragasAnswerRelevance ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                            {runBDetails.ragasAnswerRelevance >= runADetails.ragasAnswerRelevance ? '+' : ''}
+                            {Math.round((runBDetails.ragasAnswerRelevance - runADetails.ragasAnswerRelevance) * 100)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                    </TableRow>
 
-                      {/* Context Precision */}
-                      <TableRow className="border-b border-border/80">
-                        <TableCell className="font-medium text-sm">Context Precision (Chuẩn xác)</TableCell>
-                        <TableCell>{runADetails ? `${Math.round(runADetails.ragasContextPrecision * 100)}%` : '-'}</TableCell>
-                        <TableCell>{runBDetails ? `${Math.round(runBDetails.ragasContextPrecision * 100)}%` : '-'}</TableCell>
-                        <TableCell>
-                          {runADetails && runBDetails ? (
-                            <span className={runBDetails.ragasContextPrecision >= runADetails.ragasContextPrecision ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
-                              {runBDetails.ragasContextPrecision >= runADetails.ragasContextPrecision ? '+' : ''}
-                              {Math.round((runBDetails.ragasContextPrecision - runADetails.ragasContextPrecision) * 100)}%
-                            </span>
-                          ) : '-'}
-                        </TableCell>
-                      </TableRow>
+                    {/* Context Precision */}
+                    <TableRow className="border-b border-border/80">
+                      <TableCell className="font-medium text-sm">Context Precision (Chuẩn xác)</TableCell>
+                      <TableCell>{runADetails ? `${Math.round(runADetails.ragasContextPrecision * 100)}%` : '-'}</TableCell>
+                      <TableCell>{runBDetails ? `${Math.round(runBDetails.ragasContextPrecision * 100)}%` : '-'}</TableCell>
+                      <TableCell>
+                        {runADetails && runBDetails ? (
+                          <span className={runBDetails.ragasContextPrecision >= runADetails.ragasContextPrecision ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                            {runBDetails.ragasContextPrecision >= runADetails.ragasContextPrecision ? '+' : ''}
+                            {Math.round((runBDetails.ragasContextPrecision - runADetails.ragasContextPrecision) * 100)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                    </TableRow>
 
-                      {/* Context Recall */}
-                      <TableRow className="border-b border-border/80">
-                        <TableCell className="font-medium text-sm">Context Recall (Độ phủ)</TableCell>
-                        <TableCell>{runADetails ? `${Math.round(runADetails.ragasContextRecall * 100)}%` : '-'}</TableCell>
-                        <TableCell>{runBDetails ? `${Math.round(runBDetails.ragasContextRecall * 100)}%` : '-'}</TableCell>
-                        <TableCell>
-                          {runADetails && runBDetails ? (
-                            <span className={runBDetails.ragasContextRecall >= runADetails.ragasContextRecall ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
-                              {runBDetails.ragasContextRecall >= runADetails.ragasContextRecall ? '+' : ''}
-                              {Math.round((runBDetails.ragasContextRecall - runADetails.ragasContextRecall) * 100)}%
-                            </span>
-                          ) : '-'}
-                        </TableCell>
-                      </TableRow>
+                    {/* Context Recall */}
+                    <TableRow className="border-b border-border/80">
+                      <TableCell className="font-medium text-sm">Context Recall (Độ phủ)</TableCell>
+                      <TableCell>{runADetails ? `${Math.round(runADetails.ragasContextRecall * 100)}%` : '-'}</TableCell>
+                      <TableCell>{runBDetails ? `${Math.round(runBDetails.ragasContextRecall * 100)}%` : '-'}</TableCell>
+                      <TableCell>
+                        {runADetails && runBDetails ? (
+                          <span className={runBDetails.ragasContextRecall >= runADetails.ragasContextRecall ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                            {runBDetails.ragasContextRecall >= runADetails.ragasContextRecall ? '+' : ''}
+                            {Math.round((runBDetails.ragasContextRecall - runADetails.ragasContextRecall) * 100)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                    </TableRow>
 
-                      {/* Latency */}
-                      <TableRow className="hover:bg-transparent">
-                        <TableCell className="font-medium text-sm flex items-center gap-1.5 border-none">
-                          <Clock className="size-3.5 text-muted-foreground" />
-                          Thời gian phản hồi TB
-                        </TableCell>
-                        <TableCell className="border-none">{runADetails ? `${(runADetails.avgLatencyMs / 1000).toFixed(2)}s` : '-'}</TableCell>
-                        <TableCell className="border-none">{runBDetails ? `${(runBDetails.avgLatencyMs / 1000).toFixed(2)}s` : '-'}</TableCell>
-                        <TableCell className="border-none">
-                          {runADetails && runBDetails ? (
-                            <span className={runBDetails.avgLatencyMs <= runADetails.avgLatencyMs ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
-                              {runBDetails.avgLatencyMs > runADetails.avgLatencyMs ? '+' : ''}
-                              {((runBDetails.avgLatencyMs - runADetails.avgLatencyMs) / 1000).toFixed(2)}s
-                            </span>
-                          ) : '-'}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </div>
+                    {/* Latency */}
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell className="font-medium text-sm flex items-center gap-1.5 border-none">
+                        <Clock className="size-3.5 text-muted-foreground" />
+                        Thời gian phản hồi TB
+                      </TableCell>
+                      <TableCell className="border-none">{runADetails ? `${(runADetails.avgLatencyMs / 1000).toFixed(2)}s` : '-'}</TableCell>
+                      <TableCell className="border-none">{runBDetails ? `${(runBDetails.avgLatencyMs / 1000).toFixed(2)}s` : '-'}</TableCell>
+                      <TableCell className="border-none">
+                        {runADetails && runBDetails ? (
+                          <span className={runBDetails.avgLatencyMs <= runADetails.avgLatencyMs ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                            {runBDetails.avgLatencyMs > runADetails.avgLatencyMs ? '+' : ''}
+                            {((runBDetails.avgLatencyMs - runADetails.avgLatencyMs) / 1000).toFixed(2)}s
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </BorderedCard>
             </div>
           )}
 
           {/* Chi Tiết Từng Câu Hỏi Đối Chiếu */}
           {runADetails && runBDetails && (
-            <div className="border border-border/80 rounded-xl bg-card overflow-hidden">
-              <div className="border-b border-border/80 p-6 pb-3">
-                <h3 className="text-lg font-semibold text-foreground">Đối Chiếu Chi Tiết Từng Câu Hỏi</h3>
-                <p className="text-xs text-muted-foreground mt-1">So sánh câu trả lời sinh ra và điểm số của từng câu hỏi riêng biệt (Click vào tiêu đề để mở rộng/thu gọn).</p>
-              </div>
-              <CardContent className="space-y-4 px-6 pb-6 pt-4">
-                {runADetails.details?.map((detailA, index) => {
-                  const detailB = runBDetails.details?.[index];
-                  const isExpanded = expandedQuestions[index];
+            <BorderedCard
+              title="Đối Chiếu Chi Tiết Từng Câu Hỏi"
+              description="So sánh câu trả lời sinh ra và điểm số của từng câu hỏi riêng biệt (Click vào tiêu đề để mở rộng/thu gọn)."
+              headerClassName="pb-3"
+            >
+              {runADetails.details?.map((detailA, index) => {
+                const detailB = runBDetails.details?.[index];
+                const isExpanded = expandedQuestions[index];
 
-                  return (
-                    <div key={`compare-q-${index}`} className="border border-border/80 rounded-lg bg-muted/30 overflow-hidden transition-all duration-200">
-                      {/* Accordion Trigger Header */}
-                      <div 
-                        className="flex flex-wrap items-center justify-between gap-4 p-4 cursor-pointer hover:bg-muted/50 select-none"
-                        onClick={() => toggleQuestion(index)}
-                      >
-                        <div className="flex items-center gap-3 min-w-[200px] flex-1">
-                          <span className="font-semibold text-xs text-foreground bg-primary/10 text-primary px-2.5 py-1 rounded-md shrink-0">
-                            Câu {index + 1}
+                return (
+                  <div key={`compare-q-${index}`} className="border border-border/80 rounded-lg bg-muted/30 overflow-hidden transition-all duration-200">
+                    {/* Accordion Trigger Header */}
+                    <div 
+                      className="flex flex-wrap items-center justify-between gap-4 p-4 cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => toggleQuestion(index)}
+                    >
+                      <div className="flex items-center gap-3 min-w-[200px] flex-1">
+                        <span className="font-semibold text-xs text-foreground bg-primary/10 text-primary px-2.5 py-1 rounded-md shrink-0">
+                          Câu {index + 1}
+                        </span>
+                        <p className="font-medium text-sm text-foreground truncate max-w-md md:max-w-xl">
+                          {detailA.question}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs font-medium shrink-0">
+                        <div className="flex gap-2">
+                          <span className="bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
+                            A: {Math.round(detailA.faithfulness * 100)}% | {Math.round(detailA.answerRelevance * 100)}%
                           </span>
-                          <p className="font-medium text-sm text-foreground truncate max-w-md md:max-w-xl">
-                            {detailA.question}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs font-medium shrink-0">
-                          <div className="flex gap-2">
-                            <span className="bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
-                              A: {Math.round(detailA.faithfulness * 100)}% | {Math.round(detailA.answerRelevance * 100)}%
+                          {detailB && (
+                            <span className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300 px-2 py-0.5 rounded border border-green-200 dark:border-green-800">
+                              B: {Math.round(detailB.faithfulness * 100)}% | {Math.round(detailB.answerRelevance * 100)}%
                             </span>
-                            {detailB && (
-                              <span className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300 px-2 py-0.5 rounded border border-green-200 dark:border-green-800">
-                                B: {Math.round(detailB.faithfulness * 100)}% | {Math.round(detailB.answerRelevance * 100)}%
-                              </span>
+                          )}
+                        </div>
+                        <span className="text-muted-foreground text-xs">{isExpanded ? "Thu gọn ▲" : "Chi tiết ▼"}</span>
+                      </div>
+                    </div>
+
+                    {/* Accordion Expanded Content */}
+                    {isExpanded && (
+                      <div className="p-4 border-t border-border/80 bg-background space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="bg-muted/40 p-3 rounded-md border border-border/80">
+                          <h5 className="text-xs font-bold text-muted-foreground mb-1">CÂU HỎI KIỂM THỬ:</h5>
+                          <p className="text-sm font-medium text-foreground whitespace-pre-wrap">{detailA.question}</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Run A Answer */}
+                          <div className="space-y-2 p-3 rounded-md border border-border/80 bg-card">
+                            <div className="flex justify-between items-center border-b border-border/80 pb-2 mb-2">
+                              <h4 className="text-xs font-bold text-purple-600">{runADetails.approachName} (A)</h4>
+                              <span className="text-[10px] text-muted-foreground">Latency: {(detailA.latencyMs / 1000).toFixed(2)}s</span>
+                            </div>
+                            <p className="text-xs text-foreground/90 whitespace-pre-line leading-relaxed">{detailA.generatedAnswer}</p>
+                            
+                            <div className="grid grid-cols-4 gap-1 pt-3 border-t border-border/80 text-[10px] font-medium text-muted-foreground text-center">
+                              <div className="bg-muted py-0.5 rounded">Faith: {Math.round(detailA.faithfulness * 100)}%</div>
+                              <div className="bg-muted py-0.5 rounded">Relev: {Math.round(detailA.answerRelevance * 100)}%</div>
+                              <div className="bg-muted py-0.5 rounded">Prec: {Math.round(detailA.contextPrecision * 100)}%</div>
+                              <div className="bg-muted py-0.5 rounded">Recall: {Math.round(detailA.contextRecall * 100)}%</div>
+                            </div>
+
+                            {detailA.retrievedContexts && (
+                              <div className="mt-3 pt-2 border-t border-border/80">
+                                <span className="text-[10px] font-bold text-muted-foreground block mb-1">Ngữ cảnh truy xuất:</span>
+                                <p className="text-[10px] text-muted-foreground max-h-24 overflow-y-auto whitespace-pre-wrap bg-muted/40 p-2 rounded leading-normal">{detailA.retrievedContexts}</p>
+                              </div>
                             )}
                           </div>
-                          <span className="text-muted-foreground text-xs">{isExpanded ? "Thu gọn ▲" : "Chi tiết ▼"}</span>
-                        </div>
-                      </div>
 
-                      {/* Accordion Expanded Content */}
-                      {isExpanded && (
-                        <div className="p-4 border-t border-border/80 bg-background space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                          <div className="bg-muted/40 p-3 rounded-md border border-border/80">
-                            <h5 className="text-xs font-bold text-muted-foreground mb-1">CÂU HỎI KIỂM THỬ:</h5>
-                            <p className="text-sm font-medium text-foreground whitespace-pre-wrap">{detailA.question}</p>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Run A Answer */}
+                          {/* Run B Answer */}
+                          {detailB ? (
                             <div className="space-y-2 p-3 rounded-md border border-border/80 bg-card">
                               <div className="flex justify-between items-center border-b border-border/80 pb-2 mb-2">
-                                <h4 className="text-xs font-bold text-purple-600">{runADetails.approachName} (A)</h4>
-                                <span className="text-[10px] text-muted-foreground">Latency: {(detailA.latencyMs / 1000).toFixed(2)}s</span>
+                                <h4 className="text-xs font-bold text-green-600">{runBDetails.approachName} (B)</h4>
+                                <span className="text-[10px] text-muted-foreground">Latency: {(detailB.latencyMs / 1000).toFixed(2)}s</span>
                               </div>
-                              <p className="text-xs text-foreground/90 whitespace-pre-line leading-relaxed">{detailA.generatedAnswer}</p>
+                              <p className="text-xs text-foreground/90 whitespace-pre-line leading-relaxed">{detailB.generatedAnswer}</p>
                               
                               <div className="grid grid-cols-4 gap-1 pt-3 border-t border-border/80 text-[10px] font-medium text-muted-foreground text-center">
-                                <div className="bg-muted py-0.5 rounded">Faith: {Math.round(detailA.faithfulness * 100)}%</div>
-                                <div className="bg-muted py-0.5 rounded">Relev: {Math.round(detailA.answerRelevance * 100)}%</div>
-                                <div className="bg-muted py-0.5 rounded">Prec: {Math.round(detailA.contextPrecision * 100)}%</div>
-                                <div className="bg-muted py-0.5 rounded">Recall: {Math.round(detailA.contextRecall * 100)}%</div>
+                                <div className="bg-muted py-0.5 rounded">Faith: {Math.round(detailB.faithfulness * 100)}%</div>
+                                <div className="bg-muted py-0.5 rounded">Relev: {Math.round(detailB.answerRelevance * 100)}%</div>
+                                <div className="bg-muted py-0.5 rounded">Prec: {Math.round(detailB.contextPrecision * 100)}%</div>
+                                <div className="bg-muted py-0.5 rounded">Recall: {Math.round(detailB.contextRecall * 100)}%</div>
                               </div>
 
-                              {detailA.retrievedContexts && (
+                              {detailB.retrievedContexts && (
                                 <div className="mt-3 pt-2 border-t border-border/80">
                                   <span className="text-[10px] font-bold text-muted-foreground block mb-1">Ngữ cảnh truy xuất:</span>
-                                  <p className="text-[10px] text-muted-foreground max-h-24 overflow-y-auto whitespace-pre-wrap bg-muted/40 p-2 rounded leading-normal">{detailA.retrievedContexts}</p>
+                                  <p className="text-[10px] text-muted-foreground max-h-24 overflow-y-auto whitespace-pre-wrap bg-muted/40 p-2 rounded leading-normal">{detailB.retrievedContexts}</p>
                                 </div>
                               )}
                             </div>
-
-                            {/* Run B Answer */}
-                            {detailB ? (
-                              <div className="space-y-2 p-3 rounded-md border border-border/80 bg-card">
-                                <div className="flex justify-between items-center border-b border-border/80 pb-2 mb-2">
-                                  <h4 className="text-xs font-bold text-green-600">{runBDetails.approachName} (B)</h4>
-                                  <span className="text-[10px] text-muted-foreground">Latency: {(detailB.latencyMs / 1000).toFixed(2)}s</span>
-                                </div>
-                                <p className="text-xs text-foreground/90 whitespace-pre-line leading-relaxed">{detailB.generatedAnswer}</p>
-                                
-                                <div className="grid grid-cols-4 gap-1 pt-3 border-t border-border/80 text-[10px] font-medium text-muted-foreground text-center">
-                                  <div className="bg-muted py-0.5 rounded">Faith: {Math.round(detailB.faithfulness * 100)}%</div>
-                                  <div className="bg-muted py-0.5 rounded">Relev: {Math.round(detailB.answerRelevance * 100)}%</div>
-                                  <div className="bg-muted py-0.5 rounded">Prec: {Math.round(detailB.contextPrecision * 100)}%</div>
-                                  <div className="bg-muted py-0.5 rounded">Recall: {Math.round(detailB.contextRecall * 100)}%</div>
-                                </div>
-
-                                {detailB.retrievedContexts && (
-                                  <div className="mt-3 pt-2 border-t border-border/80">
-                                    <span className="text-[10px] font-bold text-muted-foreground block mb-1">Ngữ cảnh truy xuất:</span>
-                                    <p className="text-[10px] text-muted-foreground max-h-24 overflow-y-auto whitespace-pre-wrap bg-muted/40 p-2 rounded leading-normal">{detailB.retrievedContexts}</p>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center border border-dashed border-border/80 rounded-md bg-muted/10 text-xs text-muted-foreground p-6">
-                                Không có dữ liệu cho cấu hình B
-                              </div>
-                            )}
-                          </div>
+                          ) : (
+                            <div className="flex items-center justify-center border border-dashed border-border/80 rounded-md bg-muted/10 text-xs text-muted-foreground p-6">
+                              Không có dữ liệu cho cấu hình B
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </BorderedCard>
           )}
 
           {/* Lịch Sử Các Lượt Chạy Benchmark */}
-          <div className="border border-border/80 rounded-xl bg-card overflow-hidden">
-            <div className="border-b border-border/80 p-6 flex flex-row items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Lịch Sử Lượt Chạy Benchmark</h3>
-                <p className="text-xs text-muted-foreground mt-1">Danh sách các cấu hình thử nghiệm và điểm Ragas tích lũy (Phân trang).</p>
-              </div>
-            </div>
-            <CardContent className="px-6 pb-6 pt-0">
-              <CrudTable<BenchmarkRun>
-                columns={benchmarkRunColumns(handleSelectA, handleSelectB, handleDeleteRun, selectedRunAId, selectedRunBId)}
-                useQuery={useBenchmarkHistoryQuery}
-                filterPlaceholder="Lọc theo hướng tiếp cận..."
-              />
-            </CardContent>
-          </div>
+          <BorderedCard
+            title="Lịch Sử Lượt Chạy Benchmark"
+            description="Danh sách các cấu hình thử nghiệm và điểm Ragas tích lũy (Phân trang)."
+            contentClassName="pt-0"
+          >
+            <CrudTable<BenchmarkRun>
+              columns={benchmarkRunColumns(handleSelectA, handleSelectB, handleDeleteRun, selectedRunAId, selectedRunBId)}
+              useQuery={useBenchmarkHistoryQuery}
+              filterPlaceholder="Lọc theo hướng tiếp cận..."
+            />
+          </BorderedCard>
         </TabsContent>
 
         <TabsContent value="dataset" className="space-y-6 mt-4 animate-in fade-in duration-200">
-          <div className="border border-border/80 rounded-xl bg-card overflow-hidden">
-            <div className="border-b border-border/80 p-6 flex flex-row items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Golden Dataset (Tập Dữ Liệu Kiểm Thử)</h3>
-                <p className="text-xs text-muted-foreground mt-1">Quản lý tập câu hỏi và đáp án mẫu chuẩn (Ground Truth) dùng để chạy Benchmark đánh giá.</p>
-              </div>
+          {/* Golden Dataset (Tập Dữ Liệu Kiểm Thử) */}
+          <BorderedCard
+            title="Golden Dataset (Tập Dữ Liệu Kiểm Thử)"
+            description="Quản lý tập câu hỏi và đáp án mẫu chuẩn (Ground Truth) dùng để chạy Benchmark đánh giá."
+            contentClassName="pt-0"
+            action={
               <Button onClick={handleOpenAddDialog} className="cursor-pointer flex items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90">
                 <Plus className="size-4" />
                 Thêm Câu Hỏi
               </Button>
-            </div>
-            <CardContent className="px-6 pb-6 pt-0">
-              <CrudTable<BenchmarkQuestion>
-                columns={benchmarkQuestionColumns(handleOpenEditDialog, handleDeleteQuestion)}
-                useQuery={useBenchmarkQuestionsQuery}
-                filterPlaceholder="Lọc theo câu hỏi hoặc đáp án..."
-              />
-            </CardContent>
-          </div>
+            }
+          >
+            <CrudTable<BenchmarkQuestion>
+              columns={benchmarkQuestionColumns(handleOpenEditDialog, handleDeleteQuestion)}
+              useQuery={useBenchmarkQuestionsQuery}
+              filterPlaceholder="Lọc theo câu hỏi hoặc đáp án..."
+            />
+          </BorderedCard>
         </TabsContent>
       </Tabs>
 
