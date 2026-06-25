@@ -196,26 +196,28 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                   {isAI && message.citations && message.citations.length > 0 && (
                     <div className="flex flex-wrap gap-2 pt-1 pl-1">
                       <span className="text-xs text-muted-foreground flex items-center gap-1 py-1">
-                        <MapPin className="w-3.5 h-3.5" /> Nguồn trích dẫn:
+                        <MapPin className="w-3.5 h-3.5 shrink-0" /> Nguồn trích dẫn:
                       </span>
                       {message.citations.map((citation, idx) => {
                         const docId = (citation as any).documentId;
+                        const docDisplayName = citation.documentName
+                          ? `${citation.documentName} - Trang ${citation.pageNumber}`
+                          : docId
+                            ? `Tài liệu #${docId} - Trang ${citation.pageNumber}`
+                            : `Trang ${citation.pageNumber}`;
                         return (
                           <Button
                             key={idx}
                             onClick={() => onCitationClick(citation.pageNumber, docId)}
                             variant="outline"
                             size="sm"
-                            className="h-7 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-1 hover:scale-105 active:scale-95 cursor-pointer"
-                            title={`"${citation.quote}"`}
+                            className="h-7 max-w-[240px] sm:max-w-[340px] text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-1 cursor-pointer"
+                            title={`Tài liệu: ${citation.documentName || (docId ? `Tài liệu #${docId}` : 'Chưa rõ')} - Trang ${citation.pageNumber}\nTrích dẫn: "${citation.quote}"`}
                           >
-                            <MapPin className="w-3 h-3 text-muted-foreground" />
-                            {citation.documentName
-                              ? `${citation.documentName} - `
-                              : docId
-                                ? `Tài liệu #${docId} - `
-                                : ''}
-                            Trang {citation.pageNumber}
+                            <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <span className="truncate">
+                              {docDisplayName}
+                            </span>
                           </Button>
                         );
                       })}
