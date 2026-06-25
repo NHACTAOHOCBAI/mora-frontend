@@ -28,11 +28,15 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      const { status } = error.response;
+      const { status, config } = error.response;
       if (status === 401) {
-        // Token hết hạn hoặc không hợp lệ -> Xóa token và redirect về login
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        // Bỏ qua chuyển hướng nếu là API đăng nhập
+        if (config && !config.url?.endsWith('/auth/login')) {
+          localStorage.removeItem('token');
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login?expired=true';
+          }
+        }
       }
     }
     return Promise.reject(error);
