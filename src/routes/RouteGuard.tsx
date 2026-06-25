@@ -10,7 +10,7 @@ interface RouteGuardProps {
 // Bảo vệ các route yêu cầu đăng nhập
 export const ProtectedRoute: React.FC<RouteGuardProps> = ({ requireAdmin = false }) => {
   const token = localStorage.getItem('token');
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, error } = useAuth();
 
   if (!token) {
     // Không có token -> Chưa đăng nhập, đẩy về login
@@ -25,6 +25,12 @@ export const ProtectedRoute: React.FC<RouteGuardProps> = ({ requireAdmin = false
         <span className="text-sm text-muted-foreground font-medium animate-pulse">Đang xác thực thông tin...</span>
       </div>
     );
+  }
+
+  if (error || !user) {
+    // Tải thông tin user thất bại hoặc không có user -> Xóa token và đẩy về login
+    localStorage.removeItem('token');
+    return <Navigate to="/login" replace />;
   }
 
   if (requireAdmin && user?.role !== 'ROLE_ADMIN') {
