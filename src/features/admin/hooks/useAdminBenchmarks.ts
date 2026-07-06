@@ -20,7 +20,7 @@ export const useAdminBenchmarks = () => {
   const queryClient = useQueryClient();
 
   const createQuestionMutation = useMutation({
-    mutationFn: (data: { question: string; groundTruth: string }) =>
+    mutationFn: (data: { question: string; groundTruth: string; documentId?: number | null }) =>
       benchmarkApi.createQuestion(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['benchmarkQuestions'] });
@@ -28,7 +28,7 @@ export const useAdminBenchmarks = () => {
   });
 
   const updateQuestionMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { question: string; groundTruth: string } }) =>
+    mutationFn: ({ id, data }: { id: number; data: { question: string; groundTruth: string; documentId?: number | null } }) =>
       benchmarkApi.updateQuestion(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['benchmarkQuestions'] });

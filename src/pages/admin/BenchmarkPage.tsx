@@ -62,6 +62,27 @@ export const BenchmarkPage: React.FC = () => {
   const [questionText, setQuestionText] = useState<string>('');
   const [groundTruthText, setGroundTruthText] = useState<string>('');
 
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>('');
+  const [documentId, setDocumentId] = useState<string>('');
+
+  // Fetch spaces and documents list to support selecting a document
+  const { data: spacesData } = useQuery({
+    queryKey: ['spacesListForBenchmark'],
+    queryFn: async () => {
+      const { getSpaces } = await import('@/features/chat/services/space-api');
+      return getSpaces();
+    }
+  });
+
+  const { data: spaceDetailData } = useQuery({
+    queryKey: ['spaceDetailForBenchmark', selectedSpaceId],
+    queryFn: async () => {
+      const { getSpace } = await import('@/features/chat/services/space-api');
+      return getSpace(Number(selectedSpaceId));
+    },
+    enabled: !!selectedSpaceId && !isNaN(Number(selectedSpaceId))
+  });
+
   // Fetch details for compared runs
   const { data: runADetails } = useQuery({
     queryKey: ['benchmarkRunDetails', selectedRunAId],
@@ -111,6 +132,8 @@ export const BenchmarkPage: React.FC = () => {
     setEditingQuestion(null);
     setQuestionText('');
     setGroundTruthText('');
+    setSelectedSpaceId('');
+    setDocumentId('');
     setOpenDialog(true);
   };
 
@@ -118,6 +141,8 @@ export const BenchmarkPage: React.FC = () => {
     setEditingQuestion(q);
     setQuestionText(q.question);
     setGroundTruthText(q.groundTruth);
+    setDocumentId(q.documentId ? q.documentId.toString() : '');
+    setSelectedSpaceId('');
     setOpenDialog(true);
   };
 
@@ -128,7 +153,8 @@ export const BenchmarkPage: React.FC = () => {
     }
 
     try {
-      const payload = { question: questionText, groundTruth: groundTruthText };
+      const docIdVal = documentId ? Number(documentId) : null;
+      const payload = { question: questionText, groundTruth: groundTruthText, documentId: docIdVal };
       if (editingQuestion) {
         await updateQuestion({ id: editingQuestion.id, data: payload });
         toast.success('Cập nhật câu hỏi kiểm thử thành công!');
@@ -600,6 +626,40 @@ export const BenchmarkPage: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground">Chọn Không gian (Space)</label>
+                <Select value={selectedSpaceId} onValueChange={(val) => setSelectedSpaceId(val || '')}>
+                  <SelectTrigger className="border-border/80 bg-background">
+                    <SelectValue placeholder="Chọn không gian..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(spacesData || []).map((space: any) => (
+                      <SelectItem key={space.id} value={space.id.toString()}>
+                        {space.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground">Chọn Tài liệu (Document)</label>
+                <Select value={documentId} onValueChange={(val) => setDocumentId(val || '')} disabled={!selectedSpaceId}>
+                  <SelectTrigger className="border-border/80 bg-background">
+                    <SelectValue placeholder="Chọn tài liệu..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(spaceDetailData?.documents || []).map((doc: any) => (
+                      <SelectItem key={doc.id} value={doc.id.toString()}>
+                        {doc.fileName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-xs font-semibold text-muted-foreground">Câu hỏi kiểm thử</label>
               <Textarea 

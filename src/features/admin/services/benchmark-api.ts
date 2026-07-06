@@ -7,6 +7,7 @@ export interface BenchmarkQuestion {
   id: number;
   question: string;
   groundTruth: string;
+  documentId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,12 +42,12 @@ export const benchmarkApi = {
     return response.data.result;
   },
 
-  createQuestion: async (data: { question: string; groundTruth: string }): Promise<BenchmarkQuestion> => {
+  createQuestion: async (data: { question: string; groundTruth: string; documentId?: number | null }): Promise<BenchmarkQuestion> => {
     const response = await apiClient.post<ApiResponse<BenchmarkQuestion>>('/benchmark-questions', data);
     return response.data.result;
   },
 
-  updateQuestion: async (id: number, data: { question: string; groundTruth: string }): Promise<BenchmarkQuestion> => {
+  updateQuestion: async (id: number, data: { question: string; groundTruth: string; documentId?: number | null }): Promise<BenchmarkQuestion> => {
     const response = await apiClient.put<ApiResponse<BenchmarkQuestion>>(`/benchmark-questions/${id}`, data);
     return response.data.result;
   },
