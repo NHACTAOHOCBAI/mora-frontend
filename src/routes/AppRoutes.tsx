@@ -8,7 +8,6 @@ const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ defau
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const DashboardPage = lazy(() => import('@/pages/user/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const SpaceDetailPage = lazy(() => import('@/pages/user/space-detail/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
-const ChatPage = lazy(() => import('@/pages/user/ChatPage').then(m => ({ default: m.ChatPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 const BenchmarkPage = lazy(() => import('@/pages/admin/BenchmarkPage').then(m => ({ default: m.BenchmarkPage })));
 const ProfilePage = lazy(() => import('@/pages/user/ProfilePage').then(m => ({ default: m.ProfilePage })));
@@ -81,14 +80,6 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingFallback />}>
             <SpaceDetailPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: '/document/:id',
-        element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <ChatPage />
           </Suspense>
         ),
       },
