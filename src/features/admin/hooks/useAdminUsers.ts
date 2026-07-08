@@ -23,6 +23,13 @@ export const useAdminUsers = (params?: QueryParams) => {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => adminApi.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+  });
+
   return {
     users: usersQuery.data,
     isLoading: usersQuery.isLoading,
@@ -30,5 +37,7 @@ export const useAdminUsers = (params?: QueryParams) => {
     refetch: usersQuery.refetch,
     updateUser: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
+    deleteUser: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
   };
 };

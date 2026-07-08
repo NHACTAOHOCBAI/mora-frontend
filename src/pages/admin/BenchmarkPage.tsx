@@ -519,6 +519,13 @@ export const BenchmarkPage: React.FC = () => {
                           <p className="text-sm font-medium text-foreground whitespace-pre-wrap">{detailA.question}</p>
                         </div>
 
+                        {detailA.groundTruth && (
+                          <div className="bg-green-500/5 p-3 rounded-md border border-green-500/20">
+                            <h5 className="text-xs font-bold text-green-600 dark:text-green-400 mb-1">ĐÁP ÁN CHUẨN (GROUND TRUTH):</h5>
+                            <p className="text-sm font-medium text-foreground whitespace-pre-wrap">{detailA.groundTruth}</p>
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Run A Answer */}
                           <div className="space-y-2 p-3 rounded-md border border-border/80 bg-card">
@@ -526,7 +533,10 @@ export const BenchmarkPage: React.FC = () => {
                               <h4 className="text-xs font-bold text-purple-600">{runADetails.approachName} (A)</h4>
                               <span className="text-[10px] text-muted-foreground">Latency: {(detailA.latencyMs / 1000).toFixed(2)}s</span>
                             </div>
-                            <p className="text-xs text-foreground/90 whitespace-pre-line leading-relaxed">{detailA.generatedAnswer}</p>
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Đáp án của chatbot:</span>
+                              <p className="text-xs text-foreground/90 whitespace-pre-line leading-relaxed bg-muted/20 p-2.5 rounded border border-border/40">{detailA.generatedAnswer}</p>
+                            </div>
                             
                             <div className="grid grid-cols-4 gap-1 pt-3 border-t border-border/80 text-[10px] font-medium text-muted-foreground text-center">
                               <div className="bg-muted py-0.5 rounded">Faith: {Math.round(detailA.faithfulness * 100)}%</div>
@@ -550,7 +560,10 @@ export const BenchmarkPage: React.FC = () => {
                                 <h4 className="text-xs font-bold text-green-600">{runBDetails.approachName} (B)</h4>
                                 <span className="text-[10px] text-muted-foreground">Latency: {(detailB.latencyMs / 1000).toFixed(2)}s</span>
                               </div>
-                              <p className="text-xs text-foreground/90 whitespace-pre-line leading-relaxed">{detailB.generatedAnswer}</p>
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Đáp án của chatbot:</span>
+                                <p className="text-xs text-foreground/90 whitespace-pre-line leading-relaxed bg-muted/20 p-2.5 rounded border border-border/40">{detailB.generatedAnswer}</p>
+                              </div>
                               
                               <div className="grid grid-cols-4 gap-1 pt-3 border-t border-border/80 text-[10px] font-medium text-muted-foreground text-center">
                                 <div className="bg-muted py-0.5 rounded">Faith: {Math.round(detailB.faithfulness * 100)}%</div>

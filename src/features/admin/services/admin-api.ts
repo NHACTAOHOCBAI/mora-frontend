@@ -29,4 +29,8 @@ export const adminApi = {
     const response = await apiClient.put<ApiResponse<UserResponse>>(`/admin/users/${id}`, data);
     return response.data.result;
   },
+
+  deleteUser: async (id: number): Promise<void> => {
+    await apiClient.delete<ApiResponse<void>>(`/admin/users/${id}`);
+  },
 };

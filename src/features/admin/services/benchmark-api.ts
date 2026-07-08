@@ -17,6 +17,7 @@ export interface BenchmarkDetail {
   question: string;
   retrievedContexts: string;
   generatedAnswer: string;
+  groundTruth?: string;
   latencyMs: number;
   faithfulness: number;
   answerRelevance: number;

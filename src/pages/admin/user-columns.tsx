@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Shield, UserCheck, UserX } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import {
@@ -12,11 +12,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { UserResponse, Role } from "@/features/auth/types";
+import type { UserResponse } from "@/features/auth/types";
 
 export const userColumns = (
-    handleToggleStatus: (id: number, currentActive: boolean, currentRole: Role) => void,
-    handleChangeRole: (id: number, currentActive: boolean, newRole: Role) => void
+    onEdit: (user: UserResponse) => void,
+    onDelete: (id: number) => void
 ): ColumnDef<UserResponse>[] => [
     {
         id: "select",
@@ -118,42 +118,23 @@ export const userColumns = (
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator className="bg-border" />
                             
-                            {/* Toggle Active/Inactive */}
+                            {/* Edit Action */}
                             <DropdownMenuItem
-                                onClick={() => handleToggleStatus(user.id, user.active, user.role)}
+                                onClick={() => onEdit(user)}
                                 className="cursor-pointer"
                             >
-                                {user.active ? (
-                                    <>
-                                        <UserX className="w-4 h-4 mr-2" />
-                                        <span>Khóa tài khoản</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <UserCheck className="w-4 h-4 mr-2" />
-                                        <span>Mở khóa tài khoản</span>
-                                    </>
-                                )}
+                                <Edit className="w-4 h-4 mr-2" />
+                                <span>Chỉnh sửa</span>
                             </DropdownMenuItem>
 
-                            {/* Toggle Role */}
-                            {user.role === 'ROLE_USER' ? (
-                                <DropdownMenuItem
-                                    onClick={() => handleChangeRole(user.id, user.active, 'ROLE_ADMIN')}
-                                    className="cursor-pointer font-medium"
-                                >
-                                    <Shield className="w-4 h-4 mr-2" />
-                                    <span>Gán quyền Admin</span>
-                                </DropdownMenuItem>
-                            ) : (
-                                <DropdownMenuItem
-                                    onClick={() => handleChangeRole(user.id, user.active, 'ROLE_USER')}
-                                    className="cursor-pointer"
-                                >
-                                    <Shield className="w-4 h-4 mr-2" />
-                                    <span>Gỡ quyền Admin</span>
-                                </DropdownMenuItem>
-                            )}
+                            {/* Delete Action */}
+                            <DropdownMenuItem
+                                onClick={() => onDelete(user.id)}
+                                className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                <span>Xóa thành viên</span>
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
