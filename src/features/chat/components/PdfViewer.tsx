@@ -235,7 +235,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({
               <AlertCircle className="w-8 h-8" />
               <span className="text-sm font-semibold">Không thể hiển thị tài liệu này</span>
               <p className="text-xs text-muted-foreground">
-                Hãy chắc chắn rằng link file hợp lệ và Supabase bucket đã được cấu hình CORS chính xác.
+                Hãy chắc chắn rằng link file hợp lệ và Cloudflare R2 bucket đã được cấu hình CORS chính xác.
               </p>
             </div>
           }
