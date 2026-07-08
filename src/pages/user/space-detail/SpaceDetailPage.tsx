@@ -4,6 +4,7 @@ import {
   AlertCircle,
   Trash2,
   Sparkles,
+  FileText,
 } from 'lucide-react';
 import {
   useSpaceDetail,
@@ -14,7 +15,9 @@ import {
   useClearSpaceChatHistory,
 } from '@/features/chat/hooks/useChat';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
+import { PdfViewer } from '@/features/chat/components/PdfViewer';
 import type { Message } from '@/features/chat/types';
+import type { DocumentResponse } from '@/features/chat/services/document-api';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -38,6 +41,10 @@ export const SpaceDetailPage: React.FC = () => {
   const [spaceMessages, setSpaceMessages] = useState<Message[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showClearHistoryAlert, setShowClearHistoryAlert] = useState(false);
+  
+  // PDF Viewer states
+  const [selectedDocument, setSelectedDocument] = useState<DocumentResponse | null>(null);
+  const [citationPage, setCitationPage] = useState<number>(1);
 
   // Queries & Mutations
   const { data: space, isLoading: isSpaceLoading, error: spaceError } = useSpaceDetail(spaceId);
@@ -58,6 +65,9 @@ export const SpaceDetailPage: React.FC = () => {
           sender: msg.sender,
           text: msg.text,
           timestamp: new Date(msg.timestamp),
+          condensedQuestion: msg.condensedQuestion,
+          promptSent: msg.promptSent,
+          citations: msg.citations,
         }))
       );
     }
@@ -92,7 +102,6 @@ export const SpaceDetailPage: React.FC = () => {
       },
       {
         onSuccess: () => {
-          // Invalidate history to pull saved DB messages
           toast.success('Gửi tin nhắn thành công');
         },
         onError: (err: any) => {
@@ -121,6 +130,17 @@ export const SpaceDetailPage: React.FC = () => {
         toast.error('Xóa lịch sử thất bại: ' + (err.response?.data?.message || err.message));
       },
     });
+  };
+
+  // Xử lý khi click vào nhãn nguồn trích dẫn
+  const handleCitationClick = (pageNumber: number, documentId?: number) => {
+    if (documentId && space?.documents) {
+      const doc = space.documents.find((d: any) => d.id === documentId);
+      if (doc) {
+        setSelectedDocument(doc);
+      }
+    }
+    setCitationPage(pageNumber);
   };
 
   // Error handling
@@ -161,39 +181,69 @@ export const SpaceDetailPage: React.FC = () => {
         isSpaceLoading={isSpaceLoading}
         isSidebarCollapsed={isSidebarCollapsed}
         setIsSidebarCollapsed={setIsSidebarCollapsed}
+        selectedDocumentId={selectedDocument?.id || null}
+        onSelectDocument={setSelectedDocument}
       />
 
-      {/* 2. Main Chat Panel (Takes full remaining width) */}
-      <section className="flex-1 shrink-0 border-r border-border bg-card flex flex-col h-full min-h-0 relative overflow-hidden shadow-xs">
-        {/* Chat header */}
-        <div className="flex items-center justify-between px-6 h-16 bg-card border-b border-border/60 shrink-0">
-          <span className="text-xs font-bold text-foreground tracking-wider flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-primary" />
-            TRỢ LÝ KHÔNG GIAN
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowClearHistoryAlert(true)}
-              disabled={spaceMessages.length === 0}
-              className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer disabled:opacity-30"
-              title="Xóa lịch sử cuộc trò chuyện"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+      {/* 2. Main Work Area (Split-screen or Single-pane based on document selection) */}
+      <div className="flex-1 flex h-full min-w-0 overflow-hidden">
+        {/* Left pane: Hộp thoại Chatbot */}
+        <section className="flex-1 shrink-0 border-r border-border bg-card flex flex-col h-full min-h-0 relative overflow-hidden shadow-2xs">
+          {/* Chat header */}
+          <div className="flex items-center justify-between px-6 h-16 bg-card border-b border-border/60 shrink-0">
+            <span className="text-xs font-bold text-foreground tracking-wider flex items-center gap-1.5 animate-pulse">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              TRỢ LÝ KHÔNG GIAN
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowClearHistoryAlert(true)}
+                disabled={spaceMessages.length === 0}
+                className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer disabled:opacity-30"
+                title="Xóa lịch sử cuộc trò chuyện"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Chat Container */}
-        <ChatContainer
-          messages={spaceMessages}
-          onSendMessage={handleSendMessage}
-          isLoading={sendSpaceMessageMutation.isPending}
-          onCitationClick={() => {}}
-          isDebugMode={false}
-        />
-      </section>
+          {/* Chat Container */}
+          <ChatContainer
+            messages={spaceMessages}
+            onSendMessage={handleSendMessage}
+            isLoading={sendSpaceMessageMutation.isPending}
+            onCitationClick={handleCitationClick}
+            isDebugMode={true}
+          />
+        </section>
+
+        {/* Right pane: PDF Viewer */}
+        {selectedDocument ? (
+          <section className="flex-1 shrink-0 h-full min-h-0 relative overflow-hidden">
+            <PdfViewer
+              url={selectedDocument.storageUrl}
+              currentPage={citationPage}
+              onPageChange={setCitationPage}
+            />
+          </section>
+        ) : (
+          <section className="hidden lg:flex flex-1 shrink-0 h-full bg-muted/5 flex-col items-center justify-center text-center p-8 select-none border-l border-border">
+            <div className="max-w-xs space-y-4">
+              <div className="p-4 bg-card rounded-2xl border border-border inline-block text-muted-foreground animate-bounce">
+                <FileText className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm text-foreground">Trình Xem Tài Liệu PDF</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Chọn bất kỳ tài liệu PDF nào ở thanh bên để hiển thị trình xem song song và click vào các nhãn nguồn để cuộn trang đối chiếu.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
 
       {/* Clear Chat History AlertDialog */}
       <AlertDialog open={showClearHistoryAlert} onOpenChange={setShowClearHistoryAlert}>
