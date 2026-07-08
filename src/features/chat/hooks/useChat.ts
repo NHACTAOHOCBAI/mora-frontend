@@ -4,12 +4,12 @@ import type { Message } from '../types';
 
 export const useSpaceChatHistory = (spaceId: number) => {
   return useQuery({
-    queryKey: ['spaceChatHistory', spaceId],
+    queryKey: ['chat-history', 'space', spaceId],
     queryFn: async () => {
       const response = await apiClient.get<{ result: Message[] }>(`/chat/space/${spaceId}`);
       return response.data.result;
     },
-    enabled: !!spaceId && !isNaN(spaceId),
+    enabled: !isNaN(spaceId) && spaceId > 0,
   });
 };
 
@@ -21,7 +21,7 @@ export const useSendSpaceChatMessage = () => {
       return response.data.result;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['spaceChatHistory', variables.spaceId] });
+      queryClient.invalidateQueries({ queryKey: ['chat-history', 'space', variables.spaceId] });
     },
   });
 };
@@ -33,7 +33,7 @@ export const useClearSpaceChatHistory = () => {
       await apiClient.delete(`/chat/space/${spaceId}`);
     },
     onSuccess: (_, spaceId) => {
-      queryClient.invalidateQueries({ queryKey: ['spaceChatHistory', spaceId] });
+      queryClient.setQueryData(['chat-history', 'space', spaceId], []);
     },
   });
 };

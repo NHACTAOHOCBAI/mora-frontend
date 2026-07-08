@@ -1,14 +1,38 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/services/api-client';
-import type { SpaceDetailResponse } from '../types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getSpaces, getSpace, createSpace, deleteSpace } from '../services/space-api';
 
-export const useSpaceDetail = (spaceId: number) => {
+export const useSpaces = () => {
   return useQuery({
-    queryKey: ['spaceDetail', spaceId],
-    queryFn: async () => {
-      const response = await apiClient.get<{ result: SpaceDetailResponse }>(`/spaces/${spaceId}`);
-      return response.data.result;
+    queryKey: ['spaces'],
+    queryFn: getSpaces,
+  });
+};
+
+export const useSpaceDetail = (id: number) => {
+  return useQuery({
+    queryKey: ['space', id],
+    queryFn: () => getSpace(id),
+    enabled: !isNaN(id) && id > 0,
+  });
+};
+
+export const useCreateSpace = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, description }: { name: string; description: string }) => 
+      createSpace(name, description),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['spaces'] });
     },
-    enabled: !!spaceId && !isNaN(spaceId),
+  });
+};
+
+export const useDeleteSpace = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteSpace(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['spaces'] });
+    },
   });
 };
