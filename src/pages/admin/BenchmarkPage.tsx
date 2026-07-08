@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Play, Plus, RefreshCw, BarChart2, Clock, AlertCircle 
+  Play, Plus, RefreshCw, BarChart2, Clock, AlertCircle, Trash2 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BorderedCard } from '@/components/shared/BorderedCard';
@@ -9,6 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar } from 'recharts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -42,7 +52,8 @@ export const BenchmarkPage: React.FC = () => {
     updateQuestion, 
     deleteQuestion, 
     runBenchmark, 
-    deleteRun 
+    deleteRun,
+    bulkDeleteRuns
   } = useAdminBenchmarks();
 
   // Run Benchmark State
@@ -52,6 +63,11 @@ export const BenchmarkPage: React.FC = () => {
   // Compare State
   const [selectedRunAId, setSelectedRunAId] = useState<string>('');
   const [selectedRunBId, setSelectedRunBId] = useState<string>('');
+
+  // Selection & Deletion State
+  const [selectedRuns, setSelectedRuns] = useState<BenchmarkRun[]>([]);
+  const [runIdToDelete, setRunIdToDelete] = useState<number | null>(null);
+  const [showBulkDeleteAlert, setShowBulkDeleteAlert] = useState<boolean>(false);
 
   // Expand state for compared questions
   const [expandedQuestions, setExpandedQuestions] = useState<Record<number, boolean>>({});
@@ -114,16 +130,46 @@ export const BenchmarkPage: React.FC = () => {
     toast.info(`Đã chọn ${name} làm Lượt chạy B`);
   };
 
-  const handleDeleteRun = async (id: number) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa lượt benchmark này không?')) return;
+  const handleDeleteRun = (id: number) => {
+    setRunIdToDelete(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (runIdToDelete === null) return;
     try {
-      await deleteRun(id);
+      await deleteRun(runIdToDelete);
       toast.success('Xóa lượt chạy thành công!');
-      if (selectedRunAId === id.toString()) setSelectedRunAId('');
-      if (selectedRunBId === id.toString()) setSelectedRunBId('');
+      if (selectedRunAId === runIdToDelete.toString()) setSelectedRunAId('');
+      if (selectedRunBId === runIdToDelete.toString()) setSelectedRunBId('');
+      
+      // Update selectedRuns selection if deleted item was selected
+      setSelectedRuns(prev => prev.filter(r => r.id !== runIdToDelete));
+      
       queryClient.invalidateQueries({ queryKey: ['allBenchmarkHistoryDropdown'] });
+      setRunIdToDelete(null);
     } catch (error: any) {
       toast.error('Không thể xóa: ' + (error.message || 'Lỗi hệ thống'));
+    }
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedRuns.length === 0) return;
+    const ids = selectedRuns.map(r => r.id);
+    try {
+      await bulkDeleteRuns(ids);
+      toast.success('Xóa hàng loạt lượt chạy thành công!');
+      
+      // Reset selected runs
+      setSelectedRuns([]);
+      
+      // Clear A/B comparison selections if they were deleted
+      if (ids.some(id => id.toString() === selectedRunAId)) setSelectedRunAId('');
+      if (ids.some(id => id.toString() === selectedRunBId)) setSelectedRunBId('');
+      
+      queryClient.invalidateQueries({ queryKey: ['allBenchmarkHistoryDropdown'] });
+      setShowBulkDeleteAlert(false);
+    } catch (error: any) {
+      toast.error('Không thể xóa hàng loạt: ' + (error.message || 'Lỗi hệ thống'));
     }
   };
 
@@ -603,7 +649,20 @@ export const BenchmarkPage: React.FC = () => {
               columns={benchmarkRunColumns(handleSelectA, handleSelectB, handleDeleteRun, selectedRunAId, selectedRunBId)}
               useQuery={useBenchmarkHistoryQuery}
               filterPlaceholder="Lọc theo hướng tiếp cận..."
-            />
+              onSelectionChange={setSelectedRuns}
+            >
+              {selectedRuns.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 cursor-pointer flex items-center gap-1.5"
+                  onClick={() => setShowBulkDeleteAlert(true)}
+                >
+                  <Trash2 className="size-4" />
+                  Xóa các mục đã chọn ({selectedRuns.length})
+                </Button>
+              )}
+            </CrudTable>
           </BorderedCard>
         </TabsContent>
 
@@ -704,6 +763,48 @@ export const BenchmarkPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Run Confirmation */}
+      <AlertDialog open={runIdToDelete !== null} onOpenChange={(open) => !open && setRunIdToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa lượt chạy benchmark?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa lượt benchmark này không? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+            >
+              Xác nhận xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Runs Confirmation */}
+      <AlertDialog open={showBulkDeleteAlert} onOpenChange={setShowBulkDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa hàng loạt lượt chạy benchmark?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa {selectedRuns.length} lượt benchmark đã chọn không? Hành động này sẽ xóa vĩnh viễn toàn bộ các bản ghi được chọn và không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Hủy bỏ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+            >
+              Xác nhận xóa ({selectedRuns.length})
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

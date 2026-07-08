@@ -1,5 +1,6 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
+import React, { useEffect } from "react";
 
 import { Input } from "@/components/ui/input";
 import CustomTable from "@/components/table/custom-table";
@@ -16,6 +17,7 @@ interface CrudTableProps<T extends { id: number }> {
     renderCustomView?: (data: T[], isFetching: boolean) => React.ReactNode;
     dependencies?: any[];
     filterElement?: React.ReactNode;
+    onSelectionChange?: (selectedRows: T[]) => void;
 }
 
 export default function CrudTable<T extends { id: number }>({
@@ -26,12 +28,20 @@ export default function CrudTable<T extends { id: number }>({
     renderCustomView,
     dependencies,
     filterElement,
+    onSelectionChange,
 }: CrudTableProps<T>) {
     const { table, isFetching, filter, setFilter, setPagination } = useTable<T>({
         use: useQuery,
         columns,
         dependencies,
     });
+
+    const rowSelection = table.getState().rowSelection;
+    useEffect(() => {
+        if (onSelectionChange) {
+            onSelectionChange(table.getFilteredSelectedRowModel().rows.map((row) => row.original));
+        }
+    }, [rowSelection, onSelectionChange, table]);
 
     return (
         <div>

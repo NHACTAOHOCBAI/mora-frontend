@@ -75,4 +75,8 @@ export const benchmarkApi = {
   deleteRun: async (id: number): Promise<void> => {
     await apiClient.delete<ApiResponse<void>>(`/benchmarks/history/${id}`);
   },
+
+  bulkDeleteRuns: async (ids: number[]): Promise<void> => {
+    await apiClient.post<ApiResponse<void>>('/benchmarks/history/bulk-delete', ids);
+  },
 };

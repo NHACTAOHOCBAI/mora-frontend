@@ -56,6 +56,13 @@ export const useAdminBenchmarks = () => {
     },
   });
 
+  const bulkDeleteRunsMutation = useMutation({
+    mutationFn: (ids: number[]) => benchmarkApi.bulkDeleteRuns(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['benchmarkHistory'] });
+    },
+  });
+
   return {
     createQuestion: createQuestionMutation.mutateAsync,
     isCreatingQuestion: createQuestionMutation.isPending,
@@ -71,5 +78,8 @@ export const useAdminBenchmarks = () => {
 
     deleteRun: deleteRunMutation.mutateAsync,
     isDeletingRun: deleteRunMutation.isPending,
+
+    bulkDeleteRuns: bulkDeleteRunsMutation.mutateAsync,
+    isBulkDeletingRuns: bulkDeleteRunsMutation.isPending,
   };
 };
