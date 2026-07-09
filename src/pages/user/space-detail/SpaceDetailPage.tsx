@@ -47,7 +47,15 @@ export const SpaceDetailPage: React.FC = () => {
   const [citationPage, setCitationPage] = useState<number>(1);
 
   // Queries & Mutations
-  const { data: space, isLoading: isSpaceLoading, error: spaceError } = useSpaceDetail(spaceId);
+  const { data: space, isLoading: isSpaceLoading, error: spaceError } = useSpaceDetail(spaceId, {
+    refetchInterval: (query: any) => {
+      const docs = query.state.data?.documents;
+      const hasProcessing = docs?.some(
+        (d: any) => d.status === 'UPLOADING' || d.status === 'PARSING' || d.status === 'INDEXING'
+      );
+      return hasProcessing ? 3000 : false;
+    }
+  });
   const sendSpaceMessageMutation = useSendSpaceChatMessage();
 
   // Chat History hooks

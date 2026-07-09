@@ -13,12 +13,15 @@ export interface SpaceResponse {
   updatedAt: string;
 }
 
+import type { DocumentResponse } from '../services/document-api';
+
 export interface SpaceDetailResponse {
   id: number;
   name: string;
   description: string;
   createdAt: string;
   updatedAt: string;
+  documents?: DocumentResponse[];
 }
 
 export interface ApiResponse<T> {

@@ -7,6 +7,7 @@ export interface DocumentResponse {
   storageUrl: string;
   fileSize: number;
   contentType: string;
+  status: 'UPLOADING' | 'PARSING' | 'INDEXING' | 'READY' | 'FAILED';
   spaceId: number;
   createdAt: string;
 }

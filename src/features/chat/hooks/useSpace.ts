@@ -8,11 +8,14 @@ export const useSpaces = () => {
   });
 };
 
-export const useSpaceDetail = (id: number) => {
-  return useQuery({
+import type { SpaceDetailResponse } from '../types';
+
+export const useSpaceDetail = (id: number, options?: any) => {
+  return useQuery<SpaceDetailResponse>({
     queryKey: ['space', id],
     queryFn: () => getSpace(id),
     enabled: !isNaN(id) && id > 0,
+    ...options,
   });
 };
 

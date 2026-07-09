@@ -68,7 +68,7 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
               onSelectDocument(null);
             }
           },
-          onError: (error: any) => {
+          onError: () => {
             toast.error('Xóa tài liệu thất bại');
           },
         }
@@ -175,31 +175,63 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
           {/* Document list */}
           <div className="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1">
             {space?.documents && space.documents.length > 0 ? (
-              space.documents.map((doc) => {
+            space.documents.map((doc) => {
                 const isSelected = selectedDocumentId === doc.id;
+                const isReady = doc.status === 'READY';
+                const isFailed = doc.status === 'FAILED';
+                const isProcessing = !isReady && !isFailed;
+
+                let statusLabel = '';
+                if (doc.status === 'UPLOADING') statusLabel = 'Đang tải lên...';
+                else if (doc.status === 'PARSING') statusLabel = 'Đang đọc nội dung...';
+                else if (doc.status === 'INDEXING') statusLabel = 'Đang lập chỉ mục...';
+
                 return (
                   <div
                     key={doc.id}
-                    onClick={() => onSelectDocument(isSelected ? null : doc)}
-                    className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-all duration-150 ${
+                    onClick={() => {
+                      if (isReady) {
+                        onSelectDocument(isSelected ? null : doc);
+                      } else if (isFailed) {
+                        toast.error('Tài liệu bị lỗi, không thể hiển thị');
+                      } else {
+                        toast.info('Tài liệu đang xử lý, vui lòng đợi trong giây lát');
+                      }
+                    }}
+                    className={`flex flex-col p-2.5 rounded-xl border text-xs transition-all duration-150 ${
                       isSelected
-                        ? 'bg-primary/10 border-primary/50 text-primary font-medium'
-                        : 'bg-card border-border/80 hover:bg-muted text-foreground'
+                        ? 'bg-primary/5 border-primary text-primary font-semibold shadow-2xs'
+                        : isProcessing
+                          ? 'bg-muted/20 border-border/50 opacity-70 cursor-wait'
+                          : isFailed
+                            ? 'bg-destructive/5 border-destructive/20 text-destructive/80'
+                            : 'bg-card border-border hover:bg-muted/50 text-foreground cursor-pointer'
                     }`}
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <FileText className="w-4 h-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate">{doc.name}</span>
+                    <div className="flex items-center justify-between min-w-0 w-full gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <FileText className={`w-4 h-4 shrink-0 ${isSelected ? 'text-primary' : isFailed ? 'text-destructive/60' : 'text-muted-foreground'}`} />
+                        <span className="truncate font-medium">{doc.name}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleDocumentDelete(e, doc.id)}
+                        disabled={deleteMutation.isPending}
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0 cursor-pointer rounded-lg hover:bg-muted-foreground/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDocumentDelete(e, doc.id)}
-                      disabled={deleteMutation.isPending}
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                    
+                    {!isReady && (
+                      <div className="flex items-center gap-1.5 mt-1.5 pl-6 text-[10px]">
+                        {isProcessing && <Loader2 className="w-3 h-3 animate-spin text-primary shrink-0" />}
+                        <span className={isFailed ? 'text-destructive font-semibold' : 'text-muted-foreground font-medium animate-pulse'}>
+                          {isFailed ? 'Lỗi xử lý' : statusLabel}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })
