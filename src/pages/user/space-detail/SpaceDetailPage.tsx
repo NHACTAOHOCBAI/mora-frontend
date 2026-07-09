@@ -10,7 +10,7 @@ import {
   useSpaceDetail,
 } from '@/features/chat/hooks/useSpace';
 import {
-  useSendSpaceChatMessage,
+  useSendSpaceChatMessageAsync,
   useSpaceChatHistory,
   useClearSpaceChatHistory,
 } from '@/features/chat/hooks/useChat';
@@ -56,10 +56,11 @@ export const SpaceDetailPage: React.FC = () => {
       return hasProcessing ? 3000 : false;
     }
   });
-  const sendSpaceMessageMutation = useSendSpaceChatMessage();
+  const sendSpaceMessageMutationAsync = useSendSpaceChatMessageAsync();
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
 
   // Chat History hooks
-  const { data: spaceHistoryData } = useSpaceChatHistory(spaceId);
+  const { data: spaceHistoryData, refetch: refetchHistory } = useSpaceChatHistory(spaceId);
 
   // Clear History mutation
   const clearSpaceHistoryMutation = useClearSpaceChatHistory();
@@ -101,19 +102,87 @@ export const SpaceDetailPage: React.FC = () => {
       text: msg.text,
     }));
 
-    // 3. Gửi lên server
-    sendSpaceMessageMutation.mutate(
+    setIsAiProcessing(true);
+
+    // 3. Gửi lên server bất đồng bộ
+    sendSpaceMessageMutationAsync.mutate(
       {
         spaceId,
         question: text,
         history: historyDto,
       },
       {
-        onSuccess: () => {
-          toast.success('Gửi tin nhắn thành công');
+        onSuccess: (data) => {
+          const assistantMessageId = data.assistantMessageId;
+          
+          // Thêm tin nhắn Assistant tạm thời "Đang suy nghĩ..." vào UI
+          const tempAssistantMessage: Message = {
+            id: assistantMessageId,
+            sender: 'assistant',
+            text: '⚡ Đang định tuyến và sinh phản hồi...',
+            timestamp: new Date(),
+          };
+          setSpaceMessages((prev) => [...prev, tempAssistantMessage]);
+
+          // 4. Lắng nghe qua Server-Sent Events (SSE)
+          const token = localStorage.getItem('token');
+          const sseUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/chat/stream/${assistantMessageId}${token ? `?token=${token}` : ''}`;
+          
+          const eventSource = new EventSource(sseUrl);
+
+          eventSource.addEventListener('ANSWER', (event) => {
+            try {
+              const payload = JSON.parse(event.data);
+              // Cập nhật nội dung thực tế cho tin nhắn Assistant vừa rồi
+              setSpaceMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? {
+                        ...msg,
+                        text: payload.answer,
+                        citations: payload.citations,
+                        condensedQuestion: payload.condensedQuestion,
+                        promptSent: payload.promptSent,
+                      }
+                    : msg
+                )
+              );
+              toast.success('AI đã phản hồi xong!');
+              // Invalidate queries to sync chat history fully in react-query cache
+              refetchHistory();
+            } catch (err) {
+              console.error('Error parsing SSE answer:', err);
+            } finally {
+              eventSource.close();
+              setIsAiProcessing(false);
+            }
+          });
+
+          eventSource.addEventListener('ERROR', (event: any) => {
+            console.error('SSE Error:', event);
+            setSpaceMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      text: '❌ Đã xảy ra lỗi hệ thống khi xử lý câu hỏi. Vui lòng thử lại.',
+                    }
+                  : msg
+              )
+            );
+            eventSource.close();
+            setIsAiProcessing(false);
+          });
+
+          eventSource.onerror = (err) => {
+            console.error('EventSource connection error:', err);
+            eventSource.close();
+            setIsAiProcessing(false);
+          };
         },
         onError: (err: any) => {
           console.error(err);
+          setIsAiProcessing(false);
           const errorMessage: Message = {
             id: Date.now() + 1,
             sender: 'assistant',
@@ -217,11 +286,10 @@ export const SpaceDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Chat Container */}
           <ChatContainer
             messages={spaceMessages}
             onSendMessage={handleSendMessage}
-            isLoading={sendSpaceMessageMutation.isPending}
+            isLoading={isAiProcessing}
             onCitationClick={handleCitationClick}
             isDebugMode={true}
           />
