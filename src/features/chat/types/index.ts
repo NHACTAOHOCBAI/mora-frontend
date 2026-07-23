@@ -3,6 +3,9 @@ export interface Message {
   sender: 'user' | 'assistant';
   text: string;
   timestamp: string | Date;
+  citations?: any[];
+  condensedQuestion?: string;
+  promptSent?: string;
 }
 
 export interface SpaceResponse {

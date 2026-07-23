@@ -26,14 +26,6 @@ export const useSendSpaceChatMessage = () => {
   });
 };
 
-export const useSendSpaceChatMessageAsync = () => {
-  return useMutation({
-    mutationFn: async (data: { spaceId: number; question: string; history?: any[] }) => {
-      const response = await apiClient.post<{ result: { userMessageId: number; assistantMessageId: number; status: string } }>('/chat/space/async', data);
-      return response.data.result;
-    },
-  });
-};
 
 export const useClearSpaceChatHistory = () => {
   const queryClient = useQueryClient();

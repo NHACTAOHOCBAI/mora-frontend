@@ -10,7 +10,7 @@ import {
   useSpaceDetail,
 } from '@/features/chat/hooks/useSpace';
 import {
-  useSendSpaceChatMessageAsync,
+  useSendSpaceChatMessage,
   useSpaceChatHistory,
   useClearSpaceChatHistory,
 } from '@/features/chat/hooks/useChat';
@@ -56,7 +56,7 @@ export const SpaceDetailPage: React.FC = () => {
       return hasProcessing ? 3000 : false;
     }
   });
-  const sendSpaceMessageMutationAsync = useSendSpaceChatMessageAsync();
+  const sendSpaceMessageMutation = useSendSpaceChatMessage();
   const [isAiProcessing, setIsAiProcessing] = useState(false);
 
   // Chat History hooks
@@ -104,8 +104,8 @@ export const SpaceDetailPage: React.FC = () => {
 
     setIsAiProcessing(true);
 
-    // 3. Gửi lên server bất đồng bộ
-    sendSpaceMessageMutationAsync.mutate(
+    // 3. Gửi lên server đồng bộ
+    sendSpaceMessageMutation.mutate(
       {
         spaceId,
         question: text,
@@ -113,78 +113,25 @@ export const SpaceDetailPage: React.FC = () => {
       },
       {
         onSuccess: (data) => {
-          const assistantMessageId = data.assistantMessageId;
-          
-          // Thêm tin nhắn Assistant tạm thời "Đang suy nghĩ..." vào UI
-          const tempAssistantMessage: Message = {
-            id: assistantMessageId,
+          const assistantMessage: Message = {
+            id: Date.now() + 1,
             sender: 'assistant',
-            text: '⚡ Đang định tuyến và sinh phản hồi...',
+            text: data.answer || '',
             timestamp: new Date(),
+            citations: data.citations || [],
+            condensedQuestion: data.condensedQuestion,
+            promptSent: data.promptSent,
           };
-          setSpaceMessages((prev) => [...prev, tempAssistantMessage]);
-
-          // 4. Lắng nghe qua Server-Sent Events (SSE)
-          const token = localStorage.getItem('token');
-          const sseUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/chat/stream/${assistantMessageId}${token ? `?token=${token}` : ''}`;
-          
-          const eventSource = new EventSource(sseUrl);
-
-          eventSource.addEventListener('ANSWER', (event) => {
-            try {
-              const payload = JSON.parse(event.data);
-              // Cập nhật nội dung thực tế cho tin nhắn Assistant vừa rồi
-              setSpaceMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? {
-                        ...msg,
-                        text: payload.answer,
-                        citations: payload.citations,
-                        condensedQuestion: payload.condensedQuestion,
-                        promptSent: payload.promptSent,
-                      }
-                    : msg
-                )
-              );
-              toast.success('AI đã phản hồi xong!');
-              // Invalidate queries to sync chat history fully in react-query cache
-              refetchHistory();
-            } catch (err) {
-              console.error('Error parsing SSE answer:', err);
-            } finally {
-              eventSource.close();
-              setIsAiProcessing(false);
-            }
-          });
-
-          eventSource.addEventListener('ERROR', (event: any) => {
-            console.error('SSE Error:', event);
-            setSpaceMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMessageId
-                  ? {
-                      ...msg,
-                      text: '❌ Đã xảy ra lỗi hệ thống khi xử lý câu hỏi. Vui lòng thử lại.',
-                    }
-                  : msg
-              )
-            );
-            eventSource.close();
-            setIsAiProcessing(false);
-          });
-
-          eventSource.onerror = (err) => {
-            console.error('EventSource connection error:', err);
-            eventSource.close();
-            setIsAiProcessing(false);
-          };
+          setSpaceMessages((prev) => [...prev, assistantMessage]);
+          setIsAiProcessing(false);
+          refetchHistory();
+          toast.success('AI đã phản hồi xong!');
         },
         onError: (err: any) => {
           console.error(err);
           setIsAiProcessing(false);
           const errorMessage: Message = {
-            id: Date.now() + 1,
+            id: Date.now() + 2,
             sender: 'assistant',
             text: 'Không thể gửi tin nhắn. Vui lòng kiểm tra lại dịch vụ backend.',
             timestamp: new Date(),
