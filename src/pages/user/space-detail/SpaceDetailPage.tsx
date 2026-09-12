@@ -130,13 +130,30 @@ export const SpaceDetailPage: React.FC = () => {
         onError: (err: any) => {
           console.error(err);
           setIsAiProcessing(false);
+          const errorData = err.response?.data;
+          const isApiKeyMissing = errorData?.code === 1020 || errorData?.message?.includes('Gemini API Key');
+
+          const errorText = isApiKeyMissing
+            ? '⚠️ Bạn chưa cấu hình Gemini API Key. Vui lòng vào [Cài đặt AI & Hạn mức](/profile?tab=ai-settings) để nhập API Key từ Google AI Studio trước khi bắt đầu học tập.'
+            : (errorData?.message || 'Không thể gửi tin nhắn. Vui lòng kiểm tra lại dịch vụ backend hoặc hạn mức API Key.');
+
           const errorMessage: Message = {
             id: Date.now() + 2,
             sender: 'assistant',
-            text: 'Không thể gửi tin nhắn. Vui lòng kiểm tra lại dịch vụ backend.',
+            text: errorText,
             timestamp: new Date(),
           };
           setSpaceMessages((prev) => [...prev, errorMessage]);
+          if (isApiKeyMissing) {
+            toast.error('Vui lòng cấu hình Gemini API Key trong trang Cá nhân để sử dụng AI!', {
+              action: {
+                label: 'Cài đặt ngay',
+                onClick: () => {
+                  window.location.href = '/profile?tab=ai-settings';
+                },
+              },
+            });
+          }
         },
       }
     );
