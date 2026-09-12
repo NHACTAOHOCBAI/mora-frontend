@@ -15,7 +15,7 @@ export const useUploadDocument = () => {
 export const useDeleteDocument = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, spaceId }: { id: number; spaceId: number }) => deleteDocument(id),
+    mutationFn: ({ id }: { id: number; spaceId: number }) => deleteDocument(id),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['space', variables.spaceId] });
     },

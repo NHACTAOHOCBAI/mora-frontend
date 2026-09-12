@@ -143,6 +143,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                         h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-1.5 text-foreground">{children}</h1>,
                         h2: ({ children }) => <h2 className="text-sm font-bold mt-2.5 mb-1.5 text-foreground">{children}</h2>,
                         h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1 text-foreground">{children}</h3>,
+                        h4: ({ children }) => <h4 className="text-xs font-bold uppercase tracking-wider mt-2 mb-1 text-foreground/90">{children}</h4>,
                         ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
                         ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
                         li: ({ children }) => <li className="mb-0.5">{children}</li>,
