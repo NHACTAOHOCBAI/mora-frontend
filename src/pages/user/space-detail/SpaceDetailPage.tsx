@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   AlertCircle,
@@ -16,11 +16,12 @@ import {
   useSpaceChatHistory,
   useClearSpaceChatHistory,
 } from '@/features/chat/hooks/useChat';
+import { useSpaceSocket } from '@/features/chat/hooks/useSpaceSocket';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
 import { SpaceMemberModal } from '@/features/chat/components/SpaceMemberModal';
-import type { Message } from '@/features/chat/types';
+import type { Message, TypingNotification } from '@/features/chat/types';
 import type { DocumentResponse } from '@/features/chat/services/document-api';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,13 +72,84 @@ export const SpaceDetailPage: React.FC = () => {
   const sendGroupMessageMutation = useSendGroupMessage();
   const [isAiProcessing, setIsAiProcessing] = useState(false);
 
-  // Chat History hooks with 3s polling for group updates
-  const { data: spaceHistoryData, refetch: refetchHistory } = useSpaceChatHistory(spaceId, {
-    refetchInterval: 3000,
-  });
+  // Chat History hooks (Initial load without 3s polling)
+  const { data: spaceHistoryData } = useSpaceChatHistory(spaceId);
 
   // Clear History mutation
   const clearSpaceHistoryMutation = useClearSpaceChatHistory();
+
+  // Typing users state
+  const [typingMap, setTypingMap] = useState<Record<number, { name: string; expiry: number }>>({});
+
+  // Real-time WebSocket handlers
+  const handleSocketMessageReceived = useCallback((newMsg: Message) => {
+    setSpaceMessages((prev) => {
+      const existingIndex = prev.findIndex((m) => m.id === newMsg.id);
+      if (existingIndex !== -1) {
+        const updated = [...prev];
+        updated[existingIndex] = newMsg;
+        return updated;
+      }
+      return [...prev, newMsg];
+    });
+
+    if (newMsg.messageType === 'AI_RESPONSE') {
+      setIsAiProcessing(false);
+    } else if (newMsg.messageType === 'AI_QUERY') {
+      setIsAiProcessing(true);
+    }
+  }, []);
+
+  const handleSocketTypingReceived = useCallback(
+    (info: TypingNotification) => {
+      if (info.userId === currentUser?.id) return;
+
+      if (info.typing) {
+        setTypingMap((prev) => ({
+          ...prev,
+          [info.userId]: {
+            name: info.fullName || info.username,
+            expiry: Date.now() + 3000,
+          },
+        }));
+      } else {
+        setTypingMap((prev) => {
+          const copy = { ...prev };
+          delete copy[info.userId];
+          return copy;
+        });
+      }
+    },
+    [currentUser?.id]
+  );
+
+  const { sendTyping } = useSpaceSocket({
+    spaceId,
+    onMessageReceived: handleSocketMessageReceived,
+    onTypingReceived: handleSocketTypingReceived,
+  });
+
+  // Tự động dọn dẹp các thông báo typing quá hạn
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setTypingMap((prev) => {
+        let changed = false;
+        const next: Record<number, { name: string; expiry: number }> = {};
+        for (const [idStr, val] of Object.entries(prev)) {
+          if (val.expiry > now) {
+            next[Number(idStr)] = val;
+          } else {
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const typingUserNames = Object.values(typingMap).map((v) => v.name);
 
   // Initialize selected documents for AI scope when space loads
   useEffect(() => {
@@ -91,7 +163,7 @@ export const SpaceDetailPage: React.FC = () => {
     }
   }, [space?.documents]);
 
-  // Load space chat history from DB
+  // Load space chat history from DB on initial mount
   useEffect(() => {
     if (spaceHistoryData) {
       setSpaceMessages(
@@ -139,8 +211,10 @@ export const SpaceDetailPage: React.FC = () => {
       { spaceId, text },
       {
         onSuccess: (newMsg) => {
-          setSpaceMessages((prev) => [...prev, newMsg]);
-          refetchHistory();
+          setSpaceMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
         },
         onError: (err: any) => {
           toast.error(err.response?.data?.message || 'Không thể gửi tin nhắn nhóm');
@@ -149,25 +223,11 @@ export const SpaceDetailPage: React.FC = () => {
     );
   };
 
-  // Gửi câu hỏi kích hoạt Trợ lý AI (@AI Trigger)
+  // Gửi câu hỏi kích hoạt Trợ lý AI (@Mora Trigger)
   const handleSendMessageToAi = async (text: string) => {
     if (!text.trim()) return;
 
-    // 1. Tạo tin nhắn người dùng tạm thời
-    const userMessage: Message = {
-      id: Date.now(),
-      sender: 'user',
-      messageType: 'AI_QUERY',
-      text: text,
-      userId: currentUser?.id,
-      userName: currentUser?.fullName || currentUser?.username,
-      userAvatar: currentUser?.avatarUrl,
-      timestamp: new Date(),
-    };
-
-    setSpaceMessages((prev) => [...prev, userMessage]);
-
-    // 2. Chuẩn bị lịch sử
+    // Chuẩn bị lịch sử
     const historyDto = spaceMessages.map((msg) => ({
       sender: msg.sender,
       text: msg.text,
@@ -175,7 +235,7 @@ export const SpaceDetailPage: React.FC = () => {
 
     setIsAiProcessing(true);
 
-    // 3. Gửi lên server đồng bộ với scope tài liệu chọn lọc
+    // Gửi lên server đồng bộ với scope tài liệu chọn lọc
     sendSpaceMessageMutation.mutate(
       {
         spaceId,
@@ -184,20 +244,8 @@ export const SpaceDetailPage: React.FC = () => {
         documentIds: selectedDocIdsForAi.length > 0 ? selectedDocIdsForAi : undefined,
       },
       {
-        onSuccess: (data) => {
-          const assistantMessage: Message = {
-            id: Date.now() + 1,
-            sender: 'assistant',
-            messageType: 'AI_RESPONSE',
-            text: data.answer || '',
-            timestamp: new Date(),
-            citations: data.citations || [],
-            condensedQuestion: data.condensedQuestion,
-            promptSent: data.promptSent,
-          };
-          setSpaceMessages((prev) => [...prev, assistantMessage]);
+        onSuccess: () => {
           setIsAiProcessing(false);
-          refetchHistory();
           toast.success('AI đã phản hồi xong!');
         },
         onError: (err: any) => {
@@ -357,6 +405,8 @@ export const SpaceDetailPage: React.FC = () => {
             selectedDocCount={selectedDocIdsForAi.length}
             totalDocCount={space?.documents?.filter((d: any) => d.status === 'READY').length || 0}
             currentUserId={currentUser?.id}
+            typingUsers={typingUserNames}
+            onTyping={sendTyping}
           />
         </section>
 

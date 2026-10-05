@@ -68,6 +68,8 @@ interface ChatContainerProps {
   selectedDocCount?: number;
   totalDocCount?: number;
   currentUserId?: number;
+  typingUsers?: string[];
+  onTyping?: (typing: boolean) => void;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
@@ -80,6 +82,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   selectedDocCount = 0,
   totalDocCount = 0,
   currentUserId,
+  typingUsers = [],
+  onTyping,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
@@ -88,6 +92,28 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<any>(null);
+
+  // Xử lý gửi sự kiện typing khi người dùng gõ
+  const handleTypingEvent = () => {
+    if (!onTyping) return;
+    onTyping(true);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      onTyping(false);
+    }, 2500);
+  };
+
+  const handleStopTyping = () => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    onTyping?.(false);
+  };
 
   // Kiểm tra điều kiện kích hoạt gợi ý @Mora
   const checkMentionTrigger = (value: string, selectionEnd: number | null) => {
@@ -109,6 +135,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     const value = e.target.value;
     setInputValue(value);
     checkMentionTrigger(value, e.target.selectionStart);
+    handleTypingEvent();
   };
 
   const handleInputClick = (e: React.MouseEvent<HTMLInputElement>) => {
@@ -156,6 +183,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   // Gửi tin nhắn kích hoạt AI
   const handleSendToAi = () => {
     if (!inputValue.trim() || isLoading) return;
+    handleStopTyping();
     setShowAiSuggestion(false);
     onSendMessage(inputValue.trim());
     setInputValue('');
@@ -164,6 +192,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   // Gửi tin nhắn trao đổi nhóm (người-người)
   const handleSendToGroup = () => {
     if (!inputValue.trim()) return;
+    handleStopTyping();
     setShowAiSuggestion(false);
 
     // Nếu người dùng gõ @Mora hoặc @AI ở đầu câu, tự động chuyển sang chế độ hỏi AI
@@ -550,6 +579,20 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                 Tab ↵
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Typing Indicator */}
+        {typingUsers && typingUsers.length > 0 && (
+          <div className="flex items-center gap-2 px-1 text-[11px] text-primary animate-in fade-in slide-in-from-bottom-1 duration-150">
+            <span className="flex gap-1 items-center py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"></span>
+            </span>
+            <span className="italic font-medium text-[11px]">
+              {typingUsers.join(', ')} đang soạn tin nhắn...
+            </span>
           </div>
         )}
 

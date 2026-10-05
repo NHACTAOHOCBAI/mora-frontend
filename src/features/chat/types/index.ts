@@ -79,6 +79,15 @@ export interface SpaceDetailResponse {
   ownerName?: string;
 }
 
+export interface TypingNotification {
+  spaceId: number;
+  userId: number;
+  username: string;
+  fullName?: string;
+  avatarUrl?: string;
+  typing: boolean;
+}
+
 export interface ApiResponse<T> {
   code: number;
   message: string;
