@@ -5,17 +5,21 @@ import {
   Trash2,
   Sparkles,
   FileText,
+  Users,
 } from 'lucide-react';
 import {
   useSpaceDetail,
 } from '@/features/chat/hooks/useSpace';
 import {
   useSendSpaceChatMessage,
+  useSendGroupMessage,
   useSpaceChatHistory,
   useClearSpaceChatHistory,
 } from '@/features/chat/hooks/useChat';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
+import { SpaceMemberModal } from '@/features/chat/components/SpaceMemberModal';
 import type { Message } from '@/features/chat/types';
 import type { DocumentResponse } from '@/features/chat/services/document-api';
 import { Button } from '@/components/ui/button';
@@ -38,9 +42,15 @@ export const SpaceDetailPage: React.FC = () => {
   const { spaceId: spaceIdParam } = useParams<{ spaceId: string }>();
   const spaceId = Number(spaceIdParam);
 
+  const { user: currentUser } = useAuth();
+
   const [spaceMessages, setSpaceMessages] = useState<Message[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showClearHistoryAlert, setShowClearHistoryAlert] = useState(false);
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+
+  // Selective RAG Document Scope state
+  const [selectedDocIdsForAi, setSelectedDocIdsForAi] = useState<number[]>([]);
   
   // PDF Viewer states
   const [selectedDocument, setSelectedDocument] = useState<DocumentResponse | null>(null);
@@ -56,14 +66,30 @@ export const SpaceDetailPage: React.FC = () => {
       return hasProcessing ? 3000 : false;
     }
   });
+
   const sendSpaceMessageMutation = useSendSpaceChatMessage();
+  const sendGroupMessageMutation = useSendGroupMessage();
   const [isAiProcessing, setIsAiProcessing] = useState(false);
 
-  // Chat History hooks
-  const { data: spaceHistoryData, refetch: refetchHistory } = useSpaceChatHistory(spaceId);
+  // Chat History hooks with 3s polling for group updates
+  const { data: spaceHistoryData, refetch: refetchHistory } = useSpaceChatHistory(spaceId, {
+    refetchInterval: 3000,
+  });
 
   // Clear History mutation
   const clearSpaceHistoryMutation = useClearSpaceChatHistory();
+
+  // Initialize selected documents for AI scope when space loads
+  useEffect(() => {
+    if (space?.documents) {
+      const readyDocIds = space.documents.filter((d: any) => d.status === 'READY').map((d: any) => d.id);
+      setSelectedDocIdsForAi((prev) => {
+        if (prev.length === 0) return readyDocIds;
+        // Keep valid ids
+        return prev.filter((id) => readyDocIds.includes(id));
+      });
+    }
+  }, [space?.documents]);
 
   // Load space chat history from DB
   useEffect(() => {
@@ -72,25 +98,70 @@ export const SpaceDetailPage: React.FC = () => {
         spaceHistoryData.map((msg: any) => ({
           id: msg.id,
           sender: msg.sender,
+          messageType: msg.messageType || (msg.sender === 'assistant' ? 'AI_RESPONSE' : 'USER_MESSAGE'),
           text: msg.text,
+          userId: msg.userId,
+          userName: msg.userName,
+          userAvatar: msg.userAvatar,
           timestamp: new Date(msg.timestamp),
           condensedQuestion: msg.condensedQuestion,
           promptSent: msg.promptSent,
           citations: msg.citations,
+          selectedDocumentIds: msg.selectedDocumentIds,
         }))
       );
     }
   }, [spaceHistoryData]);
 
-  // Gửi tin nhắn mới
-  const handleSendMessage = async (text: string) => {
+  // Handler toggle 1 tài liệu trong phạm vi AI
+  const handleToggleDocForAi = (docId: number) => {
+    setSelectedDocIdsForAi((prev) =>
+      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
+    );
+  };
+
+  // Handler toggle tất cả tài liệu trong phạm vi AI
+  const handleToggleAllDocsForAi = () => {
+    if (!space?.documents) return;
+    const readyDocIds = space.documents.filter((d: any) => d.status === 'READY').map((d: any) => d.id);
+    if (selectedDocIdsForAi.length === readyDocIds.length) {
+      setSelectedDocIdsForAi([]);
+    } else {
+      setSelectedDocIdsForAi(readyDocIds);
+    }
+  };
+
+  // Gửi tin nhắn trao đổi nhóm (người-người)
+  const handleSendGroupMessage = async (text: string) => {
+    if (!text.trim()) return;
+
+    sendGroupMessageMutation.mutate(
+      { spaceId, text },
+      {
+        onSuccess: (newMsg) => {
+          setSpaceMessages((prev) => [...prev, newMsg]);
+          refetchHistory();
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || 'Không thể gửi tin nhắn nhóm');
+        },
+      }
+    );
+  };
+
+  // Gửi câu hỏi kích hoạt Trợ lý AI (@AI Trigger)
+  const handleSendMessageToAi = async (text: string) => {
     if (!text.trim()) return;
 
     // 1. Tạo tin nhắn người dùng tạm thời
     const userMessage: Message = {
       id: Date.now(),
       sender: 'user',
+      messageType: 'AI_QUERY',
       text: text,
+      userId: currentUser?.id,
+      userName: currentUser?.fullName || currentUser?.username,
+      userAvatar: currentUser?.avatarUrl,
       timestamp: new Date(),
     };
 
@@ -104,18 +175,20 @@ export const SpaceDetailPage: React.FC = () => {
 
     setIsAiProcessing(true);
 
-    // 3. Gửi lên server đồng bộ
+    // 3. Gửi lên server đồng bộ với scope tài liệu chọn lọc
     sendSpaceMessageMutation.mutate(
       {
         spaceId,
         question: text,
         history: historyDto,
+        documentIds: selectedDocIdsForAi.length > 0 ? selectedDocIdsForAi : undefined,
       },
       {
         onSuccess: (data) => {
           const assistantMessage: Message = {
             id: Date.now() + 1,
             sender: 'assistant',
+            messageType: 'AI_RESPONSE',
             text: data.answer || '',
             timestamp: new Date(),
             citations: data.citations || [],
@@ -140,6 +213,7 @@ export const SpaceDetailPage: React.FC = () => {
           const errorMessage: Message = {
             id: Date.now() + 2,
             sender: 'assistant',
+            messageType: 'AI_RESPONSE',
             text: errorText,
             timestamp: new Date(),
           };
@@ -205,7 +279,9 @@ export const SpaceDetailPage: React.FC = () => {
         <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
           <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
           <h2 className="text-xl font-bold text-foreground">Lỗi tải dữ liệu Space</h2>
-          <p className="text-muted-foreground text-sm">Không thể tải thông tin Không gian học tập từ máy chủ.</p>
+          <p className="text-muted-foreground text-sm">
+            {(spaceError as any)?.response?.data?.message || 'Không thể tải thông tin Không gian học tập từ máy chủ.'}
+          </p>
           <Link to="/">
             <Button className="cursor-pointer">Quay lại Dashboard</Button>
           </Link>
@@ -213,6 +289,8 @@ export const SpaceDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const isOwner = space?.currentUserRole === 'OWNER';
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground transition-colors duration-200">
@@ -224,6 +302,11 @@ export const SpaceDetailPage: React.FC = () => {
         setIsSidebarCollapsed={setIsSidebarCollapsed}
         selectedDocumentId={selectedDocument?.id || null}
         onSelectDocument={setSelectedDocument}
+        selectedDocIdsForAi={selectedDocIdsForAi}
+        onToggleDocForAi={handleToggleDocForAi}
+        onToggleAllDocsForAi={handleToggleAllDocsForAi}
+        onOpenMemberModal={() => setIsMemberModalOpen(true)}
+        currentUserId={currentUser?.id}
       />
 
       {/* 2. Main Work Area (Split-screen or Single-pane based on document selection) */}
@@ -231,31 +314,49 @@ export const SpaceDetailPage: React.FC = () => {
         {/* Left pane: Hộp thoại Chatbot */}
         <section className="flex-1 shrink-0 border-r border-border bg-card flex flex-col h-full min-h-0 relative overflow-hidden shadow-2xs">
           {/* Chat header */}
-          <div className="flex items-center justify-between px-6 h-16 bg-card border-b border-border/60 shrink-0">
-            <span className="text-xs font-bold text-foreground tracking-wider flex items-center gap-1.5 animate-pulse">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              TRỢ LÝ KHÔNG GIAN
-            </span>
+          <div className="flex items-center justify-between px-6 h-14 bg-card border-b border-border/60 shrink-0">
             <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-foreground tracking-wider flex items-center gap-1.5 animate-pulse">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                TRỢ LÝ & THẢO LUẬN NHÓM
+              </span>
               <Button
                 variant="ghost"
-                size="icon"
-                onClick={() => setShowClearHistoryAlert(true)}
-                disabled={spaceMessages.length === 0}
-                className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer disabled:opacity-30"
-                title="Xóa lịch sử cuộc trò chuyện"
+                size="sm"
+                onClick={() => setIsMemberModalOpen(true)}
+                className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-primary cursor-pointer"
               >
-                <Trash2 className="w-4 h-4" />
+                <Users className="w-3 h-3" />
+                {space?.memberCount || 1} thành viên
               </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowClearHistoryAlert(true)}
+                  disabled={spaceMessages.length === 0}
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer disabled:opacity-30"
+                  title="Xóa lịch sử cuộc trò chuyện (Chỉ Owner)"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
 
           <ChatContainer
             messages={spaceMessages}
-            onSendMessage={handleSendMessage}
+            onSendMessage={handleSendMessageToAi}
+            onSendGroupMessage={handleSendGroupMessage}
             isLoading={isAiProcessing}
             onCitationClick={handleCitationClick}
             isDebugMode={true}
+            selectedDocCount={selectedDocIdsForAi.length}
+            totalDocCount={space?.documents?.filter((d: any) => d.status === 'READY').length || 0}
+            currentUserId={currentUser?.id}
           />
         </section>
 
@@ -271,11 +372,11 @@ export const SpaceDetailPage: React.FC = () => {
         ) : (
           <section className="hidden lg:flex flex-1 shrink-0 h-full bg-muted/5 flex-col items-center justify-center text-center p-8 select-none border-l border-border">
             <div className="max-w-xs space-y-4">
-              <div className="p-4 bg-card rounded-2xl border border-border inline-block text-muted-foreground animate-bounce">
-                <FileText className="w-8 h-8" />
+              <div className="p-4 bg-card rounded-2xl border border-border inline-block text-muted-foreground animate-bounce shadow-xs">
+                <FileText className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm text-foreground">Trình Xem Tài Liệu PDF</h3>
+                <h3 className="font-bold text-sm text-foreground">Trình Xem Tài Liệu PDF</h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   Chọn bất kỳ tài liệu PDF nào ở thanh bên để hiển thị trình xem song song và click vào các nhãn nguồn để cuộn trang đối chiếu.
                 </p>
@@ -305,6 +406,18 @@ export const SpaceDetailPage: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Space Member & Invitation Modal */}
+      {space && (
+        <SpaceMemberModal
+          spaceId={space.id}
+          spaceName={space.name}
+          currentUserRole={space.currentUserRole}
+          currentUserId={currentUser?.id}
+          open={isMemberModalOpen}
+          onOpenChange={setIsMemberModalOpen}
+        />
+      )}
     </div>
   );
 };

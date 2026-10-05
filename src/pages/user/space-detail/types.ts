@@ -8,4 +8,9 @@ export interface SpaceSidebarProps {
   setIsSidebarCollapsed: (collapsed: boolean) => void;
   selectedDocumentId: number | null;
   onSelectDocument: (doc: DocumentResponse | null) => void;
+  selectedDocIdsForAi?: number[];
+  onToggleDocForAi?: (docId: number) => void;
+  onToggleAllDocsForAi?: () => void;
+  onOpenMemberModal?: () => void;
+  currentUserId?: number;
 }

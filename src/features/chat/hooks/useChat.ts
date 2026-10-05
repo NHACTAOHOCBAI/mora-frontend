@@ -1,38 +1,47 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/services/api-client';
+import {
+  getSpaceChatHistory,
+  sendSpaceChatMessage,
+  sendGroupMessage,
+  clearSpaceChatHistory,
+  type SendSpaceChatPayload,
+  type SendGroupMessagePayload,
+} from '../services/chat-api';
 import type { Message } from '../types';
 
-export const useSpaceChatHistory = (spaceId: number) => {
-  return useQuery({
+export const useSpaceChatHistory = (spaceId: number, options?: any) => {
+  return useQuery<Message[]>({
     queryKey: ['chat-history', 'space', spaceId],
-    queryFn: async () => {
-      const response = await apiClient.get<{ result: Message[] }>(`/chat/space/${spaceId}`);
-      return response.data.result;
-    },
+    queryFn: () => getSpaceChatHistory(spaceId),
     enabled: !isNaN(spaceId) && spaceId > 0,
+    ...options,
   });
 };
 
 export const useSendSpaceChatMessage = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { spaceId: number; question: string; history?: any[] }) => {
-      const response = await apiClient.post<{ result: any }>('/chat/space', data);
-      return response.data.result;
-    },
+    mutationFn: (payload: SendSpaceChatPayload) => sendSpaceChatMessage(payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['chat-history', 'space', variables.spaceId] });
     },
   });
 };
 
+export const useSendGroupMessage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SendGroupMessagePayload) => sendGroupMessage(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-history', 'space', variables.spaceId] });
+    },
+  });
+};
 
 export const useClearSpaceChatHistory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (spaceId: number) => {
-      await apiClient.delete(`/chat/space/${spaceId}`);
-    },
+    mutationFn: (spaceId: number) => clearSpaceChatHistory(spaceId),
     onSuccess: (_, spaceId) => {
       queryClient.setQueryData(['chat-history', 'space', spaceId], []);
     },

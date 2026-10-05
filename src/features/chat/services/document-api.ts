@@ -9,6 +9,8 @@ export interface DocumentResponse {
   contentType: string;
   status: 'UPLOADING' | 'PARSING' | 'INDEXING' | 'READY' | 'FAILED';
   spaceId: number;
+  uploadedById?: number;
+  uploadedByName?: string;
   createdAt: string;
 }
 
@@ -19,7 +21,7 @@ export const uploadDocument = async (spaceId: number, file: File): Promise<Docum
   
   const response = await apiClient.post<ApiResponse<DocumentResponse>>('/documents/upload', formData, {
     headers: {
-      'Content-Type': 'multipart/form-tệp',
+      'Content-Type': 'multipart/form-data',
     },
   });
   return response.data.result;
