@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { UserMenu } from '@/components/shared/UserMenu';
+import { GlobalApiKeyPrompt } from '@/features/ai-settings/components/GlobalApiKeyPrompt';
 
 export const MainLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +41,9 @@ export const MainLayout: React.FC = () => {
       <footer className="relative z-10 py-4 text-center text-xs text-muted-foreground border-t border-border bg-card/30 shrink-0">
         &copy; {new Date().getFullYear()} Mora. Tất cả các quyền được bảo lưu.
       </footer>
+
+      {/* Global Utility Component */}
+      <GlobalApiKeyPrompt />
     </div>
   );
 };
