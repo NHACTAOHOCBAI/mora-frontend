@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { BorderedCard } from '@/components/shared/BorderedCard';
 import { useAiSettings, useUpdateAiSettings, useTestApiKey, useDailyQuota } from '../hooks/useAiSettings';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const AiSettingsTab: React.FC = () => {
   const { data: settings, isLoading: isSettingsLoading } = useAiSettings();
@@ -306,18 +307,19 @@ export const AiSettingsTab: React.FC = () => {
                   <span>🤖 Trợ lý Chat Chính (Synthesis Agent)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Trả lời câu hỏi & RAG</span>
                 </label>
-                <select
-                  value={chatModel}
-                  onChange={(e) => setChatModel(e.target.value)}
-                  className="w-full bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-primary font-medium"
-                >
-                  <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (500 lượt/ngày - Khuyên dùng)</option>
-                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (500 lượt/ngày - Siêu tốc)</option>
-                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (20 lượt/ngày - Chuẩn)</option>
-                  <option value="gemini-3.7-flash">Gemini 3.7 Flash (20 lượt/ngày - Suy luận mới nhất)</option>
-                  <option value="gemini-3.5-flash">Gemini 3.5 Flash (20 lượt/ngày - Lập luận cao cấp)</option>
-                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (20 lượt/ngày - Học thuật chuyên sâu)</option>
-                </select>
+                <Select value={chatModel} onValueChange={setChatModel}>
+                  <SelectTrigger className="w-full bg-card border-border font-medium h-[38px]">
+                    <SelectValue placeholder="Chọn model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (500 lượt/ngày - Khuyên dùng)</SelectItem>
+                    <SelectItem value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (500 lượt/ngày - Siêu tốc)</SelectItem>
+                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (20 lượt/ngày - Chuẩn)</SelectItem>
+                    <SelectItem value="gemini-3.7-flash">Gemini 3.7 Flash (20 lượt/ngày - Suy luận mới nhất)</SelectItem>
+                    <SelectItem value="gemini-3.5-flash">Gemini 3.5 Flash (20 lượt/ngày - Lập luận cao cấp)</SelectItem>
+                    <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (20 lượt/ngày - Học thuật chuyên sâu)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Router Agent */}
@@ -326,15 +328,16 @@ export const AiSettingsTab: React.FC = () => {
                   <span>🔀 Định Tuyến Ý Định (Router Agent)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Phân loại RAG hay General</span>
                 </label>
-                <select
-                  value={routerModel}
-                  onChange={(e) => setRouterModel(e.target.value)}
-                  className="w-full bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-primary font-medium"
-                >
-                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Khuyên dùng - 500 lượt/ngày)</option>
-                  <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (500 lượt/ngày)</option>
-                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (20 lượt/ngày)</option>
-                </select>
+                <Select value={routerModel} onValueChange={setRouterModel}>
+                  <SelectTrigger className="w-full bg-card border-border font-medium h-[38px]">
+                    <SelectValue placeholder="Chọn model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Khuyên dùng - 500 lượt/ngày)</SelectItem>
+                    <SelectItem value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (500 lượt/ngày)</SelectItem>
+                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (20 lượt/ngày)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* QC Evaluator Agent */}
@@ -343,15 +346,16 @@ export const AiSettingsTab: React.FC = () => {
                   <span>⚖️ Kiểm Định Chất Lượng (QC Evaluator)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Chống ảo giác (Hallucination)</span>
                 </label>
-                <select
-                  value={evaluatorModel}
-                  onChange={(e) => setEvaluatorModel(e.target.value)}
-                  className="w-full bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-primary font-medium"
-                >
-                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Khuyên dùng - 500 lượt/ngày)</option>
-                  <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (500 lượt/ngày)</option>
-                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (20 lượt/ngày)</option>
-                </select>
+                <Select value={evaluatorModel} onValueChange={setEvaluatorModel}>
+                  <SelectTrigger className="w-full bg-card border-border font-medium h-[38px]">
+                    <SelectValue placeholder="Chọn model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Khuyên dùng - 500 lượt/ngày)</SelectItem>
+                    <SelectItem value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (500 lượt/ngày)</SelectItem>
+                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (20 lượt/ngày)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* PDF Parser Agent */}
@@ -360,15 +364,16 @@ export const AiSettingsTab: React.FC = () => {
                   <span>📄 Trích Xuất Sơ Đồ PDF (Vision Parser)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Đọc biểu đồ & ảnh PDF</span>
                 </label>
-                <select
-                  value={parserModel}
-                  onChange={(e) => setParserModel(e.target.value)}
-                  className="w-full bg-card border border-border text-foreground text-sm rounded-lg px-3 py-2 focus:outline-hidden focus:ring-2 focus:ring-primary font-medium"
-                >
-                  <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (Khuyên dùng Vision - 500 lượt/ngày)</option>
-                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (500 lượt/ngày)</option>
-                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (20 lượt/ngày)</option>
-                </select>
+                <Select value={parserModel} onValueChange={setParserModel}>
+                  <SelectTrigger className="w-full bg-card border-border font-medium h-[38px]">
+                    <SelectValue placeholder="Chọn model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (Khuyên dùng Vision - 500 lượt/ngày)</SelectItem>
+                    <SelectItem value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (500 lượt/ngày)</SelectItem>
+                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (20 lượt/ngày)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
