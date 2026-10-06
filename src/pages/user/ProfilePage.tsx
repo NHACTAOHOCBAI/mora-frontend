@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { BorderedCard } from "@/components/shared/BorderedCard";
 import { AiSettingsTab } from "@/features/ai-settings/components/AiSettingsTab";
 import { toast } from "sonner";
-import { Loader2, Camera, User, Lock, KeyRound, Check, Sparkles, UserCheck } from "lucide-react";
+import { Loader2, Camera, User, Lock, KeyRound, Check, Sparkles, UserCheck, Info } from "lucide-react";
+import { GuideApiKeyTab } from "@/features/ai-settings/components/GuideApiKeyTab";
 
 // Form Schema cho thông tin cá nhân
 const profileSchema = z.object({
@@ -40,19 +41,21 @@ export const ProfilePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<"general" | "ai-settings">(
-    tabParam === "ai-settings" ? "ai-settings" : "general"
+  const [activeTab, setActiveTab] = useState<"general" | "ai-settings" | "guide-api-key">(
+    tabParam === "ai-settings" ? "ai-settings" : tabParam === "guide-api-key" ? "guide-api-key" : "general"
   );
 
   useEffect(() => {
     if (tabParam === "ai-settings") {
       setActiveTab("ai-settings");
+    } else if (tabParam === "guide-api-key") {
+      setActiveTab("guide-api-key");
     } else {
       setActiveTab("general");
     }
   }, [tabParam]);
 
-  const handleTabChange = (tab: "general" | "ai-settings") => {
+  const handleTabChange = (tab: "general" | "ai-settings" | "guide-api-key") => {
     setActiveTab(tab);
     setSearchParams({ tab });
   };
@@ -189,10 +192,24 @@ export const ProfilePage: React.FC = () => {
           <Sparkles className="w-4 h-4 text-primary" />
           Cấu hình AI & Hạn mức (BYOK)
         </button>
+
+        <button
+          onClick={() => handleTabChange("guide-api-key")}
+          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
+            activeTab === "guide-api-key"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Info className="w-4 h-4 text-primary" />
+          Hướng dẫn lấy API Key
+        </button>
       </div>
 
       {activeTab === "ai-settings" ? (
         <AiSettingsTab />
+      ) : activeTab === "guide-api-key" ? (
+        <GuideApiKeyTab />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Cột trái: Ảnh đại diện & Thông tin chung */}
@@ -232,22 +249,22 @@ export const ProfilePage: React.FC = () => {
                 className="hidden"
               />
               
-              <div className="mt-4 space-y-1">
-                <h3 className="font-bold text-lg text-foreground">{user.fullName}</h3>
-                <p className="text-sm text-muted-foreground">@{user.username}</p>
+              <div className="mt-4 space-y-1 w-full px-4 overflow-hidden">
+                <h3 className="font-bold text-lg text-foreground truncate" title={user.fullName}>{user.fullName}</h3>
+                <p className="text-sm text-muted-foreground truncate" title={`@${user.username}`}>@{user.username}</p>
               </div>
 
               <div className="w-full border-t border-border mt-6 pt-4 text-left space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email:</span>
-                  <span className="font-medium text-foreground">{user.email}</span>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-muted-foreground shrink-0">Email:</span>
+                  <span className="font-medium text-foreground truncate" title={user.email}>{user.email}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Vai trò:</span>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-muted-foreground shrink-0">Vai trò:</span>
                   <span className="font-semibold text-primary">{user.role === 'ROLE_ADMIN' ? 'Quản trị viên' : 'Học viên'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ngày tham gia:</span>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-muted-foreground shrink-0">Ngày tham gia:</span>
                   <span className="font-medium text-foreground">
                     {new Date(user.createdAt).toLocaleDateString("vi-VN")}
                   </span>

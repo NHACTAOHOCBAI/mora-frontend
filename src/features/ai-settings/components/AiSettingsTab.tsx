@@ -13,7 +13,12 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   ArrowRightLeft,
-  Bot
+  Bot,
+  Info,
+  MessageSquare,
+  Route,
+  Scale,
+  FileSearch
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +26,7 @@ import { BorderedCard } from '@/components/shared/BorderedCard';
 import { useAiSettings, useUpdateAiSettings, useTestApiKey, useDailyQuota } from '../hooks/useAiSettings';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Link } from 'react-router-dom';
 
 export const AiSettingsTab: React.FC = () => {
   const { data: settings, isLoading: isSettingsLoading } = useAiSettings();
@@ -166,14 +172,22 @@ export const AiSettingsTab: React.FC = () => {
         description="Nhập API Key cá nhân từ Google AI Studio để không bị giới hạn tốc độ và chủ động chọn model cho từng Agent."
         icon={<Key className="w-5 h-5 text-primary" />}
         action={
-          <a
-            href="https://aistudio.google.com/app/apikey"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline px-3 py-1.5 bg-muted/60 hover:bg-muted rounded-lg border border-border transition-colors cursor-pointer"
-          >
-            Lấy Key tại Google AI Studio <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <div className="flex items-center gap-2">
+            <Link
+              to="?tab=guide-api-key"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg border border-emerald-500/20 transition-colors cursor-pointer"
+            >
+              <Info className="w-3.5 h-3.5" /> Xem hướng dẫn
+            </Link>
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline px-3 py-1.5 bg-muted/60 hover:bg-muted rounded-lg border border-border transition-colors cursor-pointer"
+            >
+              Lấy Key tại Google AI Studio <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         }
       >
         <form onSubmit={handleSaveSettings} className="space-y-6">
@@ -304,7 +318,7 @@ export const AiSettingsTab: React.FC = () => {
               {/* Chat & Synthesis Agent */}
               <div className="space-y-1.5 p-4 rounded-xl border border-border bg-muted/20">
                 <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                  <span>🤖 Trợ lý Chat Chính (Synthesis Agent)</span>
+                  <span className="flex items-center gap-1.5"><MessageSquare className="w-4 h-4 text-blue-500" /> Trợ lý Chat Chính (Synthesis Agent)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Trả lời câu hỏi & RAG</span>
                 </label>
                 <Select value={chatModel} onValueChange={setChatModel}>
@@ -325,7 +339,7 @@ export const AiSettingsTab: React.FC = () => {
               {/* Router Agent */}
               <div className="space-y-1.5 p-4 rounded-xl border border-border bg-muted/20">
                 <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                  <span>🔀 Định Tuyến Ý Định (Router Agent)</span>
+                  <span className="flex items-center gap-1.5"><Route className="w-4 h-4 text-amber-500" /> Định Tuyến Ý Định (Router Agent)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Phân loại RAG hay General</span>
                 </label>
                 <Select value={routerModel} onValueChange={setRouterModel}>
@@ -343,7 +357,7 @@ export const AiSettingsTab: React.FC = () => {
               {/* QC Evaluator Agent */}
               <div className="space-y-1.5 p-4 rounded-xl border border-border bg-muted/20">
                 <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                  <span>⚖️ Kiểm Định Chất Lượng (QC Evaluator)</span>
+                  <span className="flex items-center gap-1.5"><Scale className="w-4 h-4 text-emerald-500" /> Kiểm Định Chất Lượng (QC Evaluator)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Chống ảo giác (Hallucination)</span>
                 </label>
                 <Select value={evaluatorModel} onValueChange={setEvaluatorModel}>
@@ -361,7 +375,7 @@ export const AiSettingsTab: React.FC = () => {
               {/* PDF Parser Agent */}
               <div className="space-y-1.5 p-4 rounded-xl border border-border bg-muted/20">
                 <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                  <span>📄 Trích Xuất Sơ Đồ PDF (Vision Parser)</span>
+                  <span className="flex items-center gap-1.5"><FileSearch className="w-4 h-4 text-purple-500" /> Trích Xuất Sơ Đồ PDF (Vision Parser)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Đọc biểu đồ & ảnh PDF</span>
                 </label>
                 <Select value={parserModel} onValueChange={setParserModel}>
