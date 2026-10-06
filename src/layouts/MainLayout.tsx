@@ -10,7 +10,7 @@ export const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-200">
       {/* Navigation Header */}
-      <header className="border-b border-border bg-card/85 backdrop-blur-md sticky top-0 z-50 px-6 h-16 flex items-center justify-between shadow-sm shrink-0">
+      <header className="border-b border-border bg-card/85 backdrop-blur-md sticky top-0 z-50 px-4 md:px-6 h-16 flex items-center justify-between shadow-sm shrink-0">
         <div
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => navigate('/')}

@@ -157,7 +157,7 @@ export const ProfilePage: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="flex-1 max-w-5xl w-full mx-auto p-6 md:p-8 space-y-8">
+    <div className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
           Cài Đặt Tài Khoản
@@ -168,7 +168,7 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       {/* Tabs Switcher */}
-      <div className="flex border-b border-border space-x-2">
+      <div className="flex border-b border-border space-x-2 overflow-x-auto whitespace-nowrap scrollbar-hide pb-1">
         <button
           onClick={() => handleTabChange("general")}
           className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${

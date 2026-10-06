@@ -128,7 +128,7 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
 
   if (isSidebarCollapsed) {
     return (
-      <aside className="w-16 border-r border-border bg-card flex flex-col items-center py-4 shrink-0 justify-between">
+      <aside className="hidden md:flex w-16 border-r border-border bg-card flex-col items-center py-4 shrink-0 justify-between">
         <div className="flex flex-col items-center gap-4 w-full">
           <Button
             variant="ghost"
@@ -164,8 +164,14 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
   }
 
   return (
-    <aside className="w-80 border-r border-border bg-card flex flex-col shrink-0">
-      {/* Header section */}
+    <>
+      {/* Overlay cho Mobile khi Sidebar mở */}
+      <div 
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-200"
+        onClick={() => setIsSidebarCollapsed(true)}
+      />
+      <aside className="fixed inset-y-0 left-0 z-50 w-4/5 max-w-[320px] md:relative md:w-80 border-r border-border bg-card flex flex-col shrink-0 shadow-2xl md:shadow-none animate-in slide-in-from-left-full md:animate-none duration-300">
+        {/* Header section */}
       <div className="px-4 h-14 border-b border-border flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <Link to="/">
@@ -402,5 +408,7 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
         </div>
       </div>
     </aside>
+    </>
   );
 };
+

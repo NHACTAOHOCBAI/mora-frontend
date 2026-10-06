@@ -6,6 +6,7 @@ import {
   Sparkles,
   FileText,
   Users,
+  Menu,
 } from 'lucide-react';
 import {
   useSpaceDetail,
@@ -46,7 +47,7 @@ export const SpaceDetailPage: React.FC = () => {
   const { user: currentUser } = useAuth();
 
   const [spaceMessages, setSpaceMessages] = useState<Message[]>([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [showClearHistoryAlert, setShowClearHistoryAlert] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
 
@@ -358,12 +359,20 @@ export const SpaceDetailPage: React.FC = () => {
       />
 
       {/* 2. Main Work Area (Split-screen or Single-pane based on document selection) */}
-      <div className="flex-1 flex h-full min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row h-full min-w-0 overflow-hidden">
         {/* Left pane: Hộp thoại Chatbot */}
-        <section className="flex-1 shrink-0 border-r border-border bg-card flex flex-col h-full min-h-0 relative overflow-hidden shadow-2xs">
+        <section className="flex-1 shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-card flex flex-col h-full min-h-0 relative overflow-hidden shadow-2xs">
           {/* Chat header */}
-          <div className="flex items-center justify-between px-6 h-14 bg-card border-b border-border/60 shrink-0">
+          <div className="flex items-center justify-between px-4 md:px-6 h-14 bg-card border-b border-border/60 shrink-0">
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSidebarCollapsed(false)}
+                className="md:hidden h-8 w-8 text-muted-foreground mr-1 cursor-pointer"
+              >
+                <Menu className="w-4 h-4" />
+              </Button>
               <span className="text-xs font-bold text-foreground tracking-wider flex items-center gap-1.5 animate-pulse">
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
                 TRỢ LÝ & THẢO LUẬN NHÓM
