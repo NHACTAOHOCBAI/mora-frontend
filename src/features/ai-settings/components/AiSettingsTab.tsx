@@ -321,7 +321,7 @@ export const AiSettingsTab: React.FC = () => {
                   <span className="flex items-center gap-1.5"><MessageSquare className="w-4 h-4 text-blue-500" /> Trợ lý Chat Chính (Synthesis Agent)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Trả lời câu hỏi & RAG</span>
                 </label>
-                <Select value={chatModel} onValueChange={setChatModel}>
+                <Select value={chatModel} onValueChange={(val) => val && setChatModel(val)}>
                   <SelectTrigger className="w-full bg-card border-border font-medium h-[38px]">
                     <SelectValue placeholder="Chọn model" />
                   </SelectTrigger>
@@ -342,7 +342,7 @@ export const AiSettingsTab: React.FC = () => {
                   <span className="flex items-center gap-1.5"><Route className="w-4 h-4 text-amber-500" /> Định Tuyến Ý Định (Router Agent)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Phân loại RAG hay General</span>
                 </label>
-                <Select value={routerModel} onValueChange={setRouterModel}>
+                <Select value={routerModel} onValueChange={(val) => val && setRouterModel(val)}>
                   <SelectTrigger className="w-full bg-card border-border font-medium h-[38px]">
                     <SelectValue placeholder="Chọn model" />
                   </SelectTrigger>
@@ -360,7 +360,7 @@ export const AiSettingsTab: React.FC = () => {
                   <span className="flex items-center gap-1.5"><Scale className="w-4 h-4 text-emerald-500" /> Kiểm Định Chất Lượng (QC Evaluator)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Chống ảo giác (Hallucination)</span>
                 </label>
-                <Select value={evaluatorModel} onValueChange={setEvaluatorModel}>
+                <Select value={evaluatorModel} onValueChange={(val) => val && setEvaluatorModel(val)}>
                   <SelectTrigger className="w-full bg-card border-border font-medium h-[38px]">
                     <SelectValue placeholder="Chọn model" />
                   </SelectTrigger>
@@ -378,7 +378,7 @@ export const AiSettingsTab: React.FC = () => {
                   <span className="flex items-center gap-1.5"><FileSearch className="w-4 h-4 text-purple-500" /> Trích Xuất Sơ Đồ PDF (Vision Parser)</span>
                   <span className="text-[11px] text-muted-foreground font-normal">Đọc biểu đồ & ảnh PDF</span>
                 </label>
-                <Select value={parserModel} onValueChange={setParserModel}>
+                <Select value={parserModel} onValueChange={(val) => val && setParserModel(val)}>
                   <SelectTrigger className="w-full bg-card border-border font-medium h-[38px]">
                     <SelectValue placeholder="Chọn model" />
                   </SelectTrigger>
