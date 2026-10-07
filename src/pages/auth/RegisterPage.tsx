@@ -14,10 +14,6 @@ import { BorderBeam } from "@/components/ui/border-beam";
 
 const registerSchema = z
   .object({
-    username: z
-      .string()
-      .min(4, "Tên đăng nhập phải chứa ít nhất 4 ký tự")
-      .max(50, "Tên đăng nhập không được quá 50 ký tự"),
     email: z
       .string()
       .min(1, "Email không được để trống")
@@ -50,7 +46,6 @@ export const RegisterPage: React.FC = () => {
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
       email: "",
       fullName: "",
       password: "",
@@ -60,8 +55,13 @@ export const RegisterPage: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
+      // Auto-generate username from email prefix and random string
+      const emailPrefix = data.email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
+      const randomSuffix = Math.random().toString(36).substring(2, 6);
+      const generatedUsername = `${emailPrefix}${randomSuffix}`;
+
       await registerUser({
-        username: data.username,
+        username: generatedUsername,
         email: data.email,
         fullName: data.fullName,
         password: data.password,
@@ -70,7 +70,7 @@ export const RegisterPage: React.FC = () => {
     } catch (err: any) {
       toast.error(
         err.response?.data?.message ||
-          "Đăng ký thất bại. Tên đăng nhập hoặc Email có thể đã tồn tại.",
+          "Đăng ký thất bại. Email có thể đã tồn tại.",
       );
     }
   };
@@ -100,23 +100,6 @@ export const RegisterPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-6">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Tên đăng nhập
-            </label>
-            <Input
-              type="text"
-              placeholder="Nhập tên đăng nhập (từ 4 ký tự)"
-              disabled={isRegistering}
-              {...register("username")}
-            />
-            {errors.username && (
-              <span className="text-xs text-destructive font-medium">
-                {errors.username.message}
-              </span>
-            )}
-          </div>
-
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Họ và tên

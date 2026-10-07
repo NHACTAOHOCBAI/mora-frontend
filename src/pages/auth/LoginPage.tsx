@@ -13,7 +13,7 @@ import { DotPattern } from "@/components/ui/dot-pattern";
 import { BorderBeam } from "@/components/ui/border-beam";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Tên đăng nhập không được để trống"),
+  username: z.string().min(1, "Email không được để trống"),
   password: z.string().min(6, "Mật khẩu phải chứa ít nhất 6 ký tự"),
 });
 
@@ -86,11 +86,11 @@ export const LoginPage: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-6">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Tên đăng nhập
+              Địa chỉ Email
             </label>
             <Input
               type="text"
-              placeholder="Nhập tên đăng nhập của bạn"
+              placeholder="email@example.com"
               disabled={isLoggingIn}
               {...register("username")}
             />
