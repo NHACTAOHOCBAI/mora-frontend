@@ -63,6 +63,11 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
       return;
     }
 
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Kích thước tài liệu không được vượt quá 15MB');
+      return;
+    }
+
     uploadMutation.mutate(
       { spaceId: space.id, file },
       {
