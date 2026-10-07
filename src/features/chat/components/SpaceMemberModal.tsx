@@ -237,19 +237,19 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
         {/* Content Tabs */}
         <Tabs defaultValue="members" className="flex-1 flex flex-col min-h-0">
           <div className="px-5 pt-3 border-b border-border shrink-0">
-            <TabsList className="grid w-full grid-cols-3 bg-muted/60 p-1">
-              <TabsTrigger value="members" className="text-xs font-semibold gap-1.5 cursor-pointer">
+            <TabsList className="flex w-full bg-muted/60 p-1.5 rounded-xl h-12">
+              <TabsTrigger value="members" className="flex-1 text-xs font-semibold gap-1.5 cursor-pointer data-active:shadow-sm rounded-lg">
                 <Users className="w-3.5 h-3.5" />
                 Thành viên ({members.length})
               </TabsTrigger>
               {isOwner && (
-                <TabsTrigger value="add" className="text-xs font-semibold gap-1.5 cursor-pointer">
+                <TabsTrigger value="add" className="flex-1 text-xs font-semibold gap-1.5 cursor-pointer data-active:shadow-sm rounded-lg">
                   <UserPlus className="w-3.5 h-3.5" />
                   Thêm trực tiếp
                 </TabsTrigger>
               )}
               {isOwner && (
-                <TabsTrigger value="invite" className="text-xs font-semibold gap-1.5 cursor-pointer">
+                <TabsTrigger value="invite" className="flex-1 text-xs font-semibold gap-1.5 cursor-pointer data-active:shadow-sm rounded-lg">
                   <LinkIcon className="w-3.5 h-3.5" />
                   Liên kết mời
                 </TabsTrigger>
@@ -369,28 +369,25 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
                     Vai trò trong Không gian
                   </label>
                   <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val as SpaceRole)}>
-                    <SelectTrigger className="h-9 text-xs bg-card border-border">
+                    <SelectTrigger className="w-full h-9 text-xs bg-card border-border">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="EDITOR" className="text-xs">
-                        <div className="flex flex-col text-left py-0.5">
-                          <span className="font-semibold text-foreground">Cộng tác viên (Editor)</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            Được tải lên tài liệu, hỏi đáp AI và tham gia chat nhóm.
-                          </span>
-                        </div>
+                        <span className="font-semibold text-foreground">Cộng tác viên (Editor)</span>
                       </SelectItem>
                       <SelectItem value="VIEWER" className="text-xs">
-                        <div className="flex flex-col text-left py-0.5">
-                          <span className="font-semibold text-foreground">Người xem (Viewer)</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            Chỉ đọc tài liệu và hỏi đáp AI, không tải lên hay xóa tài liệu.
-                          </span>
-                        </div>
+                        <span className="font-semibold text-foreground">Người xem (Viewer)</span>
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  
+                  {/* Dynamic description based on selectedRole */}
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    {selectedRole === 'EDITOR' 
+                      ? "Cộng tác viên: Được tải lên tài liệu, hỏi đáp AI và tham gia chat nhóm."
+                      : "Người xem: Chỉ đọc tài liệu và hỏi đáp AI, không tải lên hay xóa tài liệu."}
+                  </p>
                 </div>
 
                 <Button
@@ -423,7 +420,7 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
                       Vai trò mặc định
                     </label>
                     <Select value={inviteRole} onValueChange={(val) => setInviteRole(val as SpaceRole)}>
-                      <SelectTrigger className="h-8 text-xs bg-card border-border">
+                      <SelectTrigger className="w-full h-8 text-xs bg-card border-border">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -438,7 +435,7 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
                       Thời hạn hiệu lực
                     </label>
                     <Select value={inviteDuration} onValueChange={(val) => val && setInviteDuration(val)}>
-                      <SelectTrigger className="h-8 text-xs bg-card border-border">
+                      <SelectTrigger className="w-full h-8 text-xs bg-card border-border">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

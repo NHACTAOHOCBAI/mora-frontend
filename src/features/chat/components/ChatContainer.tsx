@@ -70,6 +70,7 @@ interface ChatContainerProps {
   currentUserId?: number;
   typingUsers?: string[];
   onTyping?: (typing: boolean) => void;
+  membersCount?: number;
 }
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
@@ -84,6 +85,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   currentUserId,
   typingUsers = [],
   onTyping,
+  membersCount = 1,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
@@ -176,6 +178,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
 
   // Helper kiểm tra tin nhắn có trigger hỏi AI không (@Mora hoặc @AI)
   const isAiTriggerMessage = (text: string) => {
+    if (membersCount === 1) return true; // Luôn gọi AI nếu chỉ có 1 mình
     const lower = text.trim().toLowerCase();
     return lower.startsWith('@mora') || lower.startsWith('@ai');
   };
@@ -599,18 +602,28 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         {/* Quick Helper Chips */}
         <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handleInsertAtMora}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted hover:bg-primary/10 hover:text-primary border border-border text-[11px] font-semibold transition-colors cursor-pointer"
-            >
-              <Sparkles className="w-3 h-3 text-primary" />
-              Gõ @Mora để hỏi tài liệu
-            </button>
+            {membersCount > 1 && (
+              <button
+                type="button"
+                onClick={handleInsertAtMora}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted hover:bg-primary/10 hover:text-primary border border-border text-[11px] font-semibold transition-colors cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3 text-primary" />
+                Gõ @Mora để hỏi tài liệu
+              </button>
+            )}
           </div>
           <span className="text-[10px] text-muted-foreground hidden sm:inline">
-            <kbd className="px-1 py-0.5 bg-muted rounded border text-[9px] font-mono">Enter</kbd> Gửi nhóm •{' '}
-            <kbd className="px-1 py-0.5 bg-muted rounded border text-[9px] font-mono">Ctrl+Enter</kbd> Hỏi AI
+            {membersCount > 1 ? (
+              <>
+                <kbd className="px-1 py-0.5 bg-muted rounded border text-[9px] font-mono">Enter</kbd> Gửi nhóm •{' '}
+                <kbd className="px-1 py-0.5 bg-muted rounded border text-[9px] font-mono">Ctrl+Enter</kbd> Hỏi AI
+              </>
+            ) : (
+              <>
+                <kbd className="px-1 py-0.5 bg-muted rounded border text-[9px] font-mono">Enter</kbd> Gửi tin
+              </>
+            )}
           </span>
         </div>
 
@@ -623,23 +636,25 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             onChange={handleInputChange}
             onClick={handleInputClick}
             onKeyDown={handleKeyDown}
-            placeholder="Nhắn tin cho nhóm... hoặc gõ @ để chọn @Mora hỏi tài liệu"
+            placeholder={membersCount === 1 ? "Nhắn tin để hỏi tài liệu..." : "Nhắn tin cho nhóm... hoặc gõ @ để chọn @Mora hỏi tài liệu"}
             disabled={isLoading}
             className="flex-1 h-10 text-xs bg-muted/20 border-border"
           />
 
           {/* Button 1: Gửi tin nhắn nhóm */}
-          <Button
-            type="button"
-            onClick={handleSendToGroup}
-            disabled={!inputValue.trim() || isLoading}
-            variant="outline"
-            className="h-10 px-3.5 gap-1.5 text-xs font-semibold cursor-pointer shrink-0"
-            title="Gửi tin nhắn trao đổi cho nhóm (Enter)"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Gửi nhóm</span>
-          </Button>
+          {membersCount > 1 && (
+            <Button
+              type="button"
+              onClick={handleSendToGroup}
+              disabled={!inputValue.trim() || isLoading}
+              variant="outline"
+              className="h-10 px-3.5 gap-1.5 text-xs font-semibold cursor-pointer shrink-0"
+              title="Gửi tin nhắn trao đổi cho nhóm (Enter)"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Gửi nhóm</span>
+            </Button>
+          )}
 
           {/* Button 2: ✨ Hỏi AI (RAG Trigger) */}
           <Button
@@ -647,7 +662,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             onClick={handleSendToAi}
             disabled={!inputValue.trim() || isLoading}
             className="h-10 px-3.5 gap-1.5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer shrink-0 shadow-sm"
-            title="Kích hoạt Trợ lý AI tra cứu tài liệu nhóm (Ctrl + Enter)"
+            title={membersCount === 1 ? "Gửi tin nhắn (Enter)" : "Kích hoạt Trợ lý AI tra cứu tài liệu nhóm (Ctrl + Enter)"}
           >
             {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             <span>Hỏi AI</span>

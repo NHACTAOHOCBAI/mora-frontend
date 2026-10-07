@@ -416,6 +416,7 @@ export const SpaceDetailPage: React.FC = () => {
             currentUserId={currentUser?.id}
             typingUsers={typingUserNames}
             onTyping={sendTyping}
+            membersCount={space?.memberCount || 1}
           />
         </section>
 

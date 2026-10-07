@@ -230,7 +230,13 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground leading-relaxed">
-            Dùng <span className="font-semibold text-foreground">@Mora</span> trong khung chat để hỏi đáp tài liệu chung hoặc nhắn tin trao đổi trực tiếp với nhóm.
+            {(space?.memberCount || 1) === 1 ? (
+              "Bạn đang ở chế độ học tập cá nhân. Các tin nhắn sẽ được tự động gửi thẳng cho Trợ lý AI."
+            ) : (
+              <>
+                Dùng <span className="font-semibold text-foreground">@Mora</span> trong khung chat để hỏi đáp tài liệu chung hoặc nhắn tin trao đổi trực tiếp với nhóm.
+              </>
+            )}
           </p>
         </div>
 
