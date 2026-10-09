@@ -48,6 +48,7 @@ export const useAuth = () => {
   // Hàm Đăng xuất
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('originalToken');
     queryClient.clear();
     navigate('/login');
   };

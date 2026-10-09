@@ -33,4 +33,9 @@ export const adminApi = {
   deleteUser: async (id: number): Promise<void> => {
     await apiClient.delete<ApiResponse<void>>(`/admin/users/${id}`);
   },
+
+  impersonateUser: async (id: number): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>(`/admin/users/${id}/impersonate`);
+    return response.data.result;
+  }
 };

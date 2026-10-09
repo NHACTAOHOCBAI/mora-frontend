@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAdminUsers, useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsers';
+import { adminApi } from '@/features/admin/services/admin-api';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -84,6 +85,22 @@ export const AdminUsersPage: React.FC = () => {
     toast.success('Đã tải lại danh sách!');
   };
 
+  const handleImpersonate = async (id: number) => {
+    try {
+      const response = await adminApi.impersonateUser(id);
+      const currentToken = localStorage.getItem('token');
+      if (currentToken) {
+        localStorage.setItem('originalToken', currentToken);
+      }
+      localStorage.setItem('token', response.token);
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast.success('Đăng nhập thành công với quyền người dùng!');
+      window.location.href = '/';
+    } catch (err: any) {
+      toast.error('Đăng nhập thất bại: ' + (err.message || 'Lỗi hệ thống'));
+    }
+  };
+
   return (
     <div className="space-y-4 w-full">
       <div>
@@ -94,7 +111,7 @@ export const AdminUsersPage: React.FC = () => {
       </div>
 
       <CrudTable<UserResponse>
-        columns={userColumns(handleEditClick, setUserIdToDelete)}
+        columns={userColumns(handleEditClick, setUserIdToDelete, handleImpersonate)}
         useQuery={useAdminUsersQuery}
         filterPlaceholder="Lọc theo tên, email, họ tên..."
       >

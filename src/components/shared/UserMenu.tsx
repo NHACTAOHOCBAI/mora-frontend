@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, ShieldAlert, User } from 'lucide-react';
+import { LogOut, ShieldAlert, User, Undo2 } from 'lucide-react';
 
 export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
@@ -21,6 +21,16 @@ export const UserMenu: React.FC = () => {
   // Lấy chữ cái đầu tiên của tên để làm avatar đại diện
   const getInitials = (name: string) => {
     return name ? name.charAt(0).toUpperCase() : 'U';
+  };
+
+  const originalToken = localStorage.getItem('originalToken');
+
+  const handleSwitchBack = () => {
+    if (originalToken) {
+      localStorage.setItem('token', originalToken);
+      localStorage.removeItem('originalToken');
+      window.location.href = '/';
+    }
   };
 
   return (
@@ -64,6 +74,19 @@ export const UserMenu: React.FC = () => {
             >
               <ShieldAlert className="mr-2 h-4 w-4" />
               <span>Quản lý thành viên</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-border" />
+          </>
+        )}
+
+        {originalToken && (
+          <>
+            <DropdownMenuItem
+              onClick={handleSwitchBack}
+              className="cursor-pointer font-medium text-amber-600 focus:text-amber-700 focus:bg-amber-100 dark:text-amber-500 dark:focus:text-amber-400 dark:focus:bg-amber-900/30"
+            >
+              <Undo2 className="mr-2 h-4 w-4" />
+              <span>Quay lại tài khoản gốc</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
           </>

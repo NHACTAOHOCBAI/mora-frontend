@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, LogIn } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import {
@@ -16,7 +16,8 @@ import type { UserResponse } from "@/features/auth/types";
 
 export const userColumns = (
     onEdit: (user: UserResponse) => void,
-    onDelete: (id: number) => void
+    onDelete: (id: number) => void,
+    onImpersonate: (id: number) => void
 ): ColumnDef<UserResponse>[] => [
     {
         id: "select",
@@ -125,6 +126,15 @@ export const userColumns = (
                             >
                                 <Edit className="w-4 h-4 mr-2" />
                                 <span>Chỉnh sửa</span>
+                            </DropdownMenuItem>
+
+                            {/* Impersonate Action */}
+                            <DropdownMenuItem
+                                onClick={() => onImpersonate(user.id)}
+                                className="cursor-pointer"
+                            >
+                                <LogIn className="w-4 h-4 mr-2" />
+                                <span>Đăng nhập dưới tư cách người này</span>
                             </DropdownMenuItem>
 
                             {/* Delete Action */}
