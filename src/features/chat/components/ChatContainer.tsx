@@ -58,6 +58,222 @@ const renderPromptContent = (promptText: string) => {
   return elements;
 };
 
+const MemoizedMessageItem = React.memo(({
+  message,
+  isAI,
+  isAiQuery,
+  isUserMsg,
+  isSelf,
+  isDebugMode,
+  copiedId,
+  onCitationClick,
+  handleCopyText,
+  setSelectedPrompt
+}: any) => {
+  return (
+              <div
+                key={message.id}
+                className={`flex gap-3.5 max-w-[88%] ${
+                  isAI
+                    ? 'mr-auto'
+                    : isSelf
+                      ? 'ml-auto flex-row-reverse'
+                      : 'mr-auto'
+                }`}
+              >
+                {/* Avatar */}
+                <Avatar className="w-8 h-8 border border-border shrink-0 mt-0.5 shadow-xs">
+                  {isAI ? (
+                    <AvatarFallback className="bg-primary text-primary-foreground font-bold">
+                      <Bot className="w-4 h-4" />
+                    </AvatarFallback>
+                  ) : (
+                    <>
+                      <AvatarImage src={message.userAvatar} />
+                      <AvatarFallback className="bg-muted text-foreground text-[10px] font-bold">
+                        {message.userName ? message.userName.substring(0, 2).toUpperCase() : <User className="w-3.5 h-3.5" />}
+                      </AvatarFallback>
+                    </>
+                  )}
+                </Avatar>
+
+                {/* Bubble Container */}
+                <div className={`space-y-1.5 max-w-full flex flex-col ${isSelf && !isAI ? 'items-end' : 'items-start'}`}>
+                  {/* Sender Name & Type Header */}
+                  <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
+                    <span className="font-semibold text-foreground">
+                      {isAI ? 'Trợ Lý AI Mora' : message.userName || 'Thành viên'}
+                    </span>
+                    {isAiQuery && (
+                      <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] px-1.5 py-0 h-4 font-semibold gap-1">
+                        <Sparkles className="w-2.5 h-2.5" /> Hỏi @Mora
+                      </Badge>
+                    )}
+                    {isUserMsg && (
+                      <span className="text-[10px] text-muted-foreground">trao đổi nhóm</span>
+                    )}
+                    <span className="text-[10px] text-muted-foreground/70">
+                      {message.timestamp ? new Date(message.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </span>
+                  </div>
+
+                  {/* Main Bubble */}
+                  <div
+                    onDoubleClick={() => {
+                      if (isDebugMode && isAI && message.promptSent) {
+                        setSelectedPrompt(message.promptSent);
+                      }
+                    }}
+                    title={isDebugMode && isAI && message.promptSent ? 'Double click để xem chi tiết prompt đã gửi' : undefined}
+                    className={`p-4 rounded-2xl text-xs leading-relaxed border select-text relative group ${
+                      isAI
+                        ? 'bg-card border-border text-foreground shadow-xs hover:border-primary/30 transition-colors'
+                        : isAiQuery
+                          ? 'bg-primary/5 border-primary/20 text-foreground font-medium'
+                          : isSelf
+                            ? 'bg-primary text-primary-foreground border-primary font-medium shadow-xs'
+                            : 'bg-card border-border text-foreground'
+                    }`}
+                  >
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                        h1: ({ children }) => <h1 className="text-sm font-bold mt-3 mb-1.5 text-foreground">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-xs font-bold mt-2.5 mb-1.5 text-foreground">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-xs font-semibold mt-2 mb-1 text-foreground">{children}</h3>,
+                        ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                        li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                        code: ({ className, children, ...props }) => {
+                          const match = /language-(\w+)/.exec(className || '');
+                          const isInline = !match;
+                          return isInline ? (
+                            <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px] text-primary" {...props}>
+                              {children}
+                            </code>
+                          ) : (
+                            <pre className="bg-muted p-3 rounded-lg font-mono text-[11px] overflow-x-auto my-2 border border-border">
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            </pre>
+                          );
+                        },
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto my-3 border border-border rounded-xl shadow-xs">
+                            <table className="w-full border-collapse text-left text-[11px]">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        thead: ({ children }) => <thead className="bg-muted/80 border-b border-border font-semibold">{children}</thead>,
+                        th: ({ children }) => <th className="px-3 py-2 font-bold text-foreground border-r border-border last:border-r-0">{children}</th>,
+                        td: ({ children }) => <td className="px-3 py-1.5 border-b border-border/50 border-r border-border/50 last:border-r-0 last:border-b-0 align-top">{children}</td>,
+                        tr: ({ children }) => <tr className="hover:bg-muted/30 transition-colors last:border-b-0">{children}</tr>,
+                      }}
+                    >
+                      {message.text}
+                    </ReactMarkdown>
+
+                    {/* Copy text action */}
+                    {isAI && (
+                      <button
+                        onClick={() => handleCopyText(message.id, message.text)}
+                        className="absolute top-2 right-2 p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-muted transition-all text-muted-foreground cursor-pointer"
+                        title="Sao chép nội dung câu trả lời"
+                      >
+                        {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    )}
+                  </div>
+
+                  {isDebugMode && isAI && message.condensedQuestion && (
+                    <div className="text-[10px] text-muted-foreground pl-1 italic flex items-center gap-1">
+                      <Search className="w-3 h-3 text-muted-foreground/80" />
+                      <span>Truy vấn tối ưu: {message.condensedQuestion}</span>
+                    </div>
+                  )}
+
+                  {/* Citations */}
+                  {isAI && message.citations && message.citations.length > 0 && (() => {
+                    const uniqueCitationsMap = new Map<string, {
+                      pageNumber: number;
+                      documentId?: number;
+                      documentName?: string;
+                      quotes: string[];
+                    }>();
+
+                    message.citations.forEach((citation) => {
+                      const docId = (citation as any).documentId;
+                      const docName = citation.documentName;
+                      const pageNum = citation.pageNumber;
+                      const key = `${docId || docName || 'doc'}_${pageNum}`;
+
+                      const existing = uniqueCitationsMap.get(key);
+                      if (!existing) {
+                        uniqueCitationsMap.set(key, {
+                          pageNumber: pageNum,
+                          documentId: docId,
+                          documentName: docName,
+                          quotes: citation.quote ? [citation.quote] : [],
+                        });
+                      } else {
+                        if (citation.quote && !existing.quotes.includes(citation.quote)) {
+                          existing.quotes.push(citation.quote);
+                        }
+                      }
+                    });
+
+                    const uniqueCitations = Array.from(uniqueCitationsMap.values());
+                    if (uniqueCitations.length === 0) return null;
+
+                    return (
+                      <div className="flex flex-wrap gap-1.5 pt-0.5 pl-1">
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1 py-1 font-medium">
+                          <MapPin className="w-3 h-3 shrink-0" /> Nguồn trích dẫn:
+                        </span>
+                        {uniqueCitations.map((citation, idx) => {
+                          const docId = citation.documentId;
+                          const docDisplayName = citation.documentName
+                            ? `${citation.documentName} - Trang ${citation.pageNumber}`
+                            : docId
+                              ? `Tài liệu #${docId} - Trang ${citation.pageNumber}`
+                              : `Trang ${citation.pageNumber}`;
+                          const quotesText = citation.quotes.join('\n---\n');
+
+                          return (
+                            <Button
+                              key={idx}
+                              onClick={() => onCitationClick(citation.pageNumber, docId)}
+                              variant="outline"
+                              size="sm"
+                              className="h-6 max-w-[260px] text-[11px] font-semibold rounded-lg transition-all duration-200 flex items-center gap-1 cursor-pointer bg-card hover:border-primary hover:text-primary"
+                              title={`Tài liệu: ${citation.documentName || (docId ? `Tài liệu #${docId}` : 'Chưa rõ')} - Trang ${citation.pageNumber}${quotesText ? `\nTrích dẫn:\n"${quotesText}"` : ''}`}
+                            >
+                              <MapPin className="w-2.5 h-2.5 text-primary shrink-0" />
+                              <span className="truncate">{docDisplayName}</span>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.message === nextProps.message &&
+         prevProps.copiedId === nextProps.copiedId &&
+         prevProps.isDebugMode === nextProps.isDebugMode &&
+         prevProps.isAI === nextProps.isAI &&
+         prevProps.isAiQuery === nextProps.isAiQuery &&
+         prevProps.isUserMsg === nextProps.isUserMsg &&
+         prevProps.isSelf === nextProps.isSelf;
+});
+
+
 interface ChatContainerProps {
   messages: Message[];
   onSendMessage: (text: string) => void;
@@ -328,196 +544,19 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             const isSelf = currentUserId && message.userId === currentUserId;
 
             return (
-              <div
-                key={message.id}
-                className={`flex gap-3.5 max-w-[88%] ${
-                  isAI
-                    ? 'mr-auto'
-                    : isSelf
-                      ? 'ml-auto flex-row-reverse'
-                      : 'mr-auto'
-                }`}
-              >
-                {/* Avatar */}
-                <Avatar className="w-8 h-8 border border-border shrink-0 mt-0.5 shadow-xs">
-                  {isAI ? (
-                    <AvatarFallback className="bg-primary text-primary-foreground font-bold">
-                      <Bot className="w-4 h-4" />
-                    </AvatarFallback>
-                  ) : (
-                    <>
-                      <AvatarImage src={message.userAvatar} />
-                      <AvatarFallback className="bg-muted text-foreground text-[10px] font-bold">
-                        {message.userName ? message.userName.substring(0, 2).toUpperCase() : <User className="w-3.5 h-3.5" />}
-                      </AvatarFallback>
-                    </>
-                  )}
-                </Avatar>
-
-                {/* Bubble Container */}
-                <div className={`space-y-1.5 max-w-full flex flex-col ${isSelf && !isAI ? 'items-end' : 'items-start'}`}>
-                  {/* Sender Name & Type Header */}
-                  <div className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
-                    <span className="font-semibold text-foreground">
-                      {isAI ? 'Trợ Lý AI Mora' : message.userName || 'Thành viên'}
-                    </span>
-                    {isAiQuery && (
-                      <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] px-1.5 py-0 h-4 font-semibold gap-1">
-                        <Sparkles className="w-2.5 h-2.5" /> Hỏi @Mora
-                      </Badge>
-                    )}
-                    {isUserMsg && (
-                      <span className="text-[10px] text-muted-foreground">trao đổi nhóm</span>
-                    )}
-                    <span className="text-[10px] text-muted-foreground/70">
-                      {message.timestamp ? new Date(message.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}
-                    </span>
-                  </div>
-
-                  {/* Main Bubble */}
-                  <div
-                    onDoubleClick={() => {
-                      if (isDebugMode && isAI && message.promptSent) {
-                        setSelectedPrompt(message.promptSent);
-                      }
-                    }}
-                    title={isDebugMode && isAI && message.promptSent ? 'Double click để xem chi tiết prompt đã gửi' : undefined}
-                    className={`p-4 rounded-2xl text-xs leading-relaxed border select-text relative group ${
-                      isAI
-                        ? 'bg-card border-border text-foreground shadow-xs hover:border-primary/30 transition-colors'
-                        : isAiQuery
-                          ? 'bg-primary/5 border-primary/20 text-foreground font-medium'
-                          : isSelf
-                            ? 'bg-primary text-primary-foreground border-primary font-medium shadow-xs'
-                            : 'bg-card border-border text-foreground'
-                    }`}
-                  >
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
-                        h1: ({ children }) => <h1 className="text-sm font-bold mt-3 mb-1.5 text-foreground">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-xs font-bold mt-2.5 mb-1.5 text-foreground">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-xs font-semibold mt-2 mb-1 text-foreground">{children}</h3>,
-                        ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                        li: ({ children }) => <li className="mb-0.5">{children}</li>,
-                        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                        code: ({ className, children, ...props }) => {
-                          const match = /language-(\w+)/.exec(className || '');
-                          const isInline = !match;
-                          return isInline ? (
-                            <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px] text-primary" {...props}>
-                              {children}
-                            </code>
-                          ) : (
-                            <pre className="bg-muted p-3 rounded-lg font-mono text-[11px] overflow-x-auto my-2 border border-border">
-                              <code className={className} {...props}>
-                                {children}
-                              </code>
-                            </pre>
-                          );
-                        },
-                        table: ({ children }) => (
-                          <div className="overflow-x-auto my-3 border border-border rounded-xl shadow-xs">
-                            <table className="w-full border-collapse text-left text-[11px]">
-                              {children}
-                            </table>
-                          </div>
-                        ),
-                        thead: ({ children }) => <thead className="bg-muted/80 border-b border-border font-semibold">{children}</thead>,
-                        th: ({ children }) => <th className="px-3 py-2 font-bold text-foreground border-r border-border last:border-r-0">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-1.5 border-b border-border/50 border-r border-border/50 last:border-r-0 last:border-b-0 align-top">{children}</td>,
-                        tr: ({ children }) => <tr className="hover:bg-muted/30 transition-colors last:border-b-0">{children}</tr>,
-                      }}
-                    >
-                      {message.text}
-                    </ReactMarkdown>
-
-                    {/* Copy text action */}
-                    {isAI && (
-                      <button
-                        onClick={() => handleCopyText(message.id, message.text)}
-                        className="absolute top-2 right-2 p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-muted transition-all text-muted-foreground cursor-pointer"
-                        title="Sao chép nội dung câu trả lời"
-                      >
-                        {copiedId === message.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    )}
-                  </div>
-
-                  {isDebugMode && isAI && message.condensedQuestion && (
-                    <div className="text-[10px] text-muted-foreground pl-1 italic flex items-center gap-1">
-                      <Search className="w-3 h-3 text-muted-foreground/80" />
-                      <span>Truy vấn tối ưu: {message.condensedQuestion}</span>
-                    </div>
-                  )}
-
-                  {/* Citations */}
-                  {isAI && message.citations && message.citations.length > 0 && (() => {
-                    const uniqueCitationsMap = new Map<string, {
-                      pageNumber: number;
-                      documentId?: number;
-                      documentName?: string;
-                      quotes: string[];
-                    }>();
-
-                    message.citations.forEach((citation) => {
-                      const docId = (citation as any).documentId;
-                      const docName = citation.documentName;
-                      const pageNum = citation.pageNumber;
-                      const key = `${docId || docName || 'doc'}_${pageNum}`;
-
-                      const existing = uniqueCitationsMap.get(key);
-                      if (!existing) {
-                        uniqueCitationsMap.set(key, {
-                          pageNumber: pageNum,
-                          documentId: docId,
-                          documentName: docName,
-                          quotes: citation.quote ? [citation.quote] : [],
-                        });
-                      } else {
-                        if (citation.quote && !existing.quotes.includes(citation.quote)) {
-                          existing.quotes.push(citation.quote);
-                        }
-                      }
-                    });
-
-                    const uniqueCitations = Array.from(uniqueCitationsMap.values());
-                    if (uniqueCitations.length === 0) return null;
-
-                    return (
-                      <div className="flex flex-wrap gap-1.5 pt-0.5 pl-1">
-                        <span className="text-[11px] text-muted-foreground flex items-center gap-1 py-1 font-medium">
-                          <MapPin className="w-3 h-3 shrink-0" /> Nguồn trích dẫn:
-                        </span>
-                        {uniqueCitations.map((citation, idx) => {
-                          const docId = citation.documentId;
-                          const docDisplayName = citation.documentName
-                            ? `${citation.documentName} - Trang ${citation.pageNumber}`
-                            : docId
-                              ? `Tài liệu #${docId} - Trang ${citation.pageNumber}`
-                              : `Trang ${citation.pageNumber}`;
-                          const quotesText = citation.quotes.join('\n---\n');
-
-                          return (
-                            <Button
-                              key={idx}
-                              onClick={() => onCitationClick(citation.pageNumber, docId)}
-                              variant="outline"
-                              size="sm"
-                              className="h-6 max-w-[260px] text-[11px] font-semibold rounded-lg transition-all duration-200 flex items-center gap-1 cursor-pointer bg-card hover:border-primary hover:text-primary"
-                              title={`Tài liệu: ${citation.documentName || (docId ? `Tài liệu #${docId}` : 'Chưa rõ')} - Trang ${citation.pageNumber}${quotesText ? `\nTrích dẫn:\n"${quotesText}"` : ''}`}
-                            >
-                              <MapPin className="w-2.5 h-2.5 text-primary shrink-0" />
-                              <span className="truncate">{docDisplayName}</span>
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
+              <div key={message.id} className="w-full">
+                <MemoizedMessageItem
+                  message={message}
+                  isAI={isAI}
+                  isAiQuery={isAiQuery}
+                  isUserMsg={isUserMsg}
+                  isSelf={isSelf}
+                  isDebugMode={isDebugMode}
+                  copiedId={copiedId}
+                  onCitationClick={onCitationClick}
+                  handleCopyText={handleCopyText}
+                  setSelectedPrompt={setSelectedPrompt}
+                />
               </div>
             );
           })

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -42,6 +42,28 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
   const uploadMutation = useUploadDocument();
   const deleteMutation = useDeleteDocument();
 
+  const processingDocsRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!space?.documents) return;
+    
+    space.documents.forEach(doc => {
+      const isProcessing = doc.status === 'UPLOADING' || doc.status === 'PARSING' || doc.status === 'INDEXING';
+      const isReady = doc.status === 'READY';
+      const isFailed = doc.status === 'FAILED';
+      
+      if (isProcessing) {
+        processingDocsRef.current.add(doc.id);
+      } else if (isReady && processingDocsRef.current.has(doc.id)) {
+        toast.success(`Tài liệu "${doc.name}" đã sẵn sàng`);
+        processingDocsRef.current.delete(doc.id);
+      } else if (isFailed && processingDocsRef.current.has(doc.id)) {
+        toast.error(`Xử lý tài liệu "${doc.name}" thất bại`);
+        processingDocsRef.current.delete(doc.id);
+      }
+    });
+  }, [space?.documents]);
+
   const isOwner = space?.currentUserRole === 'OWNER';
   const isViewer = space?.currentUserRole === 'VIEWER';
   const isAllDocsSelected =
@@ -72,7 +94,7 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
       { spaceId: space.id, file },
       {
         onSuccess: () => {
-          toast.success('Tải lên tài liệu thành công');
+          toast.info('Tệp đã được tải lên. Hệ thống đang xử lý...');
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
@@ -370,9 +392,9 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
                           variant="ghost"
                           size="icon"
                           onClick={(e) => handleDocumentDelete(e, doc.id)}
-                          disabled={deleteMutation.isPending}
-                          className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0 cursor-pointer rounded-lg hover:bg-muted-foreground/10"
-                          title="Xóa tài liệu"
+                          disabled={deleteMutation.isPending || isProcessing}
+                          className={`h-6 w-6 text-muted-foreground hover:text-destructive shrink-0 rounded-lg hover:bg-muted-foreground/10 ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          title={isProcessing ? "Đang xử lý, không thể xóa" : "Xóa tài liệu"}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
