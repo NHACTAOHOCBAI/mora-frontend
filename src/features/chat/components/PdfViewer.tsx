@@ -37,6 +37,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
   const pageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const isProgrammaticScrollRef = useRef(false);
   const scrollTimeoutRef = useRef<any>(null);
+  const lastReportedPageRef = useRef<number>(currentPage);
 
   // Theo dõi kích thước container để tự động Fit-to-Width hoàn hảo
   useEffect(() => {
@@ -86,7 +87,10 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
   // Lắng nghe khi props currentPage thay đổi từ bên ngoài (Citation click)
   useEffect(() => {
     if (currentPage && currentPage > 0) {
-      scrollToPage(currentPage);
+      if (currentPage !== lastReportedPageRef.current) {
+        scrollToPage(currentPage);
+      }
+      lastReportedPageRef.current = currentPage;
     }
   }, [currentPage, scrollToPage]);
 
@@ -128,6 +132,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
         });
 
         if (maxRatio > 0.15 && mostVisiblePage !== activePage) {
+          lastReportedPageRef.current = mostVisiblePage;
           setActivePage(mostVisiblePage);
           onPageChange?.(mostVisiblePage);
         }
@@ -150,6 +155,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
 
   const handlePageChange = (newPage: number) => {
     if (numPages && newPage >= 1 && newPage <= numPages) {
+      lastReportedPageRef.current = newPage;
       scrollToPage(newPage);
       onPageChange?.(newPage);
     }
@@ -159,6 +165,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
     if (e.key === 'Enter') {
       const page = parseInt(inputPage, 10);
       if (!isNaN(page) && numPages && page >= 1 && page <= numPages) {
+        lastReportedPageRef.current = page;
         scrollToPage(page);
         onPageChange?.(page);
       } else {
@@ -170,6 +177,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
   const handleInputBlur = () => {
     const page = parseInt(inputPage, 10);
     if (!isNaN(page) && numPages && page >= 1 && page <= numPages) {
+      lastReportedPageRef.current = page;
       scrollToPage(page);
       onPageChange?.(page);
     } else {
