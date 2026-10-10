@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { Message } from '../types';
+import type { Message, Citation } from '../types';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,19 @@ const renderPromptContent = (promptText: string) => {
   return elements;
 };
 
+interface MemoizedMessageItemProps {
+  message: Message;
+  isAI: boolean;
+  isAiQuery: boolean;
+  isUserMsg: boolean;
+  isSelf: boolean;
+  isDebugMode?: boolean;
+  copiedId: number | null;
+  onCitationClick: (pageNumber: number, documentId?: number) => void;
+  handleCopyText: (id: number, text: string) => void;
+  setSelectedPrompt: (prompt: string | null) => void;
+}
+
 const MemoizedMessageItem = React.memo(({
   message,
   isAI,
@@ -69,7 +82,7 @@ const MemoizedMessageItem = React.memo(({
   onCitationClick,
   handleCopyText,
   setSelectedPrompt
-}: any) => {
+}: MemoizedMessageItemProps) => {
   return (
               <div
                 key={message.id}
@@ -205,8 +218,8 @@ const MemoizedMessageItem = React.memo(({
                       quotes: string[];
                     }>();
 
-                    message.citations.forEach((citation) => {
-                      const docId = (citation as any).documentId;
+                    message.citations.forEach((citation: Citation) => {
+                      const docId = citation.documentId;
                       const docName = citation.documentName;
                       const pageNum = citation.pageNumber;
                       const key = `${docId || docName || 'doc'}_${pageNum}`;
@@ -541,7 +554,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             const isAI = message.sender === 'assistant';
             const isAiQuery = message.messageType === 'AI_QUERY' || isAiTriggerMessage(message.text);
             const isUserMsg = !isAI && !isAiQuery;
-            const isSelf = currentUserId && message.userId === currentUserId;
+            const isSelf = !!(currentUserId && message.userId === currentUserId);
 
             return (
               <div key={message.id} className="w-full">

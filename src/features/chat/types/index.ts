@@ -4,6 +4,13 @@ export type SpaceRole = 'OWNER' | 'EDITOR' | 'VIEWER';
 export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
 export type MessageType = 'USER_MESSAGE' | 'AI_QUERY' | 'AI_RESPONSE';
 
+export interface Citation {
+  pageNumber: number;
+  documentId?: number;
+  documentName?: string;
+  quote?: string;
+}
+
 export interface Message {
   id: number;
   sender: 'user' | 'assistant';
@@ -13,7 +20,7 @@ export interface Message {
   userName?: string;
   userAvatar?: string;
   timestamp: string | Date;
-  citations?: any[];
+  citations?: Citation[];
   condensedQuestion?: string;
   promptSent?: string;
   selectedDocumentIds?: number[];
