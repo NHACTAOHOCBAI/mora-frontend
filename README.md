@@ -1,118 +1,111 @@
 # Mora Frontend
 
-Mora Frontend là ứng dụng giao diện được xây dựng bằng **React 19** và **Vite**, tích hợp hệ sinh thái thư viện hiện đại nhằm tối ưu hóa hiệu năng, trải nghiệm lập trình và trải nghiệm người dùng trong dự án **Mora - AI-Powered Social Learning Network**.
+Ứng dụng web cho Mora — nền tảng học tập có không gian cộng tác, tài liệu, chat hỗ trợ AI và khu vực quản trị/đánh giá chất lượng RAG.
 
----
+## Vai trò trong hệ thống
 
-## 🚀 Công Nghệ Sử Dụng (Tech Stack)
+```mermaid
+flowchart LR
+  U[Người dùng] --> FE[React + Vite\nFrontend :5173]
+  FE -->|REST + JWT| BE[Spring Boot API\nBackend :8080]
+  FE -->|STOMP/WebSocket| BE
+  BE --> PG[(PostgreSQL\n:5433)]
+  BE --> AI[FastAPI AI Service\n:8000]
+  BE --> R2[Cloudflare R2]
+  AI --> Q[(Qdrant\n:6333 / :6334)]
+  AI --> G[Google Gemini]
+```
 
-*   **Framework**: [React 19](https://react.dev/) & [Vite 8](https://vite.dev/) (TypeScript)
-*   **Styling & UI Components**: [Tailwind CSS v4](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
-*   **Icons**: [Lucide React](https://lucide.dev/)
-*   **State Management (Server State)**: [TanStack Query v5](https://tanstack.com/query/latest) (React Query)
-*   **Routing**: [React Router](https://reactrouter.com/) (v6/v7)
-*   **HTTP Client**: [Axios](https://axios-http.com/) (Interceptors đính kèm JWT Token tự động)
-*   **Form & Validation**: [React Hook Form](https://react-hook-form.com/) kết hợp với [Zod](https://zod.dev/)
-*   **PDF Rendering**: [react-pdf](https://projects.wojtekmaj.pl/react-pdf/) (Hỗ trợ lật trang, cuộn trang và hiển thị tài liệu PDF trực tuyến)
+Frontend giao tiếp với Backend qua REST API tại `/api`; token JWT được tự động gắn vào mỗi request. Với chat trong không gian, frontend dùng STOMP qua WebSocket để nhận tin nhắn và trạng thái đang nhập theo thời gian thực.
 
----
+## Công nghệ
 
-## 📂 Cấu Trúc Thư Mục (Folder Structure)
+- React 19, TypeScript, Vite 8 và Tailwind CSS 4.
+- React Router 7 cho định tuyến và route guard.
+- Axios cho REST API; TanStack React Query cho dữ liệu bất đồng bộ.
+- STOMP.js cho WebSocket; React Hook Form + Zod cho biểu mẫu.
+- shadcn/ui, Base UI, Lucide và Recharts cho giao diện.
 
-Dự án tuân theo mô hình **Feature-based** để dễ dàng mở rộng khi hệ thống lớn lên:
+## Cấu trúc chính
 
 ```text
 src/
-├── assets/             # Hình ảnh, icons, font tĩnh
-├── components/         # Các components dùng chung toàn dự án
-│   ├── ui/             # Các components UI nguyên bản (Shadcn/ui)
-│   └── shared/         # Components dùng chung tự viết
-├── config/             # Cấu hình dự án (Axios client, biến môi trường...)
-├── features/           # Phân chia thư mục theo nghiệp vụ/chức năng (Auth, Chat, User...)
-│   └── chat/
-│       ├── components/ # Components nội bộ (ChatContainer, PdfViewer, MessageItem...)
-│       ├── hooks/      # Hooks nghiệp vụ (API queries/mutations)
-│       ├── services/   # Services gọi API (chat-api.ts)
-│       └── types/      # Định nghĩa TypeScript Types
-├── hooks/              # Custom hooks dùng chung toàn dự án
-├── layouts/            # Layout hiển thị chính (MainLayout, AuthLayout...)
-├── pages/              # Màn hình/Trang tương ứng với mỗi Router (SpaceDetailPage, ChatPage, Dashboard...)
-├── providers/          # Các Provider bọc ngoài App (QueryProvider...)
-├── routes/             # Cấu hình routes ứng dụng (AppRoutes)
-├── types/              # Định nghĩa Types dùng chung toàn dự án
-└── utils/              # Các hàm tiện ích dùng chung
+├── components/  # Thành phần UI dùng lại
+├── features/    # Logic theo nghiệp vụ: auth, chat, space, ...
+├── layouts/     # MainLayout và AdminLayout
+├── pages/       # Màn hình auth, người dùng và quản trị
+├── providers/   # React Query và theme
+├── routes/      # Router, ProtectedRoute, GuestRoute
+├── services/    # API client và tích hợp HTTP
+└── types/       # Kiểu dữ liệu dùng chung
 ```
 
----
+Các route chính gồm đăng nhập/đăng ký, dashboard, hồ sơ, không gian học tập, tham gia qua lời mời và quản lý người dùng. Các trang được lazy-load; route quản trị yêu cầu quyền `ADMIN`.
 
-## 🚀 Tính năng Nổi bật (Core Features)
+## Chat trong không gian học tập
 
-1.  **Giao diện Split-Screen hiện đại (Chia đôi màn hình):**
-    *   **Bên trái (AI Chat & Study helper):** Khung hội thoại AI, cho phép chuyển đổi mượt mà giữa các tab hỏi đáp và học tập.
-    *   **Bên phải (Document PDF Viewer):** Tải trực tiếp file PDF từ Object Storage đám mây, hỗ trợ điều hướng, lật trang chính xác.
-2.  **Kết xuất Bảng biểu Premium (Markdown Tables / GFM Support):**
-    *   Tích hợp thư viện `remark-gfm` trong `ReactMarkdown` tại `ChatContainer` và `SpaceDetailPage`.
-    *   Tự động phát hiện và render các bảng Markdown so sánh, đối chiếu do AI trả về với định dạng UI cao cấp (rounded borders, shadow, alternating row background, hover effects).
-3.  **Trích dẫn tương tác (Interactive Citation):**
-    *   Nhận kết quả cấu trúc kèm định vị vị trí trích dẫn của câu trả lời AI từ backend.
-    *   Khi người dùng click vào các nhãn trích dẫn (ví dụ: `📍 Trang 5`), trình xem PDF bên phải sẽ tự động nhảy đến đúng trang số 5 ngay lập tức.
-4.  **Hỏi đáp Đa tài liệu (Space-Wide Chat):**
-    *   Cho phép đặt câu hỏi trên toàn bộ Không gian học tập (nhiều tài liệu). AI sẽ tổng hợp câu trả lời kèm nhãn chỉ định rõ tài liệu nào và trang số mấy đã trích dẫn thông tin.
-4.  **Tóm tắt & Flashcards học tập tự động:**
-    *   Tự động sinh bản tóm tắt học thuật đầy đủ cho tài liệu.
-    *   Tạo danh sách các Flashcards tương tác, hỗ trợ lật thẻ xem đáp án, điều hướng các câu hỏi giúp ôn tập bài học tốt hơn.
-5.  **Lưu trữ & Dọn dẹp Lịch sử hội thoại:**
-    *   Lịch sử chat được tự động tải từ database mỗi khi bạn truy cập trang.
-    *   Cung cấp nút **Xóa lịch sử** (`Trash2` icon) đặt cạnh nút thu gọn khung chat giúp người dùng làm sạch hội thoại nhanh chóng.
-6.  **Chế độ Developer Mode (Chế độ Debug) & Trình gỡ lỗi nâng cao:**
-    *   **Quản lý Trạng thái:** Công tắc bật/tắt ở sidebar được lưu vào `localStorage` (`mora_dev_mode`) giúp duy trì trạng thái khi tải lại trang.
-    *   **Phân tách Giao diện:**
-        *   *Khi tắt (User Mode):* Cung cấp một giao diện học tập tối giản và sạch sẽ cho người dùng phổ thông, ẩn các tính năng kỹ thuật.
-        *   *Khi bật (Developer Mode):* Hiển thị các công cụ hỗ trợ gỡ lỗi và kiểm tra:
-            - **Slider Ngưỡng Vector Path:** Điều chỉnh độ nhạy phát hiện sơ đồ vector trực tiếp trên thanh bên từ 5 đến 200, tự động cập nhật và quét lại tài liệu trên hệ thống.
-            - **Icon Debug hình ảnh (Bug):** Mở Dialog Debug Hình Ảnh chi tiết để kiểm tra XObjects trích xuất từ PDF cùng chế độ Zoom View phóng to hình ảnh gốc.
-            - **Prompt Debugger:** Nhấp đúp (Double-click) vào câu trả lời của AI để xem chi tiết Prompt thô kèm các thẻ ảnh Base64 được gửi tới Gemini API.
-            - **Câu hỏi tối ưu:** Hiển thị câu hỏi đã được tối ưu hóa (condensed question) dưới tin nhắn trợ lý.
+Mỗi không gian có hai loại tin nhắn, dùng chung lịch sử nhưng có luồng xử lý khác nhau:
 
----
+| Loại | Cách gửi | Xử lý |
+| --- | --- | --- |
+| Chat nhóm | `POST /api/chat/space/message` | Backend lưu và phát ngay cho thành viên; không gọi AI. |
+| Câu hỏi AI | `POST /api/chat/space` | Backend gọi AI Service theo kiến trúc RAG, rồi phát câu hỏi và phản hồi AI. |
 
-## 🛠️ Hướng Dẫn Cài Đặt & Chạy Dự Án
+`useSpaceChatHistory` tải lịch sử bằng React Query. Sau khi gửi thành công, các mutation làm mới cache `chat-history`; đồng thời `useSpaceSocket` nhận bản cập nhật realtime để các thành viên trong cùng space nhìn thấy message ngay.
 
-### 1. Cài đặt dependencies
-Đảm bảo bạn đã cài đặt Node.js phiên bản mới (khuyến nghị v18+ hoặc v20+).
-```bash
-npm install
+```mermaid
+sequenceDiagram
+  participant UI as ChatContainer
+  participant API as REST API
+  participant WS as STOMP /ws
+  participant BE as Mora Backend
+
+  UI->>API: Gửi chat nhóm hoặc câu hỏi AI
+  API->>BE: Request kèm JWT
+  BE-->>WS: Publish /topic/spaces/{id}/messages
+  WS-->>UI: Message mới cho mọi thành viên
+  UI->>WS: Publish /app/spaces/{id}/typing
+  WS-->>UI: Broadcast /topic/spaces/{id}/typing
 ```
 
-### 2. Biến Môi Trường (Environment Variables)
-Tạo file `.env` ở thư mục gốc của dự án và cấu hình đường dẫn API:
+Kết nối STOMP dùng endpoint `/ws`, gửi JWT qua header `Authorization`, tự reconnect sau 3 giây và dùng heartbeat hai chiều mỗi 4 giây. Client chỉ subscribe các topic `/topic/spaces/{spaceId}/messages` và `/topic/spaces/{spaceId}/typing`; Backend quyết định quyền truy cập. Message AI có thể chứa `citations`, `condensedQuestion`, `promptSent` và danh sách document đã chọn để UI hiển thị câu trả lời có nguồn.
+
+Luồng agent, retrieval, fallback và cách tạo citation được mô tả chi tiết tại [kiến trúc chatbot của AI Service](../mora-ai/README.md#kiến-trúc-chatbot).
+
+## Yêu cầu
+
+- Node.js phiên bản LTS mới.
+- Backend Mora đang chạy, mặc định tại `http://localhost:8080`.
+
+## Cấu hình môi trường
+
+Tạo file `.env` trong thư mục này khi Backend không ở địa chỉ mặc định:
+
 ```env
 VITE_API_BASE_URL=http://localhost:8080/api
 ```
 
-### 3. Chạy môi trường phát triển (Development)
+Nếu không đặt biến trên, ứng dụng cũng dùng giá trị mặc định `http://localhost:8080/api`. URL WebSocket được suy ra từ cùng host, vì vậy không thêm hậu tố `/api` vào host WebSocket.
+
+## Chạy local
+
 ```bash
+npm install
 npm run dev
 ```
 
-### 4. Build sản phẩm (Production)
+Vite sẽ in URL local (thông thường là `http://localhost:5173`).
+
+Các lệnh hữu ích:
+
 ```bash
-npm run build
-```
-Thư mục chứa kết quả build sẽ là `dist/`.
-
-### 5. Xem trước bản Build (Preview)
-```bash
-npm run preview
+npm run lint     # kiểm tra ESLint
+npm run build    # kiểm tra TypeScript và tạo bản production
+npm run preview  # xem thử bản build
 ```
 
----
+## Liên quan đến các service khác
 
-## 📜 Quy Định Viết Code (Coding Standards)
-
-Để dự án được đồng bộ và nhất quán, vui lòng đọc kỹ tài liệu **[frontend-guide.md](./frontend-guide.md)** trước khi tham gia viết code. Một số quy tắc quan trọng:
-*   Đặt tên component bằng **PascalCase** (ví dụ: `LoginForm.tsx`).
-*   Sử dụng **Named Export** thay vì Default Export.
-*   Không gọi API trực tiếp trong component; luôn bọc qua **React Query** custom hooks.
-*   Validate Form bằng **Zod** schema và **React Hook Form**.
-*   Sử dụng path alias `@/` khi import (ví dụ: `@/components/ui/button` thay vì `../../components/ui/button`).
+- Cài và chạy hạ tầng, Backend tại [`../mora-backend/README.md`](../mora-backend/README.md).
+- Cài và chạy AI Service tại [`../mora-ai/README.md`](../mora-ai/README.md).
+- Không đặt API key, mật khẩu cơ sở dữ liệu hay secret trong frontend.

@@ -9,7 +9,6 @@ const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then(m => ({
 const DashboardPage = lazy(() => import('@/pages/user/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const SpaceDetailPage = lazy(() => import('@/pages/user/space-detail/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
-const BenchmarkPage = lazy(() => import('@/pages/admin/BenchmarkPage').then(m => ({ default: m.BenchmarkPage })));
 const ProfilePage = lazy(() => import('@/pages/user/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const JoinSpacePage = lazy(() => import('@/pages/user/JoinSpacePage').then(m => ({ default: m.JoinSpacePage })));
 import { AdminLayout } from '@/layouts/AdminLayout';
@@ -114,14 +113,6 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<LoadingFallback />}>
                 <AdminUsersPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: '/admin/benchmark',
-            element: (
-              <Suspense fallback={<LoadingFallback />}>
-                <BenchmarkPage />
               </Suspense>
             ),
           },
