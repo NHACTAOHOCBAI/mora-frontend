@@ -4,6 +4,7 @@ import { adminApi } from '@/features/admin/services/admin-api';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/api-error';
 import CrudTable from '@/components/crud_table/crud-table';
 import { userColumns } from './user-columns';
 import type { UserResponse, Role } from '@/features/auth/types';
@@ -64,8 +65,8 @@ export const AdminUsersPage: React.FC = () => {
       });
       toast.success('Cập nhật thông tin thành viên thành công!');
       setUserToEdit(null);
-    } catch (err: any) {
-      toast.error('Cập nhật thất bại: ' + (err.message || 'Lỗi hệ thống'));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -75,8 +76,8 @@ export const AdminUsersPage: React.FC = () => {
       await deleteUser(userIdToDelete);
       toast.success('Xóa thành viên thành công!');
       setUserIdToDelete(null);
-    } catch (err: any) {
-      toast.error('Xóa thất bại: ' + (err.message || 'Lỗi hệ thống'));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -96,8 +97,8 @@ export const AdminUsersPage: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success('Đăng nhập thành công với quyền người dùng!');
       window.location.href = '/';
-    } catch (err: any) {
-      toast.error('Đăng nhập thất bại: ' + (err.message || 'Lỗi hệ thống'));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

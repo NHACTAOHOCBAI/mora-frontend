@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { BorderedCard } from '@/components/shared/BorderedCard';
 import { useAiSettings, useUpdateAiSettings, useTestApiKey, useDailyQuota } from '../hooks/useAiSettings';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/api-error';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 
@@ -104,8 +105,8 @@ export const AiSettingsTab: React.FC = () => {
             toast.error(res.message);
           }
         },
-        onError: (err: any) => {
-          const msg = err.response?.data?.message || err.message;
+        onError: (err: unknown) => {
+          const msg = getErrorMessage(err);
           setTestResult({ valid: false, message: msg });
           toast.error(`Kiểm tra thất bại: ${msg}`);
         },
@@ -135,9 +136,8 @@ export const AiSettingsTab: React.FC = () => {
           toast.success('Cập nhật cấu hình AI thành công!');
           refetchQuota();
         },
-        onError: (err: any) => {
-          const msg = err.response?.data?.message || err.message;
-          toast.error(`Cập nhật thất bại: ${msg}`);
+        onError: (err: unknown) => {
+          toast.error(getErrorMessage(err));
         },
       }
     );

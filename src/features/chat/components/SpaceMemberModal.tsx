@@ -43,6 +43,7 @@ import {
 } from '../hooks/useSpace';
 import type { SpaceRole } from '../types';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/api-error';
 
 interface SpaceMemberModalProps {
   spaceId: number;
@@ -100,8 +101,8 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
           toast.success(`Đã thêm ${newMember.fullName || newMember.username} vào nhóm!`);
           setUsernameOrEmail('');
         },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || 'Không thể thêm thành viên');
+        onError: (err: unknown) => {
+          toast.error(getErrorMessage(err));
         },
       }
     );
@@ -114,8 +115,8 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
         onSuccess: () => {
           toast.success('Đã cập nhật vai trò thành công!');
         },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || 'Không thể cập nhật vai trò');
+        onError: (err: unknown) => {
+          toast.error(getErrorMessage(err));
         },
       }
     );
@@ -137,8 +138,8 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
               window.location.href = '/';
             }
           },
-          onError: (err: any) => {
-            toast.error(err.response?.data?.message || 'Thao tác thất bại');
+          onError: (err: unknown) => {
+            toast.error(getErrorMessage(err));
           },
         }
       );
@@ -160,8 +161,8 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
           toast.success('Đã tạo mã mời mới thành công!');
           handleCopyLink(inv.inviteCode);
         },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || 'Không thể tạo mã mời');
+        onError: (err: unknown) => {
+          toast.error(getErrorMessage(err));
         },
       }
     );
@@ -183,8 +184,8 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
           onSuccess: () => {
             toast.success('Đã hủy mã mời');
           },
-          onError: (err: any) => {
-            toast.error(err.response?.data?.message || 'Hủy mã mời thất bại');
+          onError: (err: unknown) => {
+            toast.error(getErrorMessage(err));
           },
         }
       );

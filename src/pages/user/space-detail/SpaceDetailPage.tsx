@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { AppApiError, getErrorMessage } from '@/lib/api-error';
 
 // Import subcomponents
 import { SpaceSidebar } from './components/SpaceSidebar';
@@ -217,8 +218,8 @@ export const SpaceDetailPage: React.FC = () => {
             return [...prev, newMsg];
           });
         },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || 'Không thể gửi tin nhắn nhóm');
+        onError: (err: unknown) => {
+          toast.error(getErrorMessage(err));
         },
       }
     );
@@ -249,15 +250,15 @@ export const SpaceDetailPage: React.FC = () => {
           setIsAiProcessing(false);
           toast.success('AI đã phản hồi xong!');
         },
-        onError: (err: any) => {
+        onError: (err: unknown) => {
           console.error(err);
           setIsAiProcessing(false);
-          const errorData = err.response?.data;
-          const isApiKeyMissing = errorData?.code === 1020 || errorData?.message?.includes('Gemini API Key');
+          const apiError = err instanceof AppApiError ? err : undefined;
+          const isApiKeyMissing = apiError?.code === 1020;
 
           const errorText = isApiKeyMissing
             ? '⚠️ Bạn chưa cấu hình Gemini API Key. Vui lòng vào [Cài đặt AI & Hạn mức](/profile?tab=ai-settings) để nhập API Key từ Google AI Studio trước khi bắt đầu học tập.'
-            : (errorData?.message || 'Không thể gửi tin nhắn. Vui lòng kiểm tra lại dịch vụ backend hoặc hạn mức API Key.');
+            : getErrorMessage(err);
 
           const errorMessage: Message = {
             id: Date.now() + 2,
@@ -276,6 +277,8 @@ export const SpaceDetailPage: React.FC = () => {
                 },
               },
             });
+          } else {
+            toast.error(getErrorMessage(err));
           }
         },
       }
@@ -290,8 +293,8 @@ export const SpaceDetailPage: React.FC = () => {
         setShowClearHistoryAlert(false);
         toast.success('Đã xóa sạch lịch sử cuộc trò chuyện!');
       },
-      onError: (err: any) => {
-        toast.error('Xóa lịch sử thất bại: ' + (err.response?.data?.message || err.message));
+      onError: (err: unknown) => {
+        toast.error(getErrorMessage(err));
       },
     });
   };
@@ -329,7 +332,7 @@ export const SpaceDetailPage: React.FC = () => {
           <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
           <h2 className="text-xl font-bold text-foreground">Lỗi tải dữ liệu Space</h2>
           <p className="text-muted-foreground text-sm">
-            {(spaceError as any)?.response?.data?.message || 'Không thể tải thông tin Không gian học tập từ máy chủ.'}
+            {getErrorMessage(spaceError)}
           </p>
           <Link to="/">
             <Button className="cursor-pointer">Quay lại Dashboard</Button>

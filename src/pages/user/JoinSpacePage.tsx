@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePreviewSpaceInvitation, useJoinSpaceByInviteCode } from '@/features/chat/hooks/useSpace';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/api-error';
 
 export const JoinSpacePage: React.FC = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
@@ -34,8 +35,8 @@ export const JoinSpacePage: React.FC = () => {
         toast.success(`Đã gia nhập Không gian "${space.name}" thành công!`);
         navigate(`/space/${space.id}`);
       },
-      onError: (err: any) => {
-        toast.error(err.response?.data?.message || 'Gia nhập Không gian thất bại');
+      onError: (err: unknown) => {
+        toast.error(getErrorMessage(err));
       },
     });
   };
@@ -82,10 +83,10 @@ export const JoinSpacePage: React.FC = () => {
             <AlertCircle className="w-6 h-6" />
           </div>
           <CardTitle className="text-lg font-bold text-foreground">
-            Mã mời không hợp lệ hoặc đã hết hạn
+            {getErrorMessage(error, 'Không thể tải thông tin mã mời')}
           </CardTitle>
           <CardDescription className="text-xs text-muted-foreground mt-2">
-            Mã mời này có thể đã bị hủy, hết thời hạn hoặc liên kết không chính xác. Vui lòng liên hệ chủ sở hữu Không gian để nhận mã mới.
+            Vui lòng kiểm tra lại liên kết hoặc liên hệ chủ sở hữu Không gian để được hỗ trợ.
           </CardDescription>
           <CardFooter className="flex justify-center mt-6 p-0">
             <Link to="/">

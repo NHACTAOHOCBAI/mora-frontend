@@ -24,6 +24,7 @@ import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import type { SpaceSidebarProps } from '../types';
 import { useUploadDocument, useDeleteDocument } from '@/features/chat/hooks/useDocument';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/api-error';
 
 export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
   space,
@@ -99,8 +100,8 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
             fileInputRef.current.value = '';
           }
         },
-        onError: (error: any) => {
-          toast.error('Tải lên tài liệu thất bại: ' + (error.response?.data?.message || error.message));
+        onError: (error: unknown) => {
+          toast.error(getErrorMessage(error));
         },
       }
     );
@@ -120,8 +121,8 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
               onSelectDocument(null);
             }
           },
-          onError: () => {
-            toast.error('Xóa tài liệu thất bại');
+          onError: (error: unknown) => {
+            toast.error(getErrorMessage(error));
           },
         }
       );
@@ -444,4 +445,3 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
     </>
   );
 };
-

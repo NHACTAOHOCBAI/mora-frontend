@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import type { Message, TypingNotification } from '../types';
+import { toast } from 'sonner';
 
 interface UseSpaceSocketProps {
   spaceId?: number;
@@ -15,6 +16,7 @@ export const useSpaceSocket = ({
 }: UseSpaceSocketProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const clientRef = useRef<Client | null>(null);
+  const hasShownConnectionErrorRef = useRef(false);
 
   // Lưu callbacks vào ref để tránh re-subscribe không cần thiết khi callback thay đổi
   const onMessageReceivedRef = useRef(onMessageReceived);
@@ -49,6 +51,7 @@ export const useSpaceSocket = ({
       heartbeatOutgoing: 4000,
       onConnect: () => {
         setIsConnected(true);
+        hasShownConnectionErrorRef.current = false;
 
         // 1. Subscribe channel nhận tin nhắn
         client.subscribe(`/topic/spaces/${spaceId}/messages`, (stompMessage) => {
@@ -90,6 +93,10 @@ export const useSpaceSocket = ({
       onStompError: (frame) => {
         console.error('[WebSocket STOMP error]:', frame.headers['message'], frame.body);
         setIsConnected(false);
+        if (!hasShownConnectionErrorRef.current) {
+          hasShownConnectionErrorRef.current = true;
+          toast.error('Không thể kết nối tính năng trò chuyện thời gian thực. Vui lòng thử lại sau.');
+        }
       },
       onWebSocketClose: () => {
         setIsConnected(false);

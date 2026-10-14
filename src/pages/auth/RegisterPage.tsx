@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/api-error";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { BorderBeam } from "@/components/ui/border-beam";
 
@@ -67,11 +68,8 @@ export const RegisterPage: React.FC = () => {
         password: data.password,
       });
       toast.success("Đăng ký tài khoản thành công! Hãy đăng nhập.");
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message ||
-          "Đăng ký thất bại. Email có thể đã tồn tại.",
-      );
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

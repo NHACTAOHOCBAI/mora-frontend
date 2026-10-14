@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toAppApiError } from '@/lib/api-error';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
@@ -19,7 +20,7 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
-    return Promise.reject(error);
+    return Promise.reject(toAppApiError(error));
   }
 );
 
@@ -39,6 +40,6 @@ apiClient.interceptors.response.use(
         }
       }
     }
-    return Promise.reject(error);
+    return Promise.reject(toAppApiError(error));
   }
 );

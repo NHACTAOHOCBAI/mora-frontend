@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { BorderedCard } from "@/components/shared/BorderedCard";
 import { AiSettingsTab } from "@/features/ai-settings/components/AiSettingsTab";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/api-error";
 import { Loader2, Camera, User, Lock, KeyRound, Check, Sparkles, UserCheck, Info } from "lucide-react";
 import { GuideApiKeyTab } from "@/features/ai-settings/components/GuideApiKeyTab";
 
@@ -89,9 +90,8 @@ export const ProfilePage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
       toast.success("Cập nhật thông tin cá nhân thành công!");
     },
-    onError: (err: any) => {
-      const msg = err.response?.data?.message || err.message || "Lỗi cập nhật";
-      toast.error(`Cập nhật thất bại: ${msg}`);
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -102,9 +102,8 @@ export const ProfilePage: React.FC = () => {
       toast.success("Thay đổi mật khẩu thành công!");
       resetPasswordForm();
     },
-    onError: (err: any) => {
-      const msg = err.response?.data?.message || err.message || "Lỗi đổi mật khẩu";
-      toast.error(`Đổi mật khẩu thất bại: ${msg}`);
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -135,9 +134,8 @@ export const ProfilePage: React.FC = () => {
       await authApi.uploadAvatar(file);
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
       toast.success("Cập nhật ảnh đại diện thành công!");
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || "Lỗi tải ảnh";
-      toast.error(`Cập nhật ảnh đại diện thất bại: ${msg}`);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setIsUploading(false);
     }

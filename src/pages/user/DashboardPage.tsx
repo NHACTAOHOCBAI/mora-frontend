@@ -21,10 +21,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/api-error";
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { data: spaces, isLoading, isError } = useSpaces();
+  const { data: spaces, isLoading, isError, error } = useSpaces();
   const createSpaceMutation = useCreateSpace();
   const deleteSpaceMutation = useDeleteSpace();
 
@@ -46,10 +47,8 @@ export const DashboardPage: React.FC = () => {
           setDescription("");
           setIsModalOpen(false);
         },
-        onError: (err: any) => {
-          toast.error(
-            "Tạo Không gian thất bại: " + (err.message || "Lỗi kết nối"),
-          );
+        onError: (err: unknown) => {
+          toast.error(getErrorMessage(err));
         },
       },
     );
@@ -62,10 +61,8 @@ export const DashboardPage: React.FC = () => {
         toast.success("Đã xóa Không gian học tập!");
         setSpaceIdToDelete(null);
       },
-      onError: (err: any) => {
-        toast.error(
-          "Xóa Không gian thất bại: " + (err.message || "Lỗi kết nối"),
-        );
+      onError: (err: unknown) => {
+        toast.error(getErrorMessage(err));
         setSpaceIdToDelete(null);
       },
     });
@@ -102,7 +99,7 @@ export const DashboardPage: React.FC = () => {
         ) : isError ? (
           <div className="bg-destructive/10 border border-destructive/20 p-6 rounded-2xl text-center">
             <p className="text-destructive font-medium">
-              Lỗi tải danh sách Space. Vui lòng kiểm tra lại dịch vụ backend.
+              {getErrorMessage(error)}
             </p>
           </div>
         ) : spaces && spaces.length === 0 ? (
