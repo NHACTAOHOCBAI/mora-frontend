@@ -727,7 +727,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         <DialogContent className="sm:max-w-[700px] w-[90vw] bg-card text-foreground border-border max-h-[85vh] flex flex-col p-6 rounded-2xl shadow-2xl z-50">
           <DialogHeader className="border-b border-border pb-3 flex flex-col">
             <DialogTitle className="text-sm font-bold text-foreground">
-              Chi tiết Prompt gửi tới Gemini AI
+              Chi tiết Prompt gửi tới OpenAI
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-[11px] mt-1">
               Nội dung System Prompt và ngữ cảnh trích xuất từ tài liệu

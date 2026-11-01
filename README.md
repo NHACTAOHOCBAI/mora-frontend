@@ -13,7 +13,7 @@ flowchart LR
   BE --> AI[FastAPI AI Service\n:8000]
   BE --> R2[Cloudflare R2]
   AI --> Q[(Qdrant\n:6333 / :6334)]
-  AI --> G[Google Gemini]
+  AI --> G[OpenAI]
 ```
 
 Frontend giao tiếp với Backend qua REST API tại `/api`; token JWT được tự động gắn vào mỗi request. Với chat trong không gian, frontend dùng STOMP qua WebSocket để nhận tin nhắn và trạng thái đang nhập theo thời gian thực.

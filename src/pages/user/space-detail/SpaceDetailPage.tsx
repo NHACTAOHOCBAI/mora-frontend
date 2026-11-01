@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { AppApiError, getErrorMessage } from '@/lib/api-error';
+import { getErrorMessage } from '@/lib/api-error';
 
 // Import subcomponents
 import { SpaceSidebar } from './components/SpaceSidebar';
@@ -253,12 +253,7 @@ export const SpaceDetailPage: React.FC = () => {
         onError: (err: unknown) => {
           console.error(err);
           setIsAiProcessing(false);
-          const apiError = err instanceof AppApiError ? err : undefined;
-          const isApiKeyMissing = apiError?.code === 1020;
-
-          const errorText = isApiKeyMissing
-            ? '⚠️ Bạn chưa cấu hình Gemini API Key. Vui lòng vào [Cài đặt AI & Hạn mức](/profile?tab=ai-settings) để nhập API Key từ Google AI Studio trước khi bắt đầu học tập.'
-            : getErrorMessage(err);
+          const errorText = getErrorMessage(err);
 
           const errorMessage: Message = {
             id: Date.now() + 2,
@@ -268,18 +263,7 @@ export const SpaceDetailPage: React.FC = () => {
             timestamp: new Date(),
           };
           setSpaceMessages((prev) => [...prev, errorMessage]);
-          if (isApiKeyMissing) {
-            toast.error('Vui lòng cấu hình Gemini API Key trong trang Cá nhân để sử dụng AI!', {
-              action: {
-                label: 'Cài đặt ngay',
-                onClick: () => {
-                  window.location.href = '/profile?tab=ai-settings';
-                },
-              },
-            });
-          } else {
-            toast.error(getErrorMessage(err));
-          }
+          toast.error(errorText);
         },
       }
     );

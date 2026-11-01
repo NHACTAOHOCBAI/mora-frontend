@@ -9,11 +9,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BorderedCard } from "@/components/shared/BorderedCard";
-import { AiSettingsTab } from "@/features/ai-settings/components/AiSettingsTab";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api-error";
-import { Loader2, Camera, User, Lock, KeyRound, Check, Sparkles, UserCheck, Info } from "lucide-react";
-import { GuideApiKeyTab } from "@/features/ai-settings/components/GuideApiKeyTab";
+import { Loader2, Camera, User, Lock, KeyRound, Check } from "lucide-react";
 
 // Form Schema cho thông tin cá nhân
 const profileSchema = z.object({
@@ -41,25 +39,13 @@ export const ProfilePage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<"general" | "ai-settings" | "guide-api-key">(
-    tabParam === "ai-settings" ? "ai-settings" : tabParam === "guide-api-key" ? "guide-api-key" : "general"
-  );
-
   useEffect(() => {
-    if (tabParam === "ai-settings") {
-      setActiveTab("ai-settings");
-    } else if (tabParam === "guide-api-key") {
-      setActiveTab("guide-api-key");
-    } else {
-      setActiveTab("general");
+    if (searchParams.has("tab")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("tab");
+      setSearchParams(next, { replace: true });
     }
-  }, [tabParam]);
-
-  const handleTabChange = (tab: "general" | "ai-settings" | "guide-api-key") => {
-    setActiveTab(tab);
-    setSearchParams({ tab });
-  };
+  }, [searchParams, setSearchParams]);
 
   // Hook form cho thông tin cá nhân
   const {
@@ -161,235 +147,190 @@ export const ProfilePage: React.FC = () => {
           Cài Đặt Tài Khoản
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Quản lý thông tin tài khoản, khóa Gemini API cá nhân và theo dõi hạn mức sử dụng model.
+          Quản lý thông tin cá nhân và mật khẩu tài khoản.
         </p>
       </div>
 
-      {/* Tabs Switcher */}
-      <div className="flex border-b border-border space-x-2 overflow-x-auto whitespace-nowrap scrollbar-hide pb-1">
-        <button
-          onClick={() => handleTabChange("general")}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
-            activeTab === "general"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <UserCheck className="w-4 h-4" />
-          Thông tin cá nhân & Mật khẩu
-        </button>
-
-        <button
-          onClick={() => handleTabChange("ai-settings")}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
-            activeTab === "ai-settings"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-primary" />
-          Cấu hình AI & Hạn mức (BYOK)
-        </button>
-
-        <button
-          onClick={() => handleTabChange("guide-api-key")}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition-colors cursor-pointer flex items-center gap-2 ${
-            activeTab === "guide-api-key"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Info className="w-4 h-4 text-primary" />
-          Hướng dẫn lấy API Key
-        </button>
-      </div>
-
-      {activeTab === "ai-settings" ? (
-        <AiSettingsTab />
-      ) : activeTab === "guide-api-key" ? (
-        <GuideApiKeyTab />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Cột trái: Ảnh đại diện & Thông tin chung */}
-          <div className="md:col-span-1 flex flex-col items-center space-y-6">
-            <div className="w-full bg-card border border-border/80 rounded-xl p-6 flex flex-col items-center text-center">
-              <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-                <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary transition-all duration-300 relative flex items-center justify-center bg-muted">
-                  {user.avatarUrl ? (
-                    <img
-                      src={user.avatarUrl}
-                      alt={user.fullName}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  ) : (
-                    <span className="text-4xl font-extrabold text-muted-foreground uppercase">
-                      {user.fullName ? user.fullName.charAt(0) : user.username.charAt(0)}
-                    </span>
-                  )}
-                  {/* Overlay khi hover */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white text-xs font-semibold space-y-1">
-                    <Camera className="w-5 h-5 animate-pulse" />
-                    <span>Thay đổi ảnh</span>
-                  </div>
-                  {/* Spinner khi đang upload */}
-                  {isUploading && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white">
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*"
-                className="hidden"
-              />
-              
-              <div className="mt-4 space-y-1 w-full px-4 overflow-hidden">
-                <h3 className="font-bold text-lg text-foreground truncate" title={user.fullName}>{user.fullName}</h3>
-                <p className="text-sm text-muted-foreground truncate" title={`@${user.username}`}>@{user.username}</p>
-              </div>
-
-              <div className="w-full border-t border-border mt-6 pt-4 text-left space-y-3 text-sm">
-                <div className="flex justify-between items-center gap-2">
-                  <span className="text-muted-foreground shrink-0">Email:</span>
-                  <span className="font-medium text-foreground truncate" title={user.email}>{user.email}</span>
-                </div>
-                <div className="flex justify-between items-center gap-2">
-                  <span className="text-muted-foreground shrink-0">Vai trò:</span>
-                  <span className="font-semibold text-primary">{user.role === 'ROLE_ADMIN' ? 'Quản trị viên' : 'Học viên'}</span>
-                </div>
-                <div className="flex justify-between items-center gap-2">
-                  <span className="text-muted-foreground shrink-0">Ngày tham gia:</span>
-                  <span className="font-medium text-foreground">
-                    {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Cột trái: Ảnh đại diện & Thông tin chung */}
+        <div className="md:col-span-1 flex flex-col items-center space-y-6">
+          <div className="w-full bg-card border border-border/80 rounded-xl p-6 flex flex-col items-center text-center">
+            <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+              <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary transition-all duration-300 relative flex items-center justify-center bg-muted">
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.fullName}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <span className="text-4xl font-extrabold text-muted-foreground uppercase">
+                    {user.fullName ? user.fullName.charAt(0) : user.username.charAt(0)}
                   </span>
+                )}
+                {/* Overlay khi hover */}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white text-xs font-semibold space-y-1">
+                  <Camera className="w-5 h-5 animate-pulse" />
+                  <span>Thay đổi ảnh</span>
                 </div>
+                {/* Spinner khi đang upload */}
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+
+            <div className="mt-4 space-y-1 w-full px-4 overflow-hidden">
+              <h3 className="font-bold text-lg text-foreground truncate" title={user.fullName}>{user.fullName}</h3>
+              <p className="text-sm text-muted-foreground truncate" title={`@${user.username}`}>@{user.username}</p>
+            </div>
+
+            <div className="w-full border-t border-border mt-6 pt-4 text-left space-y-3 text-sm">
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-muted-foreground shrink-0">Email:</span>
+                <span className="font-medium text-foreground truncate" title={user.email}>{user.email}</span>
+              </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-muted-foreground shrink-0">Vai trò:</span>
+                <span className="font-semibold text-primary">{user.role === 'ROLE_ADMIN' ? 'Quản trị viên' : 'Học viên'}</span>
+              </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-muted-foreground shrink-0">Ngày tham gia:</span>
+                <span className="font-medium text-foreground">
+                  {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                </span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Cột phải: Cấu hình thông tin & đổi mật khẩu */}
-          <div className="md:col-span-2 space-y-6">
-            {/* Card 1: Cập nhật họ tên */}
-            <BorderedCard
-              title="Thông tin cơ bản"
-              description="Thay đổi họ và tên hiển thị trên tài khoản của bạn."
-              icon={<User className="w-5 h-5 text-primary" />}
-            >
-              <form onSubmit={handleSubmitProfile(onProfileSubmit)} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Họ và tên
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="Nhập họ và tên đầy đủ..."
-                    {...registerProfile("fullName")}
-                  />
-                  {profileErrors.fullName && (
-                    <p className="text-xs text-destructive font-medium">
-                      {profileErrors.fullName.message}
-                    </p>
+        {/* Cột phải: Cấu hình thông tin & đổi mật khẩu */}
+        <div className="md:col-span-2 space-y-6">
+          {/* Card 1: Cập nhật họ tên */}
+          <BorderedCard
+            title="Thông tin cơ bản"
+            description="Thay đổi họ và tên hiển thị trên tài khoản của bạn."
+            icon={<User className="w-5 h-5 text-primary" />}
+          >
+            <form onSubmit={handleSubmitProfile(onProfileSubmit)} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Họ và tên
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Nhập họ và tên đầy đủ..."
+                  {...registerProfile("fullName")}
+                />
+                {profileErrors.fullName && (
+                  <p className="text-xs text-destructive font-medium">
+                    {profileErrors.fullName.message}
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={updateProfileMutation.isPending} className="font-semibold flex items-center gap-1.5 cursor-pointer">
+                  {updateProfileMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang lưu...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Lưu thông tin
+                    </>
                   )}
-                </div>
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={updateProfileMutation.isPending} className="font-semibold flex items-center gap-1.5 cursor-pointer">
-                    {updateProfileMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Đang lưu...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        Lưu thông tin
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </BorderedCard>
+                </Button>
+              </div>
+            </form>
+          </BorderedCard>
 
-            {/* Card 2: Đổi mật khẩu */}
-            <BorderedCard
-              title="Thay đổi mật khẩu"
-              description="Đảm bảo mật khẩu của bạn có độ dài tối thiểu 6 ký tự để giữ tài khoản an toàn."
-              icon={<Lock className="w-5 h-5 text-primary" />}
-            >
-              <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-4">
+          {/* Card 2: Đổi mật khẩu */}
+          <BorderedCard
+            title="Thay đổi mật khẩu"
+            description="Đảm bảo mật khẩu của bạn có độ dài tối thiểu 6 ký tự để giữ tài khoản an toàn."
+            icon={<Lock className="w-5 h-5 text-primary" />}
+          >
+            <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Mật khẩu hiện tại
+                </label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  {...registerPassword("oldPassword")}
+                />
+                {passwordErrors.oldPassword && (
+                  <p className="text-xs text-destructive font-medium">
+                    {passwordErrors.oldPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Mật khẩu hiện tại
+                    Mật khẩu mới
                   </label>
                   <Input
                     type="password"
                     placeholder="••••••••"
-                    {...registerPassword("oldPassword")}
+                    {...registerPassword("newPassword")}
                   />
-                  {passwordErrors.oldPassword && (
+                  {passwordErrors.newPassword && (
                     <p className="text-xs text-destructive font-medium">
-                      {passwordErrors.oldPassword.message}
+                      {passwordErrors.newPassword.message}
                     </p>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Mật khẩu mới
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      {...registerPassword("newPassword")}
-                    />
-                    {passwordErrors.newPassword && (
-                      <p className="text-xs text-destructive font-medium">
-                        {passwordErrors.newPassword.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Xác nhận mật khẩu mới
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      {...registerPassword("confirmPassword")}
-                    />
-                    {passwordErrors.confirmPassword && (
-                      <p className="text-xs text-destructive font-medium">
-                        {passwordErrors.confirmPassword.message}
-                      </p>
-                    )}
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Xác nhận mật khẩu mới
+                  </label>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    {...registerPassword("confirmPassword")}
+                  />
+                  {passwordErrors.confirmPassword && (
+                    <p className="text-xs text-destructive font-medium">
+                      {passwordErrors.confirmPassword.message}
+                    </p>
+                  )}
                 </div>
+              </div>
 
-                <div className="flex justify-end pt-2">
-                  <Button type="submit" disabled={changePasswordMutation.isPending} className="font-semibold flex items-center gap-1.5 cursor-pointer">
-                    {changePasswordMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Đang đổi...
-                      </>
-                    ) : (
-                      <>
-                        <KeyRound className="w-4 h-4" />
-                        Đổi mật khẩu
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </BorderedCard>
-          </div>
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={changePasswordMutation.isPending} className="font-semibold flex items-center gap-1.5 cursor-pointer">
+                  {changePasswordMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang đổi...
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-4 h-4" />
+                      Đổi mật khẩu
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </BorderedCard>
         </div>
-      )}
+      </div>
     </div>
   );
 };
