@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, UsersIcon } from "lucide-react"
+import { LayoutDashboardIcon, UsersIcon, FlaskConical } from "lucide-react"
 
 const data = {
   user: {
@@ -19,6 +19,7 @@ const data = {
     avatar: "/frog-logo.png",
   },
   navMain: [
+    { title: "Benchmark RAG", url: "/admin/benchmarks", icon: <FlaskConical /> },
     {
       title: "Quản lý thành viên",
       url: "/admin/user",
