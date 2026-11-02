@@ -1,4 +1,9 @@
 import { useState, type ChangeEvent } from 'react';
+import { BenchmarkRunSelect } from '@/features/admin/components/BenchmarkRunSelect';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BenchmarkMetricDetails } from '@/features/admin/components/BenchmarkMetricDetails';
+import type { BenchmarkMetrics, BenchmarkTrace } from '@/features/admin/types/benchmark-details';
+import type { BenchmarkDocument } from '@/features/admin/services/benchmark-api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { FlaskConical, Upload, Download, Play, CheckCircle2, Loader2 } from 'lucide-react';
@@ -72,7 +77,7 @@ export function AdminBenchmarksPage() {
         </>}
       </main>
     </div> : <div className="space-y-5">
-      <label className="block max-w-xl text-sm">Chọn lượt chạy<select aria-label="Chọn lượt chạy" className={`${fieldClass} mt-2`} value={runId ?? ''} onChange={e => setRunId(Number(e.target.value) || undefined)}><option value="">Chọn một lượt chạy</option>{runs.data?.map(r => <option key={r.id} value={r.id}>#{r.id} · Dataset {r.datasetId} · {r.smoke ? 'Smoke' : '108 mẫu'} · {r.status}</option>)}</select></label>
+      <BenchmarkRunSelect runs={runs.data ?? []} value={runId} onChange={setRunId} loading={runs.isLoading} />
       {run.data && <RunResults detail={run.data} pending={pending || !!active} action={act} />}
       {!runId && <Card className="p-10 text-center text-muted-foreground">Chọn lượt chạy để xem kết quả và trace từng mẫu.</Card>}
     </div>}
@@ -107,7 +112,7 @@ function QuestionEditor({ question: q, dataset, pending, save, approve }: { ques
     <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><b>{q.code}</b><span className="rounded bg-muted px-2 py-1 text-xs">{types[q.type]}</span><span className={`text-xs ${q.approved ? 'text-emerald-600' : 'text-muted-foreground'}`}>{q.approved ? 'Đã duyệt' : 'Bản nháp'}</span></div>
       <div className="flex gap-2"><Button size="sm" variant="outline" disabled={pending} onClick={() => { setDraft({ ...q }); setSources(JSON.stringify(q.sources, null, 2)); }}>Sửa</Button><Button size="sm" variant={q.approved ? 'outline' : 'default'} disabled={pending || !!draft} onClick={approve}><CheckCircle2 className="size-4" />{q.approved ? 'Bỏ duyệt' : 'Duyệt'}</Button></div></div>
     {draft ? <div className="space-y-3">
-      <label className="block text-sm">Loại câu hỏi<select className={fieldClass} value={draft.type} onChange={e => setDraft({ ...draft, type: e.target.value as BenchmarkQuestion['type'] })}>{Object.entries(types).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></label>
+      <div className="space-y-2"><label htmlFor={`question-type-${q.id}`} className="text-sm">Loại câu hỏi</label><Select value={draft.type} items={types} onValueChange={value => { if (value) setDraft({ ...draft, type: value as BenchmarkQuestion['type'] }); }}><SelectTrigger id={`question-type-${q.id}`} className="h-10 w-full cursor-pointer bg-background"><SelectValue /></SelectTrigger><SelectContent align="start" alignItemWithTrigger={false}>{Object.entries(types).map(([value, label]) => <SelectItem key={value} value={value} className="cursor-pointer">{label}</SelectItem>)}</SelectContent></Select></div>
       {(['question', 'referenceAnswer', 'explanation'] as const).map((key, index) => <label key={key} className="block text-sm">{['Câu hỏi', 'Đáp án chuẩn', 'Giải thích'][index]}<textarea className={`${fieldClass} mt-1 min-h-24`} value={draft[key]} onChange={e => setDraft({ ...draft, [key]: e.target.value })} /></label>)}
       <label className="block text-sm">Nguồn chuẩn (JSON)<textarea className={`${fieldClass} mt-1 font-mono`} rows={4} value={sources} onChange={e => setSources(e.target.value)} /></label>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
@@ -130,21 +135,23 @@ function RunResults({ detail, pending, action }: { detail: RunDetail; pending: b
       <progress aria-label="Tiến độ benchmark" className="h-2 w-full" value={finished} max={detail.samples.length || 1} />
       <details className="text-sm"><summary className="cursor-pointer">Cấu hình đã đóng băng</summary><pre className="mt-2 overflow-auto rounded bg-muted p-3 text-xs">{JSON.stringify(JSON.parse(r.configJson), null, 2)}</pre></details>
     </Card>
-    <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Nhóm câu hỏi <select className="ml-2 rounded border bg-background p-2" value={group} onChange={e => setGroup(e.target.value)}><option value="ALL">Tất cả</option>{Object.entries(types).map(([v, name]) => <option key={v} value={v}>{name}</option>)}</select></label><span className="text-sm text-muted-foreground">Fallback: {summary.fallbackRate == null ? '—' : `${(summary.fallbackRate * 100).toFixed(1)}%`} · Rerank thực tế: {summary.rerankRate == null ? '—' : `${(summary.rerankRate * 100).toFixed(1)}%`} ({summary.traced} mẫu có trace) · {summary.errors}/{summary.total} mẫu lỗi</span></div>
+    <div className="flex flex-wrap items-center gap-3"><div className="flex items-center gap-3"><label htmlFor="benchmark-question-group" className="shrink-0 text-sm font-medium">Nhóm câu hỏi</label><Select value={group} items={{ ALL: 'Tất cả', ...types }} onValueChange={value => { if (value) setGroup(value); }}><SelectTrigger id="benchmark-question-group" className="h-9 min-w-36 cursor-pointer bg-background shadow-xs"><SelectValue /></SelectTrigger><SelectContent align="start" alignItemWithTrigger={false} className="p-1"><SelectItem value="ALL" className="cursor-pointer">Tất cả</SelectItem>{Object.entries(types).map(([value, label]) => <SelectItem key={value} value={value} className="cursor-pointer">{label}</SelectItem>)}</SelectContent></Select></div><span className="text-sm text-muted-foreground">Fallback: {summary.fallbackRate == null ? '—' : `${(summary.fallbackRate * 100).toFixed(1)}%`} · Rerank thực tế: {summary.rerankRate == null ? '—' : `${(summary.rerankRate * 100).toFixed(1)}%`} ({summary.traced} mẫu có trace) · {summary.errors}/{summary.total} mẫu lỗi</span></div>
     <SummaryTable summary={summary} />
     <p className="text-xs text-muted-foreground">Điểm chỉ tổng hợp mẫu hợp lệ; các cột lỗi, thiếu và không áp dụng được giữ riêng. Citation Accuracy đo đúng tài liệu–trang. Latency không bao gồm thời gian chấm.</p>
-    <div className="space-y-3">{detail.samples.filter(s => group === 'ALL' || s.questionType === group).map(s => <SampleResult key={s.id} sample={s} question={snapshot.questions.find(q => q.code === s.questionCode)} />)}</div>
+    <div className="space-y-3">{detail.samples.filter(s => group === 'ALL' || s.questionType === group).map(s => <SampleResult key={s.id} sample={s} question={snapshot.questions.find(q => q.code === s.questionCode)} documents={snapshot.documents} />)}</div>
   </>;
 }
 function SummaryTable({ summary }: { summary: GroupSummary }) {
   return <div className="overflow-auto rounded-lg border"><table className="w-full text-left text-sm"><thead className="bg-muted"><tr>{['Metric', 'Trung bình', 'Median', 'p95', 'Hợp lệ', 'Lỗi', 'Thiếu', 'Không áp dụng'].map(h => <th key={h} className="whitespace-nowrap p-3">{h}</th>)}</tr></thead><tbody>{metrics.map(([key, label]) => { const m = summary[key]; return <tr key={key} className="border-t"><td className="p-3 font-medium">{label}</td><td className="p-3">{number(m.mean)}</td><td className="p-3">{number(m.median)}</td><td className="p-3">{number(m.p95)}</td><td className="p-3">{m.valid}</td><td className="p-3">{m.errors}</td><td className="p-3">{m.missing}</td><td className="p-3">{m.notApplicable}</td></tr>; })}</tbody></table></div>;
 }
-function SampleResult({ sample: s, question: q }: { sample: BenchmarkSample; question?: BenchmarkQuestion }) {
-  const trace = s.traceJson ? JSON.parse(s.traceJson) : null;
+function SampleResult({ sample: s, question: q, documents }: { sample: BenchmarkSample; question?: BenchmarkQuestion; documents: BenchmarkDocument[] }) {
+  const trace: BenchmarkTrace | null = s.traceJson ? JSON.parse(s.traceJson) : null;
+  const calculatedMetrics: BenchmarkMetrics | null = s.metricsJson ? JSON.parse(s.metricsJson) : null;
   return <details className="rounded-lg border p-4"><summary className="cursor-pointer text-sm"><b>{s.questionCode}</b> · {types[s.questionType as keyof typeof types]} · lần {s.repetition} · {s.status}<span className="ml-3 text-muted-foreground">{q?.question}</span></summary>
     <div className="mt-4 space-y-4 text-sm">{s.error && <p role="alert" className="text-destructive">{s.error}</p>}<div><b>Đáp án chuẩn</b><p className="mt-1 whitespace-pre-wrap">{q?.referenceAnswer}</p><p className="text-xs text-muted-foreground">{q?.sources.map(x => `${x.documentCode}: trang ${x.pageNumber}`).join(' · ')}</p></div>
       <div><b>Câu trả lời</b><p className="mt-1 whitespace-pre-wrap">{trace?.response?.answer ?? 'Chưa có câu trả lời'}</p></div>
-      <div><b>Điểm từng metric</b><pre className="mt-2 overflow-auto rounded bg-muted p-3 text-xs">{s.metricsJson ? JSON.stringify(JSON.parse(s.metricsJson), null, 2) : 'Chưa chấm'}</pre></div>
+      <BenchmarkMetricDetails metrics={calculatedMetrics} question={q?.question} documents={documents} />
+      <details><summary className="cursor-pointer">Dữ liệu kỹ thuật của phép tính</summary><pre className="mt-2 overflow-auto rounded bg-muted p-3 text-xs">{calculatedMetrics ? JSON.stringify(calculatedMetrics, null, 2) : "Chưa chấm"}</pre></details>
       <details><summary className="cursor-pointer">Context, citation và trace</summary><pre className="mt-2 max-h-[600px] overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">{trace ? JSON.stringify(trace, null, 2) : 'Chưa có trace'}</pre></details>
     </div></details>;
 }

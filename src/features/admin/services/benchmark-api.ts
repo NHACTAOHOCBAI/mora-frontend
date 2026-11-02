@@ -18,7 +18,7 @@ export interface BenchmarkRun {
   id: number; datasetId: number; status: string; smoke: boolean; createdAt: string;
   snapshotJson: string; configJson: string;
 }
-export interface MetricSummary { mean: number | null; median?: number; p95?: number; valid: number; errors: number; missing: number; notApplicable: number }
+export interface MetricSummary { mean: number | null; median: number | null; p95: number | null; valid: number; errors: number; missing: number; notApplicable: number }
 export interface GroupSummary {
   total: number; completed: number; errors: number; traced: number; fallbackRate: number | null; rerankRate: number | null;
   contextPrecision: MetricSummary; faithfulness: MetricSummary; answerRelevance: MetricSummary;
