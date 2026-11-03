@@ -237,20 +237,20 @@ export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
 
         {/* Content Tabs */}
         <Tabs defaultValue="members" className="flex-1 flex flex-col min-h-0">
-          <div className="px-5 pt-3 border-b border-border shrink-0">
-            <TabsList className="flex w-full bg-muted/60 p-1.5 rounded-xl h-12">
-              <TabsTrigger value="members" className="flex-1 text-xs font-semibold gap-1.5 cursor-pointer data-active:shadow-sm rounded-lg">
+          <div className="px-5 py-4 border-b border-border/80 shrink-0">
+            <TabsList className="flex w-full group-data-horizontal/tabs:!h-14 rounded-2xl border border-border/60 bg-muted/70 p-2 shadow-inner shadow-black/[0.02]">
+              <TabsTrigger value="members" className="flex-1 rounded-xl px-3 text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground transition-all hover:bg-background/60 hover:text-foreground data-active:bg-background data-active:text-primary data-active:shadow-md data-active:shadow-black/[0.08] focus-visible:ring-2 focus-visible:ring-primary/40">
                 <Users className="w-3.5 h-3.5" />
                 Thành viên ({members.length})
               </TabsTrigger>
               {isOwner && (
-                <TabsTrigger value="add" className="flex-1 text-xs font-semibold gap-1.5 cursor-pointer data-active:shadow-sm rounded-lg">
+                <TabsTrigger value="add" className="flex-1 rounded-xl px-3 text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground transition-all hover:bg-background/60 hover:text-foreground data-active:bg-background data-active:text-primary data-active:shadow-md data-active:shadow-black/[0.08] focus-visible:ring-2 focus-visible:ring-primary/40">
                   <UserPlus className="w-3.5 h-3.5" />
                   Thêm trực tiếp
                 </TabsTrigger>
               )}
               {isOwner && (
-                <TabsTrigger value="invite" className="flex-1 text-xs font-semibold gap-1.5 cursor-pointer data-active:shadow-sm rounded-lg">
+                <TabsTrigger value="invite" className="flex-1 rounded-xl px-3 text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground transition-all hover:bg-background/60 hover:text-foreground data-active:bg-background data-active:text-primary data-active:shadow-md data-active:shadow-black/[0.08] focus-visible:ring-2 focus-visible:ring-primary/40">
                   <LinkIcon className="w-3.5 h-3.5" />
                   Liên kết mời
                 </TabsTrigger>
