@@ -104,6 +104,17 @@ npm run build    # kiểm tra TypeScript và tạo bản production
 npm run preview  # xem thử bản build
 ```
 
+## Chạy bằng Docker
+
+Dockerfile build static site qua Nginx. Khi chạy cả hệ thống, dùng repository
+[`../mora-infra`](../mora-infra/README.md):
+
+```bash
+cd ../mora-infra
+cp .env.example .env
+docker compose --env-file .env up --build
+```
+
 ## Liên quan đến các service khác
 
 - Cài và chạy hạ tầng, Backend tại [`../mora-backend/README.md`](../mora-backend/README.md).
