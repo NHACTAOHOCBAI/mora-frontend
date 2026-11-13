@@ -22,6 +22,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { ChatContainer } from '@/features/chat/components/ChatContainer';
 import { PdfViewer } from '@/features/chat/components/PdfViewer';
 import { SpaceMemberModal } from '@/features/chat/components/SpaceMemberModal';
+import { StudySetPanel } from '@/features/study/components/StudySetPanel';
 import type { Message, TypingNotification } from '@/features/chat/types';
 import type { DocumentResponse } from '@/features/chat/services/document-api';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ export const SpaceDetailPage: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [showClearHistoryAlert, setShowClearHistoryAlert] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [isStudyOpen, setIsStudyOpen] = useState(false);
 
   // Selective RAG Document Scope state
   const [selectedDocIdsForAi, setSelectedDocIdsForAi] = useState<number[]>([]);
@@ -373,6 +375,14 @@ export const SpaceDetailPage: React.FC = () => {
                 <Users className="w-3 h-3" />
                 {space?.memberCount || 1} thành viên
               </Button>
+              <Button
+                variant={isStudyOpen ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setIsStudyOpen((value) => !value)}
+                className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-primary cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3" /> Ôn tập
+              </Button>
             </div>
 
             <div className="flex items-center gap-2">
@@ -391,7 +401,13 @@ export const SpaceDetailPage: React.FC = () => {
             </div>
           </div>
 
-          <ChatContainer
+          {isStudyOpen && space ? (
+            <StudySetPanel
+              spaceId={spaceId}
+              documents={space.documents || []}
+              onCitation={(page, documentId) => handleCitationClick(page, documentId)}
+            />
+          ) : <ChatContainer
             messages={spaceMessages}
             onSendMessage={handleSendMessageToAi}
             onSendGroupMessage={handleSendGroupMessage}
@@ -404,7 +420,7 @@ export const SpaceDetailPage: React.FC = () => {
             typingUsers={typingUserNames}
             onTyping={sendTyping}
             membersCount={space?.memberCount || 1}
-          />
+          />}
         </section>
 
         {/* Right pane: PDF Viewer */}
