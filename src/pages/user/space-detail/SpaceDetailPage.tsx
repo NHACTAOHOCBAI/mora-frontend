@@ -6,6 +6,8 @@ import {
   Trash2,
   ArrowLeft,
   PanelLeft,
+  MessageSquare,
+  BookOpen,
   MoreHorizontal,
   X,
   Users,
@@ -403,20 +405,32 @@ export const SpaceDetailPage: React.FC = () => {
           aria-label="Không gian học"
           className="flex gap-1 w-full justify-center sm:w-auto sm:justify-start sm:ml-8 order-last sm:order-none"
         >
-          <Button
-            variant={isStudyOpen ? "ghost" : "secondary"}
+          <button
+            type="button"
             onClick={() => setIsStudyOpen(false)}
             aria-pressed={!isStudyOpen}
+            className="relative inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
           >
+            <MessageSquare className="size-4" aria-hidden="true" />
             Hỏi đáp
-          </Button>
-          <Button
-            variant={isStudyOpen ? "secondary" : "ghost"}
+            <span
+              aria-hidden="true"
+              className={`absolute bottom-0 inset-x-3 h-0.5 rounded-full bg-primary transition-transform duration-200 motion-reduce:transition-none ${isStudyOpen ? "scale-x-0" : "scale-x-100"}`}
+            />
+          </button>
+          <button
+            type="button"
             onClick={() => setIsStudyOpen(true)}
             aria-pressed={isStudyOpen}
+            className="relative inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
           >
+            <BookOpen className="size-4" aria-hidden="true" />
             Ôn tập
-          </Button>
+            <span
+              aria-hidden="true"
+              className={`absolute bottom-0 inset-x-3 h-0.5 rounded-full bg-primary transition-transform duration-200 motion-reduce:transition-none ${isStudyOpen ? "scale-x-100" : "scale-x-0"}`}
+            />
+          </button>
         </nav>
         <div className="flex items-center gap-1 md:gap-4 shrink-0 sm:ml-auto">
           <Button
