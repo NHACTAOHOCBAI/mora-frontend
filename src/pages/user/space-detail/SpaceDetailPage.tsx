@@ -1,31 +1,43 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import type { Query } from "@tanstack/react-query";
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, Link } from "react-router-dom";
 import {
   AlertCircle,
   Trash2,
-  Sparkles,
-  FileText,
+  ArrowLeft,
+  PanelLeft,
+  MoreHorizontal,
+  X,
   Users,
-  Menu,
-} from 'lucide-react';
-import {
-  useSpaceDetail,
-} from '@/features/chat/hooks/useSpace';
+} from "lucide-react";
+import { useSpaceDetail } from "@/features/chat/hooks/useSpace";
 import {
   useSendSpaceChatMessage,
   useSendGroupMessage,
   useSpaceChatHistory,
   useClearSpaceChatHistory,
-} from '@/features/chat/hooks/useChat';
-import { useSpaceSocket } from '@/features/chat/hooks/useSpaceSocket';
-import { useAuth } from '@/features/auth/hooks/useAuth';
-import { ChatContainer } from '@/features/chat/components/ChatContainer';
-import { PdfViewer } from '@/features/chat/components/PdfViewer';
-import { SpaceMemberModal } from '@/features/chat/components/SpaceMemberModal';
-import { StudySetPanel } from '@/features/study/components/StudySetPanel';
-import type { Message, TypingNotification } from '@/features/chat/types';
-import type { DocumentResponse } from '@/features/chat/services/document-api';
-import { Button } from '@/components/ui/button';
+} from "@/features/chat/hooks/useChat";
+import { useSpaceSocket } from "@/features/chat/hooks/useSpaceSocket";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { ChatContainer } from "@/features/chat/components/ChatContainer";
+import { PdfViewer } from "@/features/chat/components/PdfViewer";
+import { SpaceMemberModal } from "@/features/chat/components/SpaceMemberModal";
+import { StudySetPanel } from "@/features/study/components/StudySetPanel";
+import type {
+  Message,
+  TypingNotification,
+  SpaceDetailResponse,
+} from "@/features/chat/types";
+import type { DocumentResponse } from "@/features/chat/services/document-api";
+import { UserMenu } from "@/components/shared/UserMenu";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,12 +47,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/api-error';
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/api-error";
 
 // Import subcomponents
-import { SpaceSidebar } from './components/SpaceSidebar';
+import { SpaceSidebar } from "./components/SpaceSidebar";
 
 export const SpaceDetailPage: React.FC = () => {
   const { spaceId: spaceIdParam } = useParams<{ spaceId: string }>();
@@ -49,27 +61,37 @@ export const SpaceDetailPage: React.FC = () => {
   const { user: currentUser } = useAuth();
 
   const [spaceMessages, setSpaceMessages] = useState<Message[]>([]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => window.innerWidth < 768);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    () => window.innerWidth < 768,
+  );
   const [showClearHistoryAlert, setShowClearHistoryAlert] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [isStudyOpen, setIsStudyOpen] = useState(false);
 
   // Selective RAG Document Scope state
   const [selectedDocIdsForAi, setSelectedDocIdsForAi] = useState<number[]>([]);
-  
+
   // PDF Viewer states
-  const [selectedDocument, setSelectedDocument] = useState<DocumentResponse | null>(null);
+  const [selectedDocument, setSelectedDocument] =
+    useState<DocumentResponse | null>(null);
   const [citationPage, setCitationPage] = useState<number>(1);
 
   // Queries & Mutations
-  const { data: space, isLoading: isSpaceLoading, error: spaceError } = useSpaceDetail(spaceId, {
-    refetchInterval: (query: any) => {
+  const {
+    data: space,
+    isLoading: isSpaceLoading,
+    error: spaceError,
+  } = useSpaceDetail(spaceId, {
+    refetchInterval: (query: Query<SpaceDetailResponse>) => {
       const docs = query.state.data?.documents;
       const hasProcessing = docs?.some(
-        (d: any) => d.status === 'UPLOADING' || d.status === 'PARSING' || d.status === 'INDEXING'
+        (d: DocumentResponse) =>
+          d.status === "UPLOADING" ||
+          d.status === "PARSING" ||
+          d.status === "INDEXING",
       );
       return hasProcessing ? 3000 : false;
-    }
+    },
   });
 
   const sendSpaceMessageMutation = useSendSpaceChatMessage();
@@ -83,7 +105,9 @@ export const SpaceDetailPage: React.FC = () => {
   const clearSpaceHistoryMutation = useClearSpaceChatHistory();
 
   // Typing users state
-  const [typingMap, setTypingMap] = useState<Record<number, { name: string; expiry: number }>>({});
+  const [typingMap, setTypingMap] = useState<
+    Record<number, { name: string; expiry: number }>
+  >({});
 
   // Real-time WebSocket handlers
   const handleSocketMessageReceived = useCallback((newMsg: Message) => {
@@ -97,9 +121,9 @@ export const SpaceDetailPage: React.FC = () => {
       return [...prev, newMsg];
     });
 
-    if (newMsg.messageType === 'AI_RESPONSE') {
+    if (newMsg.messageType === "AI_RESPONSE") {
       setIsAiProcessing(false);
-    } else if (newMsg.messageType === 'AI_QUERY') {
+    } else if (newMsg.messageType === "AI_QUERY") {
       setIsAiProcessing(true);
     }
   }, []);
@@ -124,7 +148,7 @@ export const SpaceDetailPage: React.FC = () => {
         });
       }
     },
-    [currentUser?.id]
+    [currentUser?.id],
   );
 
   const { sendTyping } = useSpaceSocket({
@@ -158,7 +182,11 @@ export const SpaceDetailPage: React.FC = () => {
   // Initialize selected documents for AI scope when space loads
   useEffect(() => {
     if (space?.documents) {
-      const readyDocIds = space.documents.filter((d: any) => d.status === 'READY').map((d: any) => d.id);
+      const readyDocIds = space.documents
+        .filter((d: DocumentResponse) => d.status === "READY")
+        .map((d: DocumentResponse) => d.id);
+      // Keep source selection valid when asynchronous document processing completes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedDocIdsForAi((prev) => {
         if (prev.length === 0) return readyDocIds;
         // Keep valid ids
@@ -170,11 +198,15 @@ export const SpaceDetailPage: React.FC = () => {
   // Load space chat history from DB on initial mount
   useEffect(() => {
     if (spaceHistoryData) {
+      // Merge the persisted history refreshed after sending or clearing messages.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSpaceMessages(
-        spaceHistoryData.map((msg: any) => ({
+        spaceHistoryData.map((msg: Message) => ({
           id: msg.id,
           sender: msg.sender,
-          messageType: msg.messageType || (msg.sender === 'assistant' ? 'AI_RESPONSE' : 'USER_MESSAGE'),
+          messageType:
+            msg.messageType ||
+            (msg.sender === "assistant" ? "AI_RESPONSE" : "USER_MESSAGE"),
           text: msg.text,
           userId: msg.userId,
           userName: msg.userName,
@@ -184,7 +216,7 @@ export const SpaceDetailPage: React.FC = () => {
           promptSent: msg.promptSent,
           citations: msg.citations,
           selectedDocumentIds: msg.selectedDocumentIds,
-        }))
+        })),
       );
     }
   }, [spaceHistoryData]);
@@ -192,14 +224,18 @@ export const SpaceDetailPage: React.FC = () => {
   // Handler toggle 1 tài liệu trong phạm vi AI
   const handleToggleDocForAi = (docId: number) => {
     setSelectedDocIdsForAi((prev) =>
-      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
+      prev.includes(docId)
+        ? prev.filter((id) => id !== docId)
+        : [...prev, docId],
     );
   };
 
   // Handler toggle tất cả tài liệu trong phạm vi AI
   const handleToggleAllDocsForAi = () => {
     if (!space?.documents) return;
-    const readyDocIds = space.documents.filter((d: any) => d.status === 'READY').map((d: any) => d.id);
+    const readyDocIds = space.documents
+      .filter((d: DocumentResponse) => d.status === "READY")
+      .map((d: DocumentResponse) => d.id);
     if (selectedDocIdsForAi.length === readyDocIds.length) {
       setSelectedDocIdsForAi([]);
     } else {
@@ -223,7 +259,7 @@ export const SpaceDetailPage: React.FC = () => {
         onError: (err: unknown) => {
           toast.error(getErrorMessage(err));
         },
-      }
+      },
     );
   };
 
@@ -245,12 +281,13 @@ export const SpaceDetailPage: React.FC = () => {
         spaceId,
         question: text,
         history: historyDto,
-        documentIds: selectedDocIdsForAi.length > 0 ? selectedDocIdsForAi : undefined,
+        documentIds:
+          selectedDocIdsForAi.length > 0 ? selectedDocIdsForAi : undefined,
       },
       {
         onSuccess: () => {
           setIsAiProcessing(false);
-          toast.success('AI đã phản hồi xong!');
+          toast.success("AI đã phản hồi xong!");
         },
         onError: (err: unknown) => {
           console.error(err);
@@ -259,15 +296,15 @@ export const SpaceDetailPage: React.FC = () => {
 
           const errorMessage: Message = {
             id: Date.now() + 2,
-            sender: 'assistant',
-            messageType: 'AI_RESPONSE',
+            sender: "assistant",
+            messageType: "AI_RESPONSE",
             text: errorText,
             timestamp: new Date(),
           };
           setSpaceMessages((prev) => [...prev, errorMessage]);
           toast.error(errorText);
         },
-      }
+      },
     );
   };
 
@@ -277,7 +314,7 @@ export const SpaceDetailPage: React.FC = () => {
       onSuccess: () => {
         setSpaceMessages([]);
         setShowClearHistoryAlert(false);
-        toast.success('Đã xóa sạch lịch sử cuộc trò chuyện!');
+        toast.success("Đã xóa sạch lịch sử cuộc trò chuyện!");
       },
       onError: (err: unknown) => {
         toast.error(getErrorMessage(err));
@@ -288,7 +325,9 @@ export const SpaceDetailPage: React.FC = () => {
   // Xử lý khi click vào nhãn nguồn trích dẫn
   const handleCitationClick = (pageNumber: number, documentId?: number) => {
     if (documentId && space?.documents) {
-      const doc = space.documents.find((d: any) => d.id === documentId);
+      const doc = space.documents.find(
+        (d: DocumentResponse) => d.id === documentId,
+      );
       if (doc) {
         setSelectedDocument(doc);
       }
@@ -302,7 +341,9 @@ export const SpaceDetailPage: React.FC = () => {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground p-6">
         <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
           <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-bold text-foreground">Mã Không gian học tập không hợp lệ</h2>
+          <h2 className="text-xl font-bold text-foreground">
+            Mã Không gian học tập không hợp lệ
+          </h2>
           <Link to="/">
             <Button className="cursor-pointer">Quay lại Dashboard</Button>
           </Link>
@@ -316,7 +357,9 @@ export const SpaceDetailPage: React.FC = () => {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground p-6">
         <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
           <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-bold text-foreground">Lỗi tải dữ liệu Space</h2>
+          <h2 className="text-xl font-bold text-foreground">
+            Lỗi tải dữ liệu Space
+          </h2>
           <p className="text-muted-foreground text-sm">
             {getErrorMessage(spaceError)}
           </p>
@@ -328,138 +371,183 @@ export const SpaceDetailPage: React.FC = () => {
     );
   }
 
-  const isOwner = space?.currentUserRole === 'OWNER';
+  const isOwner = space?.currentUserRole === "OWNER";
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground transition-colors duration-200">
-      {/* 1. Left Sidebar */}
-      <SpaceSidebar
-        space={space}
-        isSpaceLoading={isSpaceLoading}
-        isSidebarCollapsed={isSidebarCollapsed}
-        setIsSidebarCollapsed={setIsSidebarCollapsed}
-        selectedDocumentId={selectedDocument?.id || null}
-        onSelectDocument={setSelectedDocument}
-        selectedDocIdsForAi={selectedDocIdsForAi}
-        onToggleDocForAi={handleToggleDocForAi}
-        onToggleAllDocsForAi={handleToggleAllDocsForAi}
-        onOpenMemberModal={() => setIsMemberModalOpen(true)}
-        currentUserId={currentUser?.id}
-      />
+    <div className="flex flex-col h-dvh w-full overflow-hidden bg-background text-foreground transition-colors duration-200">
+      <header className="min-h-16 shrink-0 border-b border-border bg-card flex flex-wrap items-center justify-between gap-2 px-3 py-2 md:px-6">
+        <div className="flex min-w-0 items-center gap-1 md:gap-4 flex-1 sm:flex-none">
+          <Link
+            to="/"
+            aria-label="Quay lại Dashboard"
+            className="p-2 rounded-lg hover:bg-muted"
+          >
+            <ArrowLeft className="size-4" />
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            id="space-documents-toggle"
+            aria-label="Đóng/mở tài liệu"
+            aria-expanded={!isSidebarCollapsed}
+            aria-controls="space-documents-sidebar"
+            onClick={() => setIsSidebarCollapsed((v) => !v)}
+          >
+            <PanelLeft className="size-4" />
+          </Button>
+          <h1 className="truncate text-sm font-semibold max-w-32 md:max-w-64">
+            {space?.name || "Đang tải..."}
+          </h1>
+        </div>
+        <nav
+          aria-label="Không gian học"
+          className="flex gap-1 w-full justify-center sm:w-auto sm:justify-start sm:ml-8 order-last sm:order-none"
+        >
+          <Button
+            variant={isStudyOpen ? "ghost" : "secondary"}
+            onClick={() => setIsStudyOpen(false)}
+            aria-pressed={!isStudyOpen}
+          >
+            Hỏi đáp
+          </Button>
+          <Button
+            variant={isStudyOpen ? "secondary" : "ghost"}
+            onClick={() => setIsStudyOpen(true)}
+            aria-pressed={isStudyOpen}
+          >
+            Ôn tập
+          </Button>
+        </nav>
+        <div className="flex items-center gap-1 md:gap-4 shrink-0 sm:ml-auto">
+          <Button
+            variant="ghost"
+            onClick={() => setIsMemberModalOpen(true)}
+            aria-label="Thành viên"
+          >
+            <Users className="size-4" />
+            <span className="hidden md:inline">
+              Thành viên {space?.memberCount || 1}
+            </span>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Thao tác không gian"
+              className="p-2 rounded-lg hover:bg-muted"
+            >
+              <MoreHorizontal className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                disabled={!isOwner || spaceMessages.length === 0}
+                onClick={() => setShowClearHistoryAlert(true)}
+              >
+                <Trash2 className="size-4" />
+                Xóa lịch sử hội thoại
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <span className="inline-flex">
+            <ThemeToggle />
+          </span>
+          <UserMenu />
+        </div>
+      </header>
+      <div className="flex flex-1 min-h-0 relative">
+        {/* 1. Left Sidebar */}
+        <SpaceSidebar
+          space={space}
+          isSpaceLoading={isSpaceLoading}
+          isSidebarCollapsed={isSidebarCollapsed}
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
+          selectedDocumentId={selectedDocument?.id || null}
+          onSelectDocument={setSelectedDocument}
+          currentUserId={currentUser?.id}
+        />
 
-      {/* 2. Main Work Area (Split-screen or Single-pane based on document selection) */}
-      <div className="flex-1 flex flex-col lg:flex-row h-full min-w-0 overflow-hidden">
-        {/* Left pane: Hộp thoại Chatbot */}
-        <section className="flex-1 shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-card flex flex-col h-full min-h-0 relative overflow-hidden shadow-2xs">
-          {/* Chat header */}
-          <div className="flex items-center justify-between px-4 md:px-6 h-14 bg-card border-b border-border/60 shrink-0">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSidebarCollapsed(false)}
-                className="md:hidden h-8 w-8 text-muted-foreground mr-1 cursor-pointer"
-              >
-                <Menu className="w-4 h-4" />
-              </Button>
-              <span className="text-xs font-bold text-foreground tracking-wider flex items-center gap-1.5 animate-pulse">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                TRỢ LÝ & THẢO LUẬN NHÓM
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsMemberModalOpen(true)}
-                className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-primary cursor-pointer"
-              >
-                <Users className="w-3 h-3" />
-                {space?.memberCount || 1} thành viên
-              </Button>
-              <Button
-                variant={isStudyOpen ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setIsStudyOpen((value) => !value)}
-                className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-primary cursor-pointer"
-              >
-                <Sparkles className="w-3 h-3" /> Ôn tập
-              </Button>
-            </div>
+        <div className="flex-1 flex min-w-0 min-h-0 overflow-hidden bg-muted/50 p-3 md:p-5 gap-5">
+          <section
+            className={`flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden rounded-2xl border border-border bg-card max-w-[1200px] mx-auto ${selectedDocument ? "hidden lg:flex" : ""}`}
+          >
+            {isStudyOpen && space ? (
+              <StudySetPanel
+                spaceId={spaceId}
+                documents={space.documents || []}
+                onCitation={(page, documentId) =>
+                  handleCitationClick(page, documentId)
+                }
+              />
+            ) : (
+              <ChatContainer
+                messages={spaceMessages}
+                onSendMessage={handleSendMessageToAi}
+                onSendGroupMessage={handleSendGroupMessage}
+                isLoading={isAiProcessing}
+                onCitationClick={handleCitationClick}
+                isDebugMode={true}
+                selectedDocCount={selectedDocIdsForAi.length}
+                totalDocCount={
+                  space?.documents?.filter(
+                    (d: DocumentResponse) => d.status === "READY",
+                  ).length || 0
+                }
+                currentUserId={currentUser?.id}
+                typingUsers={typingUserNames}
+                onTyping={sendTyping}
+                documents={space?.documents || []}
+                selectedDocumentIds={selectedDocIdsForAi}
+                onToggleDocument={handleToggleDocForAi}
+                onToggleAllDocuments={handleToggleAllDocsForAi}
+                membersCount={space?.memberCount || 1}
+              />
+            )}
+          </section>
 
-            <div className="flex items-center gap-2">
-              {isOwner && (
+          {selectedDocument && (
+            <section className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
+              <div className="flex items-center justify-between gap-3 p-3 border-b border-border">
+                <span className="text-sm truncate">
+                  {selectedDocument.name}
+                </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setShowClearHistoryAlert(true)}
-                  disabled={spaceMessages.length === 0}
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer disabled:opacity-30"
-                  title="Xóa lịch sử cuộc trò chuyện (Chỉ Owner)"
+                  aria-label="Đóng tài liệu"
+                  onClick={() => setSelectedDocument(null)}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <X className="size-4" />
                 </Button>
-              )}
-            </div>
-          </div>
-
-          {isStudyOpen && space ? (
-            <StudySetPanel
-              spaceId={spaceId}
-              documents={space.documents || []}
-              onCitation={(page, documentId) => handleCitationClick(page, documentId)}
-            />
-          ) : <ChatContainer
-            messages={spaceMessages}
-            onSendMessage={handleSendMessageToAi}
-            onSendGroupMessage={handleSendGroupMessage}
-            isLoading={isAiProcessing}
-            onCitationClick={handleCitationClick}
-            isDebugMode={true}
-            selectedDocCount={selectedDocIdsForAi.length}
-            totalDocCount={space?.documents?.filter((d: any) => d.status === 'READY').length || 0}
-            currentUserId={currentUser?.id}
-            typingUsers={typingUserNames}
-            onTyping={sendTyping}
-            membersCount={space?.memberCount || 1}
-          />}
-        </section>
-
-        {/* Right pane: PDF Viewer */}
-        {selectedDocument ? (
-          <section className="flex-1 shrink-0 h-full min-h-0 relative overflow-hidden">
-            <PdfViewer
-              url={selectedDocument.storageUrl}
-              currentPage={citationPage}
-              onPageChange={setCitationPage}
-            />
-          </section>
-        ) : (
-          <section className="hidden lg:flex flex-1 shrink-0 h-full bg-muted/5 flex-col items-center justify-center text-center p-8 select-none border-l border-border">
-            <div className="max-w-xs space-y-4">
-              <div className="p-4 bg-card rounded-2xl border border-border inline-block text-muted-foreground animate-bounce shadow-xs">
-                <FileText className="w-8 h-8 text-primary" />
               </div>
-              <div>
-                <h3 className="font-bold text-sm text-foreground">Trình Xem Tài Liệu PDF</h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Chọn bất kỳ tài liệu PDF nào ở thanh bên để hiển thị trình xem song song và click vào các nhãn nguồn để cuộn trang đối chiếu.
-                </p>
+              <div className="flex-1 min-h-0">
+                <PdfViewer
+                  url={selectedDocument.storageUrl}
+                  currentPage={citationPage}
+                  onPageChange={setCitationPage}
+                />
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          )}
+        </div>
       </div>
 
       {/* Clear Chat History AlertDialog */}
-      <AlertDialog open={showClearHistoryAlert} onOpenChange={setShowClearHistoryAlert}>
+      <AlertDialog
+        open={showClearHistoryAlert}
+        onOpenChange={setShowClearHistoryAlert}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Bạn có chắc muốn xóa lịch sử trò chuyện này?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Bạn có chắc muốn xóa lịch sử trò chuyện này?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này sẽ xóa sạch toàn bộ nội dung tin nhắn và câu hỏi đáp của cuộc trò chuyện hiện tại. Không thể hoàn tác hành động này.
+              Hành động này sẽ xóa sạch toàn bộ nội dung tin nhắn và câu hỏi đáp
+              của cuộc trò chuyện hiện tại. Không thể hoàn tác hành động này.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Hủy bỏ</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">
+              Hủy bỏ
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClearHistoryConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
