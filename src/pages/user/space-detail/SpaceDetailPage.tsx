@@ -4,7 +4,6 @@ import { useParams, Link } from "react-router-dom";
 import {
   AlertCircle,
   Trash2,
-  ArrowLeft,
   PanelLeft,
   MessageSquare,
   BookOpen,
@@ -31,8 +30,8 @@ import type {
   SpaceDetailResponse,
 } from "@/features/chat/types";
 import type { DocumentResponse } from "@/features/chat/services/document-api";
-import { UserMenu } from "@/components/shared/UserMenu";
-import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { AppHeader } from "@/components/shared/AppHeader";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -340,15 +339,18 @@ export const SpaceDetailPage: React.FC = () => {
   // Error handling
   if (isNaN(spaceId) || spaceId <= 0) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground p-6">
-        <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
-          <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-bold text-foreground">
-            Mã Không gian học tập không hợp lệ
-          </h2>
-          <Link to="/">
-            <Button className="cursor-pointer">Quay lại Dashboard</Button>
-          </Link>
+      <div className="flex h-dvh flex-col bg-background text-foreground">
+        <AppHeader />
+        <div className="flex flex-1 items-center justify-center overflow-auto p-6">
+          <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+            <h2 className="text-xl font-bold text-foreground">
+              Mã Không gian học tập không hợp lệ
+            </h2>
+            <Link to="/">
+              <Button className="cursor-pointer">Về danh sách không gian</Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -356,18 +358,21 @@ export const SpaceDetailPage: React.FC = () => {
 
   if (spaceError) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground p-6">
-        <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
-          <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-bold text-foreground">
-            Lỗi tải dữ liệu Space
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            {getErrorMessage(spaceError)}
-          </p>
-          <Link to="/">
-            <Button className="cursor-pointer">Quay lại Dashboard</Button>
-          </Link>
+      <div className="flex h-dvh flex-col bg-background text-foreground">
+        <AppHeader />
+        <div className="flex flex-1 items-center justify-center overflow-auto p-6">
+          <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+            <h2 className="text-xl font-bold text-foreground">
+              Lỗi tải dữ liệu Space
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              {getErrorMessage(spaceError)}
+            </p>
+            <Link to="/">
+              <Button className="cursor-pointer">Về danh sách không gian</Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -377,95 +382,94 @@ export const SpaceDetailPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-dvh w-full overflow-hidden bg-background text-foreground transition-colors duration-200">
-      <header className="min-h-16 shrink-0 border-b border-border bg-card flex flex-wrap items-center justify-between gap-2 px-3 py-2 md:px-6">
-        <div className="flex min-w-0 items-center gap-1 md:gap-4 flex-1 sm:flex-none">
-          <Link
-            to="/"
-            aria-label="Quay lại Dashboard"
-            className="p-2 rounded-lg hover:bg-muted"
-          >
-            <ArrowLeft className="size-4" />
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            id="space-documents-toggle"
-            aria-label="Đóng/mở tài liệu"
-            aria-expanded={!isSidebarCollapsed}
-            aria-controls="space-documents-sidebar"
-            onClick={() => setIsSidebarCollapsed((v) => !v)}
-          >
-            <PanelLeft className="size-4" />
-          </Button>
-          <h1 className="truncate text-sm font-semibold max-w-32 md:max-w-64">
-            {space?.name || "Đang tải..."}
-          </h1>
-        </div>
-        <nav
-          aria-label="Không gian học"
-          className="flex gap-1 w-full justify-center sm:w-auto sm:justify-start sm:ml-8 order-last sm:order-none"
-        >
-          <button
-            type="button"
-            onClick={() => setIsStudyOpen(false)}
-            aria-pressed={!isStudyOpen}
-            className="relative inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
-          >
-            <MessageSquare className="size-4" aria-hidden="true" />
-            Hỏi đáp
-            <span
-              aria-hidden="true"
-              className={`absolute bottom-0 inset-x-3 h-0.5 rounded-full bg-primary transition-transform duration-200 motion-reduce:transition-none ${isStudyOpen ? "scale-x-0" : "scale-x-100"}`}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsStudyOpen(true)}
-            aria-pressed={isStudyOpen}
-            className="relative inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
-          >
-            <BookOpen className="size-4" aria-hidden="true" />
-            Ôn tập
-            <span
-              aria-hidden="true"
-              className={`absolute bottom-0 inset-x-3 h-0.5 rounded-full bg-primary transition-transform duration-200 motion-reduce:transition-none ${isStudyOpen ? "scale-x-100" : "scale-x-0"}`}
-            />
-          </button>
-        </nav>
-        <div className="flex items-center gap-1 md:gap-4 shrink-0 sm:ml-auto">
-          <Button
-            variant="ghost"
-            onClick={() => setIsMemberModalOpen(true)}
-            aria-label="Thành viên"
-          >
-            <Users className="size-4" />
-            <span className="hidden md:inline">
-              Thành viên {space?.memberCount || 1}
-            </span>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label="Thao tác không gian"
-              className="p-2 rounded-lg hover:bg-muted"
+      <AppHeader
+        context={
+          <>
+            <span aria-hidden="true" className="h-5 w-px shrink-0 bg-border" />
+            <Tooltip>
+              <TooltipTrigger render={<h1 />} tabIndex={0} className="min-w-0 truncate text-sm font-semibold lg:max-w-64">
+                {space?.name || "Đang tải..."}
+              </TooltipTrigger>
+              <TooltipContent>{space?.name || "Đang tải..."}</TooltipContent>
+            </Tooltip>
+            <Button
+              variant="ghost"
+              size="icon"
+              id="space-documents-toggle"
+              aria-label="Đóng/mở tài liệu"
+              aria-expanded={!isSidebarCollapsed}
+              aria-controls="space-documents-sidebar"
+              onClick={() => setIsSidebarCollapsed((v) => !v)}
             >
-              <MoreHorizontal className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                disabled={!isOwner || spaceMessages.length === 0}
-                onClick={() => setShowClearHistoryAlert(true)}
+              <PanelLeft className="size-4" />
+            </Button>
+          </>
+        }
+        navigation={
+          <nav
+            aria-label="Không gian học"
+            className="flex h-11 gap-1"
+          >
+            <button
+              type="button"
+              onClick={() => setIsStudyOpen(false)}
+              aria-pressed={!isStudyOpen}
+              className="relative inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
+            >
+              <MessageSquare className="size-4" aria-hidden="true" />
+              Hỏi đáp
+              <span
+                aria-hidden="true"
+                className={`absolute bottom-0 inset-x-3 h-0.5 rounded-full bg-primary transition-transform duration-200 motion-reduce:transition-none ${isStudyOpen ? "scale-x-0" : "scale-x-100"}`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsStudyOpen(true)}
+              aria-pressed={isStudyOpen}
+              className="relative inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
+            >
+              <BookOpen className="size-4" aria-hidden="true" />
+              Ôn tập
+              <span
+                aria-hidden="true"
+                className={`absolute bottom-0 inset-x-3 h-0.5 rounded-full bg-primary transition-transform duration-200 motion-reduce:transition-none ${isStudyOpen ? "scale-x-100" : "scale-x-0"}`}
+              />
+            </button>
+          </nav>
+        }
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => setIsMemberModalOpen(true)}
+              aria-label="Thành viên"
+            >
+              <Users className="size-4" />
+              <span className="hidden lg:inline">
+                Thành viên {space?.memberCount ?? 1}
+              </span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                aria-label="Thao tác không gian"
+                className="p-2 rounded-lg hover:bg-muted"
               >
-                <Trash2 className="size-4" />
-                Xóa lịch sử hội thoại
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <span className="inline-flex">
-            <ThemeToggle />
-          </span>
-          <UserMenu />
-        </div>
-      </header>
+                <MoreHorizontal className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  disabled={!isOwner || spaceMessages.length === 0}
+                  onClick={() => setShowClearHistoryAlert(true)}
+                >
+                  <Trash2 className="size-4" />
+                  Xóa lịch sử hội thoại
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+      />
       <div className="flex flex-1 min-h-0 relative">
         {/* 1. Left Sidebar */}
         <SpaceSidebar
