@@ -1,49 +1,48 @@
-import React, { useState } from 'react';
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Users,
-  UserPlus,
+  ArrowLeft,
   Link as LinkIcon,
-  Trash2,
-  Copy,
-  Check,
-  Crown,
-  Eye,
-  Edit3,
   Loader2,
-  Clock,
   LogOut,
-} from 'lucide-react';
+  MoreHorizontal,
+  Search,
+  UserPlus,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+} from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   useSpaceMembers,
-  useAddSpaceMember,
   useUpdateMemberRole,
   useRemoveSpaceMember,
-  useSpaceInvitations,
-  useCreateSpaceInvitation,
-  useRevokeSpaceInvitation,
-} from '../hooks/useSpace';
-import type { SpaceRole } from '../types';
-import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/api-error';
+} from "../hooks/useSpace";
+import type { SpaceMemberResponse, SpaceRole } from "../types";
+import {
+  ROLE_DETAILS,
+  filterMembers,
+  memberName,
+} from "../utils/member-management";
+import { MemberRoleBadge, MemberRoleSelect } from "./MemberRoleSelect";
+import { MemberInvitationPanel } from "./MemberInvitationPanel";
+import { AddSpaceMemberForm } from "./AddSpaceMemberForm";
+import { MemberConfirmDialog } from "./MemberConfirmDialog";
+import { getErrorMessage } from "@/lib/api-error";
+import { toast } from "sonner";
 
 interface SpaceMemberModalProps {
   spaceId: number;
@@ -53,482 +52,385 @@ interface SpaceMemberModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+export function SpaceMemberModal(props: SpaceMemberModalProps) {
+  return (
+    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+      <DialogContent className="sm:max-w-[640px] max-h-[85dvh] flex flex-col p-0 gap-0 overflow-hidden bg-card border-border rounded-2xl">
+        <MemberManager {...props} />
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-export const SpaceMemberModal: React.FC<SpaceMemberModalProps> = ({
+function MemberManager({
   spaceId,
   spaceName,
   currentUserRole,
   currentUserId,
   open,
   onOpenChange,
-}) => {
-  const isOwner = currentUserRole === 'OWNER';
-
-  // Members
-  const { data: members = [], isLoading: isMembersLoading } = useSpaceMembers(spaceId);
-  const addMemberMutation = useAddSpaceMember();
-  const updateRoleMutation = useUpdateMemberRole();
-  const removeMemberMutation = useRemoveSpaceMember();
-
-  // Invitations
-  const { data: invitations = [], isLoading: isInvitationsLoading } = useSpaceInvitations(spaceId);
-  const createInviteMutation = useCreateSpaceInvitation();
-  const revokeInviteMutation = useRevokeSpaceInvitation();
-
-  // Add Member form state
-  const [usernameOrEmail, setUsernameOrEmail] = useState('');
-  const [selectedRole, setSelectedRole] = useState<SpaceRole>('EDITOR');
-
-  // Create Invite form state
-  const [inviteRole, setInviteRole] = useState<SpaceRole>('EDITOR');
-  const [inviteDuration, setInviteDuration] = useState<string>('7');
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  const handleAddMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!usernameOrEmail.trim()) {
-      toast.error('Vui lòng nhập tên đăng nhập hoặc email');
-      return;
+}: SpaceMemberModalProps) {
+  const isOwner = currentUserRole === "OWNER";
+  const navigate = useNavigate();
+  const members = useSpaceMembers(spaceId, { enabled: open });
+  const update = useUpdateMemberRole();
+  const remove = useRemoveSpaceMember();
+  const [view, setView] = useState<"members" | "invite">("members");
+  const [method, setMethod] = useState("link");
+  const [search, setSearch] = useState("");
+  const [roleError, setRoleError] = useState<{
+    userId: number;
+    message: string;
+  } | null>(null);
+  const [removing, setRemoving] = useState<SpaceMemberResponse | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, [view]);
+  const visibleMembers = filterMembers(
+    members.data || [],
+    search,
+    currentUserId,
+  );
+  const self = members.data?.find((member) => member.userId === currentUserId);
+  const selfLeaving = removing?.userId === currentUserId;
+  const changeRole = async (
+    member: SpaceMemberResponse,
+    role: "EDITOR" | "VIEWER",
+  ) => {
+    if (role === member.role || update.isPending) return;
+    setRoleError(null);
+    try {
+      await update.mutateAsync({ spaceId, userId: member.userId, role });
+      toast.success(
+        `Đã đổi quyền của ${memberName(member)} thành ${ROLE_DETAILS[role].label.toLocaleLowerCase("vi")}`,
+      );
+    } catch (error) {
+      setRoleError({ userId: member.userId, message: getErrorMessage(error) });
     }
-
-    addMemberMutation.mutate(
-      {
-        spaceId,
-        data: { usernameOrEmail: usernameOrEmail.trim(), role: selectedRole },
-      },
-      {
-        onSuccess: (newMember) => {
-          toast.success(`Đã thêm ${newMember.fullName || newMember.username} vào nhóm!`);
-          setUsernameOrEmail('');
-        },
-        onError: (err: unknown) => {
-          toast.error(getErrorMessage(err));
-        },
-      }
-    );
   };
-
-  const handleUpdateRole = (userId: number, role: SpaceRole) => {
-    updateRoleMutation.mutate(
-      { spaceId, userId, role },
+  const requestRemove = (member: SpaceMemberResponse) => {
+    setConfirmError(null);
+    setRemoving(member);
+  };
+  const confirmRemove = () => {
+    if (!removing) return;
+    setConfirmError(null);
+    remove.mutate(
+      { spaceId, userId: removing.userId },
       {
         onSuccess: () => {
-          toast.success('Đã cập nhật vai trò thành công!');
+          setRemoving(null);
+          if (selfLeaving) {
+            onOpenChange(false);
+            navigate("/");
+            toast.success("Đã rời không gian");
+          } else {
+            toast.success(`Đã xóa ${memberName(removing)} khỏi nhóm`);
+          }
         },
-        onError: (err: unknown) => {
-          toast.error(getErrorMessage(err));
-        },
-      }
-    );
-  };
-
-  const handleRemoveMember = (userId: number, isSelf: boolean) => {
-    const confirmMsg = isSelf
-      ? 'Bạn có chắc chắn muốn rời khỏi Không gian học tập này?'
-      : 'Bạn có chắc chắn muốn xóa thành viên này khỏi nhóm?';
-
-    if (confirm(confirmMsg)) {
-      removeMemberMutation.mutate(
-        { spaceId, userId },
-        {
-          onSuccess: () => {
-            toast.success(isSelf ? 'Đã rời khỏi Không gian' : 'Đã xóa thành viên khỏi nhóm');
-            if (isSelf) {
-              onOpenChange(false);
-              window.location.href = '/';
-            }
-          },
-          onError: (err: unknown) => {
-            toast.error(getErrorMessage(err));
-          },
-        }
-      );
-    }
-  };
-
-  const handleCreateInvite = () => {
-    const durationDays = parseInt(inviteDuration, 10);
-    createInviteMutation.mutate(
-      {
-        spaceId,
-        data: {
-          role: inviteRole,
-          durationDays: isNaN(durationDays) ? undefined : durationDays,
-        },
+        onError: (error) => setConfirmError(getErrorMessage(error)),
       },
-      {
-        onSuccess: (inv) => {
-          toast.success('Đã tạo mã mời mới thành công!');
-          handleCopyLink(inv.inviteCode);
-        },
-        onError: (err: unknown) => {
-          toast.error(getErrorMessage(err));
-        },
-      }
     );
   };
-
-  const handleCopyLink = (inviteCode: string) => {
-    const joinUrl = `${window.location.origin}/join/${inviteCode}`;
-    navigator.clipboard.writeText(joinUrl);
-    setCopiedCode(inviteCode);
-    toast.success('Đã sao chép liên kết tham gia vào clipboard!');
-    setTimeout(() => setCopiedCode(null), 3000);
-  };
-
-  const handleRevokeInvite = (invitationId: number) => {
-    if (confirm('Bạn có chắc chắn muốn hủy liên kết mời này?')) {
-      revokeInviteMutation.mutate(
-        { spaceId, invitationId },
-        {
-          onSuccess: () => {
-            toast.success('Đã hủy mã mời');
-          },
-          onError: (err: unknown) => {
-            toast.error(getErrorMessage(err));
-          },
-        }
-      );
-    }
-  };
-
-  const getRoleBadge = (role: SpaceRole) => {
-    switch (role) {
-      case 'OWNER':
-        return (
-          <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 text-[11px] font-semibold hover:bg-amber-500/20">
-            <Crown className="w-3 h-3" /> Chủ nhóm
-          </Badge>
-        );
-      case 'EDITOR':
-        return (
-          <Badge className="bg-primary/15 text-primary border-primary/30 gap-1 text-[11px] font-semibold hover:bg-primary/20">
-            <Edit3 className="w-3 h-3" /> Cộng tác
-          </Badge>
-        );
-      case 'VIEWER':
-        return (
-          <Badge variant="outline" className="text-muted-foreground gap-1 text-[11px] font-medium">
-            <Eye className="w-3 h-3" /> Người xem
-          </Badge>
-        );
-    }
-  };
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden bg-card border-border">
-        {/* Header */}
-        <DialogHeader className="p-5 pb-3 border-b border-border/80 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-bold text-foreground">
-                Thành viên & Quyền cộng tác
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Không gian: <span className="font-semibold text-foreground">{spaceName}</span>
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        {/* Content Tabs */}
-        <Tabs defaultValue="members" className="flex-1 flex flex-col min-h-0">
-          <div className="px-5 py-4 border-b border-border/80 shrink-0">
-            <TabsList className="flex w-full group-data-horizontal/tabs:!h-14 rounded-2xl border border-border/60 bg-muted/70 p-2 shadow-inner shadow-black/[0.02]">
-              <TabsTrigger value="members" className="flex-1 rounded-xl px-3 text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground transition-all hover:bg-background/60 hover:text-foreground data-active:bg-background data-active:text-primary data-active:shadow-md data-active:shadow-black/[0.08] focus-visible:ring-2 focus-visible:ring-primary/40">
-                <Users className="w-3.5 h-3.5" />
-                Thành viên ({members.length})
-              </TabsTrigger>
-              {isOwner && (
-                <TabsTrigger value="add" className="flex-1 rounded-xl px-3 text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground transition-all hover:bg-background/60 hover:text-foreground data-active:bg-background data-active:text-primary data-active:shadow-md data-active:shadow-black/[0.08] focus-visible:ring-2 focus-visible:ring-primary/40">
-                  <UserPlus className="w-3.5 h-3.5" />
-                  Thêm trực tiếp
-                </TabsTrigger>
+    <>
+      <DialogHeader className="px-5 sm:px-6 py-3.5 shrink-0 pr-12 text-left">
+        <div className="flex items-center gap-2">
+          {view === "invite" ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Quay lại danh sách thành viên"
+              onClick={() => setView("members")}
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+          ) : null}
+          <div className="min-w-0">
+            <DialogTitle
+              ref={titleRef}
+              tabIndex={-1}
+              className="text-sm font-semibold outline-none"
+            >
+              {view === "invite" ? "Mời thành viên" : "Thành viên"}
+              {view === "members" && members.data && (
+                <span className="ml-1.5 text-muted-foreground font-normal text-xs">
+                  {members.data.length}
+                </span>
               )}
-              {isOwner && (
-                <TabsTrigger value="invite" className="flex-1 rounded-xl px-3 text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground transition-all hover:bg-background/60 hover:text-foreground data-active:bg-background data-active:text-primary data-active:shadow-md data-active:shadow-black/[0.08] focus-visible:ring-2 focus-visible:ring-primary/40">
-                  <LinkIcon className="w-3.5 h-3.5" />
-                  Liên kết mời
-                </TabsTrigger>
-              )}
-            </TabsList>
+            </DialogTitle>
+            <DialogDescription
+              className="text-xs text-muted-foreground truncate mt-0.5"
+              title={spaceName}
+            >
+              {spaceName}
+            </DialogDescription>
           </div>
-
-          {/* TAB 1: DANH SÁCH THÀNH VIÊN */}
-          <TabsContent value="members" className="flex-1 overflow-y-auto p-5 space-y-3 m-0">
-            {isMembersLoading ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground text-xs gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                Đang tải danh sách thành viên...
+        </div>
+      </DialogHeader>
+      {view === "members" ? (
+        <>
+          <div className="p-5 sm:px-6 pb-3 shrink-0 flex flex-col-reverse sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 size-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="search"
+                aria-label="Tìm thành viên"
+                placeholder="Tìm tên hoặc tài khoản..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-10 pl-9"
+              />
+            </div>
+            {isOwner && (
+              <Button
+                className="h-10"
+                onClick={() => {
+                  setMethod("link");
+                  setView("invite");
+                }}
+              >
+                <UserPlus className="size-4" />
+                Mời thành viên
+              </Button>
+            )}
+          </div>
+          <div className="min-h-0 overflow-y-auto px-5 sm:px-6 pb-5 space-y-4">
+            {members.isLoading ? (
+              <div
+                role="status"
+                className="flex justify-center items-center gap-2 py-12 text-sm text-muted-foreground"
+              >
+                <Loader2 className="size-4 animate-spin" />
+                Đang tải thành viên...
               </div>
-            ) : members.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground text-xs">
-                Chưa có thành viên nào trong Không gian này.
+            ) : members.isError ? (
+              <div
+                role="alert"
+                className="rounded-xl border p-5 text-center space-y-3"
+              >
+                <p className="text-sm text-muted-foreground">
+                  Không tải được danh sách thành viên.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => void members.refetch()}
+                >
+                  Thử lại
+                </Button>
+              </div>
+            ) : !visibleMembers.length ? (
+              <div className="text-center py-10 space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  {search.trim()
+                    ? "Không tìm thấy thành viên phù hợp."
+                    : "Chưa có thành viên trong không gian này."}
+                </p>
+                {search.trim() && (
+                  <Button variant="outline" onClick={() => setSearch("")}>
+                    Xóa tìm kiếm
+                  </Button>
+                )}
               </div>
             ) : (
-              members.map((member) => {
-                const isMemberSelf = member.userId === currentUserId;
-                const isMemberOwner = member.role === 'OWNER';
-
-                return (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-border bg-card/60 hover:bg-muted/40 transition-colors gap-3"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <Avatar className="w-9 h-9 border border-border">
-                        <AvatarImage src={member.avatarUrl} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                          {(member.fullName || member.username).substring(0, 2).toUpperCase()}
+              <ul
+                className="rounded-xl border border-border divide-y divide-border"
+                aria-label="Danh sách thành viên"
+              >
+                {visibleMembers.map((member) => {
+                  const name = memberName(member);
+                  const isSelf = member.userId === currentUserId;
+                  const updating =
+                    update.isPending &&
+                    update.variables?.userId === member.userId;
+                  return (
+                    <li
+                      key={member.id}
+                      className="p-3 sm:p-4 grid grid-cols-[36px_minmax(0,1fr)] sm:grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2"
+                    >
+                      <Avatar className="size-9 border border-border self-start">
+                        <AvatarImage src={member.avatarUrl} alt={name} />
+                        <AvatarFallback className="bg-muted text-xs font-semibold">
+                          {name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-xs text-foreground truncate">
-                            {member.fullName || member.username}
+                          <span
+                            className="text-sm font-medium truncate"
+                            title={name}
+                          >
+                            {name}
                           </span>
-                          {isMemberSelf && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                          {isSelf && (
+                            <span className="text-[10px] text-muted-foreground shrink-0 rounded bg-muted px-1.5 py-0.5">
                               Bạn
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          @{member.username}
-                        </p>
+                        {name.toLocaleLowerCase() !==
+                          member.username.toLocaleLowerCase() && (
+                          <p
+                            className="text-xs text-muted-foreground truncate mt-1"
+                            title={member.username}
+                          >
+                            {member.username.includes("@")
+                              ? member.username
+                              : `@${member.username}`}
+                          </p>
+                        )}
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {isOwner && !isMemberOwner ? (
-                        <Select
-                          value={member.role}
-                          onValueChange={(val) => handleUpdateRole(member.userId, val as SpaceRole)}
-                          disabled={updateRoleMutation.isPending}
+                      <div className="col-start-2 sm:col-start-3 flex items-center gap-2 sm:justify-end">
+                        {updating && (
+                          <Loader2
+                            aria-label="Đang lưu quyền"
+                            className="size-4 animate-spin shrink-0"
+                          />
+                        )}
+                        {isOwner && member.role !== "OWNER" ? (
+                          <MemberRoleSelect
+                            value={member.role}
+                            onChange={(role) => void changeRole(member, role)}
+                            label={`Vai trò của ${name}`}
+                            disabled={update.isPending || remove.isPending}
+                          />
+                        ) : (
+                          <MemberRoleBadge role={member.role} />
+                        )}
+                        {isOwner && member.role !== "OWNER" && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              disabled={remove.isPending}
+                              aria-label={`Thao tác với ${name}`}
+                              className="size-8 rounded-lg hover:bg-muted flex items-center justify-center"
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => requestRemove(member)}
+                              >
+                                Xóa khỏi nhóm
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                      {roleError?.userId === member.userId && (
+                        <p
+                          role="alert"
+                          className="col-start-2 sm:col-span-2 text-xs text-destructive"
                         >
-                          <SelectTrigger className="h-7 text-xs w-28 bg-card border-border">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="EDITOR" className="text-xs">
-                              Cộng tác (Editor)
-                            </SelectItem>
-                            <SelectItem value="VIEWER" className="text-xs">
-                              Người xem (Viewer)
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        getRoleBadge(member.role)
+                          {roleError.message}
+                        </p>
                       )}
-
-                      {/* Remove or Leave button */}
-                      {((isOwner && !isMemberOwner) || (!isOwner && isMemberSelf)) && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveMember(member.userId, isMemberSelf)}
-                          disabled={removeMemberMutation.isPending}
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive cursor-pointer rounded-lg"
-                          title={isMemberSelf ? 'Rời khỏi không gian' : 'Xóa thành viên'}
-                        >
-                          {isMemberSelf ? <LogOut className="w-3.5 h-3.5" /> : <Trash2 className="w-3.5 h-3.5" />}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
+                    </li>
+                  );
+                })}
+              </ul>
             )}
-          </TabsContent>
-
-          {/* TAB 2: THÊM THÀNH VIÊN TRỰC TIẾP */}
-          {isOwner && (
-            <TabsContent value="add" className="flex-1 overflow-y-auto p-5 m-0 space-y-4">
-              <form onSubmit={handleAddMember} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    Tên đăng nhập (Username) hoặc Email
-                  </label>
-                  <Input
-                    placeholder="ví dụ: nguyenvana hoặc email@example.com"
-                    value={usernameOrEmail}
-                    onChange={(e) => setUsernameOrEmail(e.target.value)}
-                    className="text-xs h-9 bg-card border-border"
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    Thành viên cần có tài khoản đã đăng ký trên Mora.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    Vai trò trong Không gian
-                  </label>
-                  <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val as SpaceRole)}>
-                    <SelectTrigger className="w-full h-9 text-xs bg-card border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="EDITOR" className="text-xs">
-                        <span className="font-semibold text-foreground">Cộng tác viên (Editor)</span>
-                      </SelectItem>
-                      <SelectItem value="VIEWER" className="text-xs">
-                        <span className="font-semibold text-foreground">Người xem (Viewer)</span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  {/* Dynamic description based on selectedRole */}
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    {selectedRole === 'EDITOR' 
-                      ? "Cộng tác viên: Được tải lên tài liệu, hỏi đáp AI và tham gia chat nhóm."
-                      : "Người xem: Chỉ đọc tài liệu và hỏi đáp AI, không tải lên hay xóa tài liệu."}
-                  </p>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={addMemberMutation.isPending || !usernameOrEmail.trim()}
-                  className="w-full h-9 text-xs font-semibold gap-1.5 cursor-pointer mt-2"
+            <details className="text-xs text-muted-foreground">
+              <summary className="cursor-pointer py-1 font-medium hover:text-foreground">
+                Các vai trò khác nhau thế nào?
+              </summary>
+              <dl className="mt-3 space-y-3">
+                {(["OWNER", "EDITOR", "VIEWER"] as const).map((role) => (
+                  <div key={role}>
+                    <dt className="font-medium text-foreground">
+                      {ROLE_DETAILS[role].label}
+                    </dt>
+                    <dd className="mt-1 leading-5">
+                      {ROLE_DETAILS[role].description}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          </div>
+          <footer className="shrink-0 px-5 sm:px-6 py-4 border-t border-border flex flex-wrap gap-3 items-center justify-between bg-muted/20">
+            <span className="text-xs text-muted-foreground">
+              Vai trò của bạn:{" "}
+              <span className="font-medium text-foreground">
+                {currentUserRole
+                  ? ROLE_DETAILS[currentUserRole].label
+                  : "Thành viên"}
+              </span>
+            </span>
+            {!isOwner && self && (
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                onClick={() => requestRemove(self)}
+              >
+                <LogOut className="size-4" />
+                Rời không gian
+              </Button>
+            )}
+          </footer>
+        </>
+      ) : (
+        isOwner && (
+          <Tabs
+            value={method}
+            onValueChange={(value) => setMethod(String(value))}
+            className="flex flex-col min-h-0"
+          >
+            <div className="px-5 sm:px-6 pt-5 shrink-0">
+              <TabsList className="w-full h-auto p-1">
+                <TabsTrigger
+                  value="link"
+                  className="flex-1 gap-2 py-2 text-xs sm:text-sm"
                 >
-                  {addMemberMutation.isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <UserPlus className="w-3.5 h-3.5" />
-                  )}
-                  Thêm thành viên ngay
-                </Button>
-              </form>
-            </TabsContent>
-          )}
-
-          {/* TAB 3: LIÊN KẾT MỜI */}
-          {isOwner && (
-            <TabsContent value="invite" className="flex-1 overflow-y-auto p-5 m-0 space-y-4">
-              <div className="p-3.5 rounded-xl border border-border bg-muted/30 space-y-3">
-                <span className="text-xs font-bold text-foreground block">
-                  Tạo liên kết mời mới
-                </span>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-medium text-muted-foreground">
-                      Vai trò mặc định
-                    </label>
-                    <Select value={inviteRole} onValueChange={(val) => setInviteRole(val as SpaceRole)}>
-                      <SelectTrigger className="w-full h-8 text-xs bg-card border-border">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EDITOR" className="text-xs">Cộng tác (Editor)</SelectItem>
-                        <SelectItem value="VIEWER" className="text-xs">Người xem (Viewer)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-medium text-muted-foreground">
-                      Thời hạn hiệu lực
-                    </label>
-                    <Select value={inviteDuration} onValueChange={(val) => val && setInviteDuration(val)}>
-                      <SelectTrigger className="w-full h-8 text-xs bg-card border-border">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="7" className="text-xs">7 ngày</SelectItem>
-                        <SelectItem value="30" className="text-xs">30 ngày</SelectItem>
-                        <SelectItem value="0" className="text-xs">Vĩnh viễn</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Button
-                  size="sm"
-                  onClick={handleCreateInvite}
-                  disabled={createInviteMutation.isPending}
-                  className="w-full h-8 text-xs font-semibold gap-1.5 cursor-pointer"
+                  <LinkIcon className="size-4" />
+                  Chia sẻ liên kết
+                </TabsTrigger>
+                <TabsTrigger
+                  value="account"
+                  className="flex-1 gap-2 py-2 text-xs sm:text-sm"
                 >
-                  {createInviteMutation.isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <LinkIcon className="w-3.5 h-3.5" />
-                  )}
-                  Tạo & Sao chép liên kết mời
-                </Button>
-              </div>
-
-              {/* Active invitations list */}
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
-                  Mã mời đang hoạt động
-                </span>
-
-                {isInvitationsLoading ? (
-                  <div className="text-center py-4 text-xs text-muted-foreground">Đang tải...</div>
-                ) : invitations.filter((i) => i.status === 'PENDING').length === 0 ? (
-                  <div className="text-center py-4 text-xs text-muted-foreground border border-dashed border-border rounded-xl">
-                    Chưa có liên kết mời nào đang hoạt động.
-                  </div>
-                ) : (
-                  invitations
-                    .filter((i) => i.status === 'PENDING')
-                    .map((inv) => {
-                      const isCopied = copiedCode === inv.inviteCode;
-                      const expiresText = inv.expiresAt
-                        ? `Hết hạn: ${new Date(inv.expiresAt).toLocaleDateString('vi-VN')}`
-                        : 'Không thời hạn';
-
-                      return (
-                        <div
-                          key={inv.id}
-                          className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card gap-2 text-xs"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 font-mono font-bold text-foreground">
-                              <span>{inv.inviteCode}</span>
-                              {getRoleBadge(inv.role)}
-                            </div>
-                            <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <Clock className="w-3 h-3" />
-                              {expiresText}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopyLink(inv.inviteCode)}
-                              className="h-7 text-[11px] gap-1 cursor-pointer"
-                            >
-                              {isCopied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                              {isCopied ? 'Đã chép' : 'Sao chép'}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRevokeInvite(inv.id)}
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive cursor-pointer rounded-lg"
-                              title="Hủy mã mời"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })
-                )}
-              </div>
-            </TabsContent>
-          )}
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+                  <UserPlus className="size-4" />
+                  Thêm bằng tài khoản
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <div className="overflow-y-auto min-h-0 p-5 sm:p-6">
+              <TabsContent value="link" className="m-0">
+                <MemberInvitationPanel
+                  spaceId={spaceId}
+                  open={open && method === "link"}
+                />
+              </TabsContent>
+              <TabsContent value="account" className="m-0">
+                <AddSpaceMemberForm
+                  spaceId={spaceId}
+                  onAdded={() => {
+                    setSearch("");
+                    setView("members");
+                  }}
+                />
+              </TabsContent>
+            </div>
+          </Tabs>
+        )
+      )}
+      <MemberConfirmDialog
+        open={!!removing}
+        title={selfLeaving ? "Rời không gian?" : "Xóa thành viên khỏi nhóm?"}
+        description={
+          selfLeaving
+            ? `Bạn sẽ mất quyền truy cập vào không gian “${spaceName}”. Bạn có thể tham gia lại khi được thêm hoặc có liên kết mời còn hiệu lực.`
+            : `${removing ? memberName(removing) : "Thành viên"} sẽ mất quyền truy cập vào không gian “${spaceName}”. Bạn có thể thêm lại người này sau.`
+        }
+        actionLabel={selfLeaving ? "Rời không gian" : "Xóa khỏi nhóm"}
+        pending={remove.isPending}
+        error={confirmError}
+        onCancel={() => setRemoving(null)}
+        onConfirm={confirmRemove}
+        returnFocus={titleRef}
+      />
+    </>
   );
-};
+}

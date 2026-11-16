@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { UseQueryOptions } from '@tanstack/react-query';
 import {
   getSpaces,
   getSpace,
@@ -29,7 +30,7 @@ export const useSpaces = () => {
   });
 };
 
-export const useSpaceDetail = (id: number, options?: any) => {
+export const useSpaceDetail = (id: number, options?: Omit<UseQueryOptions<SpaceDetailResponse>, 'queryKey' | 'queryFn'>) => {
   return useQuery<SpaceDetailResponse>({
     queryKey: ['space', id],
     queryFn: () => getSpace(id),
@@ -63,11 +64,11 @@ export const useDeleteSpace = () => {
 // TẦNG CỘNG TÁC: MEMBER HOOKS
 // ==========================================
 
-export const useSpaceMembers = (spaceId: number) => {
+export const useSpaceMembers = (spaceId: number, options?: { enabled?: boolean }) => {
   return useQuery<SpaceMemberResponse[]>({
     queryKey: ['space-members', spaceId],
     queryFn: () => getSpaceMembers(spaceId),
-    enabled: !isNaN(spaceId) && spaceId > 0,
+    enabled: !isNaN(spaceId) && spaceId > 0 && (options?.enabled ?? true),
   });
 };
 
@@ -89,8 +90,10 @@ export const useUpdateMemberRole = () => {
     mutationFn: ({ spaceId, userId, role }: { spaceId: number; userId: number; role: SpaceRole }) =>
       updateMemberRole(spaceId, userId, { role }),
     onSuccess: (_, { spaceId }) => {
-      queryClient.invalidateQueries({ queryKey: ['space-members', spaceId] });
-      queryClient.invalidateQueries({ queryKey: ['space', spaceId] });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['space-members', spaceId] }),
+        queryClient.invalidateQueries({ queryKey: ['space', spaceId] }),
+      ]);
     },
   });
 };
@@ -112,11 +115,11 @@ export const useRemoveSpaceMember = () => {
 // TẦNG CỘNG TÁC: INVITATION HOOKS
 // ==========================================
 
-export const useSpaceInvitations = (spaceId: number) => {
+export const useSpaceInvitations = (spaceId: number, options?: { enabled?: boolean }) => {
   return useQuery<SpaceInvitationResponse[]>({
     queryKey: ['space-invitations', spaceId],
     queryFn: () => getSpaceInvitations(spaceId),
-    enabled: !isNaN(spaceId) && spaceId > 0,
+    enabled: !isNaN(spaceId) && spaceId > 0 && (options?.enabled ?? true),
   });
 };
 
