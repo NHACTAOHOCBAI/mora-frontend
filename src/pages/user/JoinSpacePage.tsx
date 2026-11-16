@@ -1,199 +1,88 @@
-import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  Users,
-  FileText,
-  Sparkles,
-  ArrowRight,
-  AlertCircle,
-  Loader2,
-  Crown,
-  Edit3,
-  Eye,
-  CheckCircle2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { usePreviewSpaceInvitation, useJoinSpaceByInviteCode } from '@/features/chat/hooks/useSpace';
-import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/api-error';
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { Users, FileText, UserPlus, ArrowRight, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { usePreviewSpaceInvitation, useJoinSpaceByInviteCode } from "@/features/chat/hooks/useSpace";
+import { MemberRoleBadge } from "@/features/chat/components/MemberRoleSelect";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { toast } from "sonner";
+import { AppApiError, getErrorMessage } from "@/lib/api-error";
 
-export const JoinSpacePage: React.FC = () => {
-  const { inviteCode } = useParams<{ inviteCode: string }>();
+export const JoinSpacePage = () => {
+  const { inviteCode = "" } = useParams<{ inviteCode: string }>();
   const navigate = useNavigate();
-
-  const { data: preview, isLoading, error } = usePreviewSpaceInvitation(inviteCode || '');
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const { data: preview, isLoading, error, refetch, isFetching } = usePreviewSpaceInvitation(inviteCode);
   const joinMutation = useJoinSpaceByInviteCode();
-
   const handleJoin = () => {
-    if (!inviteCode) return;
-
+    if (joinMutation.isPending || !preview) return;
+    if (preview.isAlreadyMember) {
+      navigate(`/space/${preview.spaceId}`, { replace: true });
+      return;
+    }
     joinMutation.mutate(inviteCode, {
-      onSuccess: (space) => {
-        toast.success(`Đã gia nhập Không gian "${space.name}" thành công!`);
-        navigate(`/space/${space.id}`);
+      onSuccess: space => {
+        toast.success(`Đã tham gia không gian “${space.name}”`);
+        navigate(`/space/${space.id}`, { replace: true });
       },
-      onError: (err: unknown) => {
+      onError: err => {
         toast.error(getErrorMessage(err));
+        if (err instanceof AppApiError && [1023, 1024].includes(err.code ?? 0)) void refetch();
       },
     });
   };
-
-  const getRoleBadge = (role?: string) => {
-    switch (role) {
-      case 'OWNER':
-        return (
-          <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 text-xs">
-            <Crown className="w-3.5 h-3.5" /> Chủ nhóm (Owner)
-          </Badge>
-        );
-      case 'EDITOR':
-        return (
-          <Badge className="bg-primary/15 text-primary border-primary/30 gap-1 text-xs">
-            <Edit3 className="w-3.5 h-3.5" /> Cộng tác viên (Editor)
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="text-muted-foreground gap-1 text-xs">
-            <Eye className="w-3.5 h-3.5" /> Người xem (Viewer)
-          </Badge>
-        );
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          Đang kiểm tra thông tin mã mời...
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !preview) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
-        <Card className="max-w-md w-full border-border bg-card shadow-lg text-center p-6">
-          <div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <CardTitle className="text-lg font-bold text-foreground">
-            {getErrorMessage(error, 'Không thể tải thông tin mã mời')}
-          </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground mt-2">
-            Vui lòng kiểm tra lại liên kết hoặc liên hệ chủ sở hữu Không gian để được hỗ trợ.
-          </CardDescription>
-          <CardFooter className="flex justify-center mt-6 p-0">
-            <Link to="/">
-              <Button variant="outline" className="cursor-pointer text-xs">
-                Quay về Dashboard
-              </Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
+  const invalid = error instanceof AppApiError &&
+    ([1023, 1024].includes(error.code ?? 0) || error.status === 404);
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background flex flex-col items-center justify-center p-6 text-foreground">
-      <Card className="max-w-md w-full border-border bg-card shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="h-2 bg-primary w-full" />
-        
-        <CardHeader className="text-center pt-8 pb-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3 shadow-inner">
-            <Sparkles className="w-7 h-7 animate-pulse" />
+    <div className="flex w-full min-w-0 flex-1 items-center justify-center bg-muted/20 p-4 sm:p-8">
+      <Card className="w-full max-w-md gap-5 rounded-2xl p-6 sm:p-8">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <span aria-hidden="true" className="flex size-12 items-center justify-center rounded-full border bg-muted/60">
+            {isLoading ? <Loader2 className="size-6 animate-spin" /> : error ? <AlertCircle className="size-6" /> : <UserPlus className="size-6" />}
+          </span>
+          <div className="space-y-2">
+            <h1 className="text-xl font-semibold">{isLoading ? "Đang kiểm tra lời mời..." : invalid ? "Lời mời không còn hiệu lực" : error ? "Không thể tải lời mời" : "Tham gia không gian"}</h1>
+            <p className="text-sm leading-6 text-muted-foreground">{invalid ? "Liên kết không hợp lệ, đã hết hạn hoặc đã bị thu hồi. Hãy liên hệ chủ nhóm để nhận lời mời mới." : error ? getErrorMessage(error) : "Kiểm tra thông tin bên dưới trước khi xác nhận tham gia."}</p>
           </div>
-          <CardTitle className="text-xl font-bold text-foreground">
-            Lời Mời Gia Nhập Không Gian
-          </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground">
-            Bạn được mời tham gia Không gian học tập cộng tác trên Mora
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-4 px-6">
-          {/* Space Card Preview */}
-          <div className="p-4 rounded-2xl border border-border bg-muted/30 space-y-3">
-            <div>
-              <h3 className="text-base font-bold text-foreground truncate">
-                {preview.spaceName}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {preview.spaceDescription || 'Không gian học tập và nghiên cứu dùng chung.'}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 border-t border-border/60">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Users className="w-4 h-4 text-primary" />
-                {preview.memberCount} thành viên
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <FileText className="w-4 h-4 text-primary" />
-                {preview.documentCount} tài liệu
-              </span>
-            </div>
+        </div>
+        {error ? (
+          <div className="flex flex-col gap-2">
+            {!invalid && <Button className="h-10" variant="outline" disabled={isFetching} onClick={() => { void refetch(); }}>Thử lại</Button>}
+            <Button className="h-10" variant="ghost" render={<Link to="/" />}>Về danh sách không gian</Button>
           </div>
-
-          {/* Inviter & Role info */}
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card text-xs">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Avatar className="w-8 h-8 border border-border">
-                <AvatarImage src={preview.inviterAvatar} />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">
-                  {(preview.inviterName || 'User').substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground">Người mời</p>
-                <p className="font-semibold text-foreground truncate">{preview.inviterName || 'Thành viên nhóm'}</p>
+        ) : preview && (
+          <>
+            <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+              <h2 className="break-words text-base font-semibold">{preview.spaceName}</h2>
+              {preview.spaceDescription && <p className="break-words text-sm leading-6 text-muted-foreground">{preview.spaceDescription}</p>}
+              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5"><Users className="size-3.5" />{preview.memberCount} thành viên</span>
+                <span className="inline-flex items-center gap-1.5"><FileText className="size-3.5" />{preview.documentCount} tài liệu</span>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs">
+                <span className="min-w-0 break-words text-muted-foreground">Người mời: {preview.inviterName || "Chủ nhóm"}</span>
+                <MemberRoleBadge role={preview.role} />
               </div>
             </div>
-
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground mb-0.5">Vai trò nhận</p>
-              {getRoleBadge(preview.role)}
+            {preview.isAlreadyMember && <p className="flex items-center gap-2 text-sm"><CheckCircle2 className="size-4 shrink-0" />Bạn đã có quyền truy cập không gian này.</p>}
+            <div className="space-y-1 rounded-lg bg-muted/30 p-3 text-center">
+              <p className="text-xs text-muted-foreground">Bạn đang đăng nhập bằng</p>
+              <p className="break-all text-sm font-medium">{user?.email}</p>
+              <Button variant="ghost" size="sm" disabled={joinMutation.isPending}
+                onClick={() => logout(location.pathname + location.search + location.hash)}>Dùng tài khoản khác</Button>
             </div>
-          </div>
-
-          {preview.isAlreadyMember && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>Bạn hiện đã là thành viên của Không gian này.</span>
+            <div className="flex flex-col gap-2">
+              <Button className="h-10 w-full" disabled={joinMutation.isPending} onClick={handleJoin}>
+                {joinMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                {joinMutation.isPending ? "Đang tham gia..." : preview.isAlreadyMember ? "Mở không gian" : "Tham gia không gian"}
+                {!joinMutation.isPending && <ArrowRight className="size-4" />}
+              </Button>
+              <Button variant="ghost" className="h-10 w-full" disabled={joinMutation.isPending} render={<Link to="/" />}>Để sau</Button>
             </div>
-          )}
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-2 p-6 pt-2">
-          <Button
-            onClick={handleJoin}
-            disabled={joinMutation.isPending}
-            className="w-full h-10 font-bold text-xs gap-2 cursor-pointer shadow-md"
-          >
-            {joinMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                {preview.isAlreadyMember ? 'Truy cập Không gian ngay' : 'Xác nhận Tham gia Không gian'}
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </Button>
-
-          <Link to="/" className="w-full">
-            <Button variant="ghost" className="w-full text-xs text-muted-foreground cursor-pointer">
-              Bỏ qua & Quay về Trang chủ
-            </Button>
-          </Link>
-        </CardFooter>
+          </>
+        )}
       </Card>
     </div>
   );
 };
-export default JoinSpacePage;

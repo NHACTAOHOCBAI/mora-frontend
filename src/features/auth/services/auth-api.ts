@@ -19,8 +19,8 @@ export const authApi = {
     return response.data.result;
   },
 
-  getCurrentUser: async (): Promise<UserResponse> => {
-    const response = await apiClient.get<ApiResponse<UserResponse>>('/users/me');
+  getCurrentUser: async (signal?: AbortSignal): Promise<UserResponse> => {
+    const response = await apiClient.get<ApiResponse<UserResponse>>('/users/me', { signal });
     return response.data.result;
   },
 

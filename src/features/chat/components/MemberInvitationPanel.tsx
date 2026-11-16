@@ -62,7 +62,6 @@ export function MemberInvitationPanel({
   );
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const linkRef = useRef<HTMLInputElement>(null);
   const listTitleRef = useRef<HTMLHeadingElement>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const form = useForm<InviteValues>({
@@ -93,7 +92,7 @@ export function MemberInvitationPanel({
       toast.success("Đã sao chép liên kết");
     } catch {
       setCopyError(
-        "Không thể tự động sao chép. Hãy chọn liên kết bên dưới và sao chép thủ công.",
+        "Không thể sao chép. Hãy cho phép trình duyệt truy cập bộ nhớ tạm và thử lại.",
       );
     }
   };
@@ -110,7 +109,6 @@ export function MemberInvitationPanel({
           setCopiedCode(null);
           setCopyError(null);
           toast.success("Đã tạo liên kết mời");
-          requestAnimationFrame(() => linkRef.current?.focus());
         },
         onError: (error) =>
           form.setError("root", { message: getErrorMessage(error) }),
@@ -224,11 +222,9 @@ export function MemberInvitationPanel({
             Liên kết vừa tạo
           </label>
           <Input
-            ref={linkRef}
             id="new-invite-url"
-            readOnly
+            disabled
             value={joinUrl(createdActive.inviteCode)}
-            onFocus={(event) => event.target.select()}
           />
           <Button
             variant="outline"
@@ -297,10 +293,9 @@ export function MemberInvitationPanel({
               </div>
               <div className="flex items-center gap-2">
                 <Input
-                  readOnly
+                  disabled
                   aria-label={`Liên kết mời ${invitation.inviteCode}`}
                   value={joinUrl(invitation.inviteCode)}
-                  onFocus={(event) => event.target.select()}
                   className="min-w-0 flex-1 text-xs"
                 />
                 <Button

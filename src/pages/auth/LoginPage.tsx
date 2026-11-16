@@ -1,3 +1,4 @@
+import { useAuthRedirect } from "@/features/auth/hooks/useAuthRedirect";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +22,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const LoginPage: React.FC = () => {
+  const { authHref } = useAuthRedirect();
   const { login, isLoggingIn } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -117,7 +119,7 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div className="flex justify-end">
-            <Link to="/forgot-password" className="rounded text-sm font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring">Quên mật khẩu?</Link>
+            <Link to={authHref("/forgot-password")} className="rounded text-sm font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring">Quên mật khẩu?</Link>
           </div>
           <Button
             type="submit"
@@ -138,7 +140,7 @@ export const LoginPage: React.FC = () => {
         <div className="text-center text-sm text-muted-foreground mt-6">
           Chưa có tài khoản?{" "}
           <Link
-            to="/register"
+            to={authHref("/register")}
             className="font-semibold text-foreground hover:underline"
           >
             Đăng ký ngay

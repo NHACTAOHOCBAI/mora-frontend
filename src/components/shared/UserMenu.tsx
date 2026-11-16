@@ -1,4 +1,5 @@
 import React from 'react';
+import { setSessionToken } from '@/features/auth/session';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import {
@@ -27,9 +28,9 @@ export const UserMenu: React.FC = () => {
 
   const handleSwitchBack = () => {
     if (originalToken) {
-      localStorage.setItem('token', originalToken);
+      setSessionToken(originalToken);
       localStorage.removeItem('originalToken');
-      window.location.href = '/';
+      window.location.assign('/');
     }
   };
 
@@ -92,7 +93,7 @@ export const UserMenu: React.FC = () => {
           </>
         )}
 
-        <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20 focus:text-destructive">
+        <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20 focus:text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Đăng xuất</span>
         </DropdownMenuItem>

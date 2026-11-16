@@ -1,69 +1,46 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi } from '../services/auth-api';
-import { useNavigate } from 'react-router-dom';
+import { useSyncExternalStore } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { authApi } from "../services/auth-api";
+import { useNavigate } from "react-router-dom";
+import { getSession, subscribeSession, setSessionToken } from "../session";
+import { authPath, clearReturnTo, pendingReturnTo, rememberReturnTo } from "../utils/auth-redirect";
 
 export const useAuth = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
-
-  // Lấy thông tin user hiện tại
-  const {
-    data: user,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: authApi.getCurrentUser,
-    enabled: !!token,
+  const session = useSyncExternalStore(subscribeSession, getSession);
+  const query = useQuery({
+    queryKey: ["currentUser", session.revision],
+    queryFn: ({ signal }) => authApi.getCurrentUser(signal),
+    enabled: !!session.token,
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 phút
+    staleTime: 1000 * 60 * 5,
   });
-
-  // Mutation Đăng nhập
   const loginMutation = useMutation({
     mutationFn: authApi.login,
-    onSuccess: async (data) => {
-      localStorage.setItem('token', data.token);
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      // Đợi load xong user rồi mới hướng đi tiếp
-      const userResult = await refetch();
-      if (userResult.data?.role === 'ROLE_ADMIN') {
-        navigate('/admin/users');
-      } else {
-        navigate('/');
-      }
-    },
+    onSuccess: data => { setSessionToken(data.token); },
   });
-
-  // Mutation Đăng ký
   const registerMutation = useMutation({
     mutationFn: authApi.register,
-    onSuccess: () => {
-      navigate('/login');
-    },
+    onSuccess: () => navigate(authPath("/login", pendingReturnTo()), { replace: true }),
   });
-
-  // Hàm Đăng xuất
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('originalToken');
+  const logout = (returnTo?: string) => {
+    clearReturnTo();
+    if (returnTo) rememberReturnTo(returnTo);
+    localStorage.removeItem("originalToken");
+    setSessionToken(null, !returnTo);
     queryClient.clear();
-    navigate('/login');
+    navigate(authPath("/login", returnTo), { replace: true });
   };
-
   return {
-    user,
-    isAuthenticated: !!token && !!user,
-    isLoading: isLoading && !!token,
-    error,
-    login: loginMutation.mutateAsync,
-    isLoggingIn: loginMutation.isPending,
+    token: session.token, expired: session.expired, explicitLogout: session.explicitLogout,
+    user: session.token ? query.data : undefined,
+    isAuthenticated: !!session.token && !!query.data,
+    isLoading: !!session.token && query.isPending,
+    isFetching: query.isFetching, error: query.error, retrySession: query.refetch,
+    login: loginMutation.mutateAsync, isLoggingIn: loginMutation.isPending,
     loginError: loginMutation.error,
-    register: registerMutation.mutateAsync,
-    isRegistering: registerMutation.isPending,
-    registerError: registerMutation.error,
-    logout,
+    register: registerMutation.mutateAsync, isRegistering: registerMutation.isPending,
+    registerError: registerMutation.error, logout,
   };
 };

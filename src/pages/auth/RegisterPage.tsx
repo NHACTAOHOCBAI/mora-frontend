@@ -1,3 +1,4 @@
+import { useAuthRedirect } from "@/features/auth/hooks/useAuthRedirect";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +39,7 @@ const registerSchema = z
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export const RegisterPage: React.FC = () => {
+  const { authHref } = useAuthRedirect();
   const { register: registerUser, isRegistering } = useAuth();
 
   const {
@@ -179,7 +181,7 @@ export const RegisterPage: React.FC = () => {
         <div className="text-center text-sm text-muted-foreground mt-6">
           Đã có tài khoản?{" "}
           <Link
-            to="/login"
+            to={authHref("/login")}
             className="font-semibold text-foreground hover:underline"
           >
             Đăng nhập

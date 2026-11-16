@@ -1,3 +1,5 @@
+import { useAuthRedirect } from "@/features/auth/hooks/useAuthRedirect";
+import { setSessionToken } from "@/features/auth/session";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -13,6 +15,7 @@ import { useResetPassword } from "@/features/auth/hooks/usePasswordRecovery";
 import { AppApiError, getErrorMessage } from "@/lib/api-error";
 
 export const ResetPasswordPage = () => {
+  const { authHref } = useAuthRedirect();
   const [params] = useSearchParams();
   const token = params.get("token") || "";
   const mutation = useResetPassword();
@@ -35,7 +38,7 @@ export const ResetPasswordPage = () => {
     form.clearErrors("root");
     try {
       await mutation.mutateAsync({ token, newPassword: data.newPassword });
-      localStorage.removeItem("token"); localStorage.removeItem("originalToken");
+      setSessionToken(null); localStorage.removeItem("originalToken");
       queryClient.clear();
       form.reset();
       setSuccess(true);
@@ -47,13 +50,13 @@ export const ResetPasswordPage = () => {
   if (!/^[A-Za-z0-9_-]{43}$/.test(token) || invalid) {
     return <PasswordRecoveryCard title="Liên kết không còn hiệu lực" icon={<Link2Off />}
       description="Liên kết khôi phục không hợp lệ, đã hết hạn hoặc đã được sử dụng. Vui lòng yêu cầu liên kết mới.">
-      <Button className="h-10 w-full" render={<Link to="/forgot-password" />}>Yêu cầu liên kết mới</Button>
-      <Link to="/login" className="text-center text-sm text-muted-foreground hover:underline">Quay về đăng nhập</Link>
+      <Button className="h-10 w-full" render={<Link to={authHref("/forgot-password")} />}>Yêu cầu liên kết mới</Button>
+      <Link to={authHref("/login")} className="text-center text-sm text-muted-foreground hover:underline">Quay về đăng nhập</Link>
     </PasswordRecoveryCard>;
   }
   if (success) {
     return <PasswordRecoveryCard title="Đã đặt lại mật khẩu" icon={<CheckCircle2 />} description="Bạn có thể đăng nhập Mora bằng mật khẩu mới. Các phiên đăng nhập cũ đã bị vô hiệu hóa.">
-      <Button className="h-10 w-full" render={<Link to="/login" />}>Đăng nhập</Button>
+      <Button className="h-10 w-full" render={<Link to={authHref("/login")} />}>Đăng nhập</Button>
     </PasswordRecoveryCard>;
   }
   return (
@@ -88,7 +91,7 @@ export const ResetPasswordPage = () => {
           {mutation.isPending ? "Đang đặt lại mật khẩu..." : "Đặt lại mật khẩu"}
         </Button>
       </form>
-      <Link to="/forgot-password" className="text-center text-sm text-muted-foreground hover:underline">Yêu cầu liên kết mới</Link>
+      <Link to={authHref("/forgot-password")} className="text-center text-sm text-muted-foreground hover:underline">Yêu cầu liên kết mới</Link>
     </PasswordRecoveryCard>
   );
 };

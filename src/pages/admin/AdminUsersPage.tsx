@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { setSessionToken } from '@/features/auth/session';
 import { useAdminUsers, useAdminUsersQuery } from '@/features/admin/hooks/useAdminUsers';
 import { adminApi } from '@/features/admin/services/admin-api';
 import { Button } from '@/components/ui/button';
@@ -93,10 +94,9 @@ export const AdminUsersPage: React.FC = () => {
       if (currentToken) {
         localStorage.setItem('originalToken', currentToken);
       }
-      localStorage.setItem('token', response.token);
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      setSessionToken(response.token);
       toast.success('Đăng nhập thành công với quyền người dùng!');
-      window.location.href = '/';
+      window.location.assign('/');
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     }

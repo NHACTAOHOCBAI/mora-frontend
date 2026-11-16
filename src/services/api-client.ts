@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { expireSession } from '@/features/auth/session';
+import { authPath, rememberReturnTo, safeReturnTo } from '@/features/auth/utils/auth-redirect';
 import { toAppApiError } from '@/lib/api-error';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
@@ -28,16 +30,15 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response) {
-      const { status, config } = error.response;
-      if (status === 401) {
-        // Bỏ qua chuyển hướng nếu là API đăng nhập
-        if (config && !config.url?.startsWith('/auth/')) {
-          localStorage.removeItem('token');
-          if (!['/login', '/forgot-password', '/reset-password'].includes(window.location.pathname)) {
-            window.location.href = '/login?expired=true';
-          }
-        }
+    const config = error.config;
+    if (error.response?.status === 401 && config && !config.url?.startsWith("/auth/")) {
+      const authorization = config.headers?.Authorization;
+      const requestToken = typeof authorization === "string" && authorization.startsWith("Bearer ")
+        ? authorization.slice(7) : "";
+      if (expireSession(requestToken)) {
+        const target = safeReturnTo(window.location.pathname + window.location.search + window.location.hash);
+        rememberReturnTo(target);
+        if (target) window.location.replace(authPath("/login", target, true));
       }
     }
     return Promise.reject(toAppApiError(error));

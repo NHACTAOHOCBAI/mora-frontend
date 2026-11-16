@@ -1,3 +1,4 @@
+import { useAuthRedirect } from "@/features/auth/hooks/useAuthRedirect";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -12,6 +13,7 @@ import { useForgotPassword } from "@/features/auth/hooks/usePasswordRecovery";
 import { AppApiError, getErrorMessage } from "@/lib/api-error";
 
 export const ForgotPasswordPage = () => {
+  const { authHref } = useAuthRedirect();
   const mutation = useForgotPassword();
   const [sentEmail, setSentEmail] = useState<string | null>(null);
   const [nextAllowedAt, setNextAllowedAt] = useState(0);
@@ -75,7 +77,7 @@ export const ForgotPasswordPage = () => {
         </form>
       )}
       {form.formState.errors.root?.message && <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.message}</p>}
-      <Link to="/login" className="inline-flex items-center justify-center gap-2 rounded text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
+      <Link to={authHref("/login")} className="inline-flex items-center justify-center gap-2 rounded text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
         <ArrowLeft className="size-4" />Quay về đăng nhập
       </Link>
     </PasswordRecoveryCard>

@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import { onSessionReset } from '@/features/auth/session';
+import React, { useState, useLayoutEffect } from 'react';
 
 export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
   const [queryClient] = useState(
@@ -14,6 +15,11 @@ export const QueryProvider = ({ children }: { children: React.ReactNode }) => {
         },
       })
   );
+
+  useLayoutEffect(() => onSessionReset(() => {
+    void queryClient.cancelQueries();
+    queryClient.clear();
+  }), [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>

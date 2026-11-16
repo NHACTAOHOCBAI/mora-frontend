@@ -155,6 +155,8 @@ export const usePreviewSpaceInvitation = (inviteCode: string) => {
     queryKey: ['space-invitation-preview', inviteCode],
     queryFn: () => previewSpaceInvitation(inviteCode),
     enabled: !!inviteCode && inviteCode.trim().length > 0,
+    retry: false,
+    refetchOnMount: 'always',
   });
 };
 
@@ -162,8 +164,6 @@ export const useJoinSpaceByInviteCode = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (inviteCode: string) => joinSpaceByInviteCode(inviteCode),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['spaces'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['spaces'] }),
   });
 };
