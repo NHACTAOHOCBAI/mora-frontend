@@ -1,3 +1,4 @@
+import { toAlias } from "@/lib/utils";
 import React from 'react';
 import { setSessionToken } from '@/features/auth/session';
 import { useNavigate } from 'react-router-dom';
@@ -19,11 +20,6 @@ export const UserMenu: React.FC = () => {
 
   if (!user) return null;
 
-  // Lấy chữ cái đầu tiên của tên để làm avatar đại diện
-  const getInitials = (name: string) => {
-    return name ? name.charAt(0).toUpperCase() : 'U';
-  };
-
   const originalToken = localStorage.getItem('originalToken');
 
   const handleSwitchBack = () => {
@@ -40,7 +36,7 @@ export const UserMenu: React.FC = () => {
         {user.avatarUrl ? (
           <img src={user.avatarUrl} alt={user.fullName || user.email} className="w-full h-full object-cover" />
         ) : (
-          getInitials(user.fullName || user.email)
+          toAlias(user.fullName || user.email)
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-card border border-border">

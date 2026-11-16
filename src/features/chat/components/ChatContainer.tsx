@@ -40,7 +40,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, toAlias } from "@/lib/utils";
 import { canGroupMessages, getMessageKind } from "../utils/message-grouping";
 
 const renderPromptContent = (promptText: string) => {
@@ -183,7 +183,7 @@ const MemoizedMessageItem = React.memo(
                     />
                     <AvatarFallback className="bg-muted text-foreground text-[10px] font-bold">
                       {message.fullName ? (
-                        message.fullName.substring(0, 2).toUpperCase()
+                        toAlias(message.fullName)
                       ) : (
                         <User className="w-3.5 h-3.5" />
                       )}
@@ -354,7 +354,6 @@ const MemoizedMessageItem = React.memo(
               {fullTimeLabel}
             </TooltipContent>
           </Tooltip>
-          </div>
           {onPin && message.id > 0 && (
             <button
               type="button"
@@ -363,12 +362,16 @@ const MemoizedMessageItem = React.memo(
               aria-label={isPinned ? "Bỏ ghim tin nhắn" : "Ghim tin nhắn"}
               aria-pressed={!!isPinned}
               title={isPinned ? "Bỏ ghim tin nhắn" : "Ghim cho cả nhóm"}
-              className={cn("inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-40 md:opacity-0 md:group-hover/message:opacity-100 md:group-focus-within/message:opacity-100", isPinned && "md:opacity-100")}
+              className={cn(
+                "absolute top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-40 [@media(hover:hover)]:opacity-0 group-hover/message:opacity-100 group-focus-within/message:opacity-100",
+                isSelf && !isAI ? "right-full mr-1" : "left-full ml-1",
+                isPinned && "text-foreground [@media(hover:hover)]:opacity-100",
+              )}
             >
-              <Pin className="size-3" />
-              {isPinned && "Đã ghim"}
+              <Pin className="size-3.5" fill={isPinned ? "currentColor" : "none"} />
             </button>
           )}
+          </div>
           {showTimestamp && hasTimestamp && (
             <time
               id={`${timestampId}-touch`}

@@ -1,3 +1,4 @@
+import { toAlias } from "@/lib/utils";
 import React, { useRef, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -165,7 +166,7 @@ export const ProfilePage: React.FC = () => {
                   />
                 ) : (
                   <span className="text-4xl font-extrabold text-muted-foreground uppercase">
-                    {user.fullName ? user.fullName.charAt(0) : user.email.charAt(0)}
+                    {toAlias(user.fullName || user.email)}
                   </span>
                 )}
                 {/* Overlay khi hover */}

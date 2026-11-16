@@ -1,3 +1,4 @@
+import { toAlias } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -253,7 +254,7 @@ function MemberManager({
                       <Avatar className="size-9 border border-border self-start">
                         <AvatarImage src={member.avatarUrl} alt={name} />
                         <AvatarFallback className="bg-muted text-xs font-semibold">
-                          {name.substring(0, 2).toUpperCase()}
+                          {toAlias(name)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
