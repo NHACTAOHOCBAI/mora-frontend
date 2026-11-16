@@ -11,10 +11,10 @@ import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 
 const addSchema = z.object({
-  usernameOrEmail: z
+  email: z
     .string()
     .trim()
-    .min(1, "Nhập email hoặc tên đăng nhập của người bạn muốn thêm."),
+    .min(1, "Email không được để trống").email("Email không hợp lệ"),
   role: z.enum(["EDITOR", "VIEWER"]),
 });
 type AddValues = z.infer<typeof addSchema>;
@@ -29,7 +29,7 @@ export function AddSpaceMemberForm({
   const add = useAddSpaceMember();
   const form = useForm<AddValues>({
     resolver: zodResolver(addSchema),
-    defaultValues: { usernameOrEmail: "", role: "EDITOR" },
+    defaultValues: { email: "", role: "EDITOR" },
   });
   const submit = form.handleSubmit((values) => {
     form.clearErrors("root");
@@ -49,14 +49,15 @@ export function AddSpaceMemberForm({
     <form onSubmit={submit} className="space-y-5" noValidate>
       <div className="space-y-2">
         <label htmlFor="member-account" className="block text-sm font-medium">
-          Email hoặc tên đăng nhập
+          Email
         </label>
         <Input
           id="member-account"
-          {...form.register("usernameOrEmail")}
+          type="email"
+          {...form.register("email")}
           disabled={add.isPending}
           placeholder="Ví dụ: ban@example.com"
-          aria-invalid={!!form.formState.errors.usernameOrEmail}
+          aria-invalid={!!form.formState.errors.email}
           aria-describedby="member-account-hint member-account-error"
           className="h-10"
         />
@@ -67,13 +68,13 @@ export function AddSpaceMemberForm({
           Người được thêm cần có tài khoản Mora. Họ sẽ được thêm ngay, không cần
           chấp nhận lời mời.
         </p>
-        {form.formState.errors.usernameOrEmail && (
+        {form.formState.errors.email && (
           <p
             id="member-account-error"
             role="alert"
             className="text-sm text-destructive"
           >
-            {form.formState.errors.usernameOrEmail.message}
+            {form.formState.errors.email.message}
           </p>
         )}
       </div>

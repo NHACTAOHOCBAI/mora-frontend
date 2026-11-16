@@ -165,7 +165,7 @@ export const ProfilePage: React.FC = () => {
                   />
                 ) : (
                   <span className="text-4xl font-extrabold text-muted-foreground uppercase">
-                    {user.fullName ? user.fullName.charAt(0) : user.username.charAt(0)}
+                    {user.fullName ? user.fullName.charAt(0) : user.email.charAt(0)}
                   </span>
                 )}
                 {/* Overlay khi hover */}
@@ -191,7 +191,7 @@ export const ProfilePage: React.FC = () => {
 
             <div className="mt-4 space-y-1 w-full px-4 overflow-hidden">
               <h3 className="font-bold text-lg text-foreground truncate" title={user.fullName}>{user.fullName}</h3>
-              <p className="text-sm text-muted-foreground truncate" title={`@${user.username}`}>@{user.username}</p>
+              <p className="text-sm text-muted-foreground truncate" title={user.email}>{user.email}</p>
             </div>
 
             <div className="w-full border-t border-border mt-6 pt-4 text-left space-y-3 text-sm">

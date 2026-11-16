@@ -75,7 +75,7 @@ export const useSpaceMembers = (spaceId: number, options?: { enabled?: boolean }
 export const useAddSpaceMember = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ spaceId, data }: { spaceId: number; data: { usernameOrEmail: string; role?: SpaceRole } }) =>
+    mutationFn: ({ spaceId, data }: { spaceId: number; data: { email: string; role?: SpaceRole } }) =>
       addSpaceMember(spaceId, data),
     onSuccess: (_, { spaceId }) => {
       queryClient.invalidateQueries({ queryKey: ['space-members', spaceId] });

@@ -13,7 +13,6 @@ import {
 
 const columnLabelMap: Record<string, string> = {
     id: "ID",
-    username: "Tên đăng nhập",
     fullName: "Họ và tên",
     email: "Email",
     role: "Vai trò",

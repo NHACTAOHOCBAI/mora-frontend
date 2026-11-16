@@ -50,11 +50,6 @@ export const userColumns = (
         cell: ({ row }) => <span className="font-medium text-muted-foreground">{row.original.id}</span>,
     },
     {
-        accessorKey: "username",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Tên đăng nhập" />,
-        cell: ({ row }) => <span className="font-semibold">{row.original.username}</span>,
-    },
-    {
         accessorKey: "fullName",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Họ và tên" />,
     },

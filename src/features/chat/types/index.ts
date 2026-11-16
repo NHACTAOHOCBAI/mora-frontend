@@ -17,7 +17,7 @@ export interface Message {
   messageType?: MessageType;
   text: string;
   userId?: number;
-  userName?: string;
+  fullName?: string;
   userAvatar?: string;
   timestamp: string | Date;
   citations?: Citation[];
@@ -29,7 +29,7 @@ export interface Message {
 export interface SpaceMemberResponse {
   id: number;
   userId: number;
-  username: string;
+  email: string;
   fullName?: string;
   avatarUrl?: string;
   role: SpaceRole;
@@ -89,7 +89,6 @@ export interface SpaceDetailResponse {
 export interface TypingNotification {
   spaceId: number;
   userId: number;
-  username: string;
   fullName?: string;
   avatarUrl?: string;
   typing: boolean;

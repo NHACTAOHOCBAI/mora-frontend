@@ -150,7 +150,7 @@ const MemoizedMessageItem = React.memo(
             <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-muted-foreground">
               {(!isSelf || isAI) && (
                 <span>
-                  {isAI ? "Trợ lý AI Mora" : message.userName || "Thành viên"}
+                  {isAI ? "Trợ lý AI Mora" : message.fullName || "Thành viên"}
                 </span>
               )}
               {isAiQuery && (
@@ -179,11 +179,11 @@ const MemoizedMessageItem = React.memo(
                   <>
                     <AvatarImage
                       src={message.userAvatar}
-                      alt={message.userName || "Thành viên"}
+                      alt={message.fullName || "Thành viên"}
                     />
                     <AvatarFallback className="bg-muted text-foreground text-[10px] font-bold">
-                      {message.userName ? (
-                        message.userName.substring(0, 2).toUpperCase()
+                      {message.fullName ? (
+                        message.fullName.substring(0, 2).toUpperCase()
                       ) : (
                         <User className="w-3.5 h-3.5" />
                       )}

@@ -25,7 +25,7 @@ export const PinnedMessagesPanel = ({
   const [search, setSearch] = useState("");
   const normalized = search.trim().toLocaleLowerCase("vi");
   const filtered = pins.filter(({ message }) =>
-    [message.text, message.sender === "assistant" ? "Trợ lý AI Mora" : message.userName || "Thành viên"]
+    [message.text, message.sender === "assistant" ? "Trợ lý AI Mora" : message.fullName || "Thành viên"]
       .some(value => value.toLocaleLowerCase("vi").includes(normalized)));
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -51,7 +51,7 @@ export const PinnedMessagesPanel = ({
             filtered.length === 0 ? <div className="py-8 text-center space-y-2 text-muted-foreground"><Pin className="mx-auto size-6" /><p>{normalized ? "Không tìm thấy tin phù hợp." : "Chưa có tin nhắn được ghim."}</p><p className="text-xs">{normalized ? "Thử tìm bằng từ khóa khác." : "Dùng nút ghim cạnh tin nhắn để cả nhóm dễ tìm lại."}</p></div> :
             filtered.map(pin => (
               <article key={pin.message.id} className="rounded-xl border p-3 space-y-2 min-w-0">
-                <p className="text-xs font-semibold truncate">{pin.message.sender === "assistant" ? "Trợ lý AI Mora" : pin.message.userName || "Thành viên"}</p>
+                <p className="text-xs font-semibold truncate">{pin.message.sender === "assistant" ? "Trợ lý AI Mora" : pin.message.fullName || "Thành viên"}</p>
                 <p className="whitespace-pre-wrap break-words line-clamp-4 text-sm">{pin.message.text}</p>
                 <p className="text-[11px] text-muted-foreground break-words">{pin.pinnedByName} đã ghim · {new Date(pin.pinnedAt).toLocaleString("vi-VN")}</p>
                 <div className="flex justify-between gap-2">

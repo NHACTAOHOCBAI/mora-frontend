@@ -163,7 +163,7 @@ export const SpaceDetailPage: React.FC = () => {
         setTypingMap((prev) => ({
           ...prev,
           [info.userId]: {
-            name: info.fullName || info.username,
+            name: info.fullName || "Thành viên",
             expiry: Date.now() + 3000,
           },
         }));
@@ -237,7 +237,7 @@ export const SpaceDetailPage: React.FC = () => {
             (msg.sender === "assistant" ? "AI_RESPONSE" : "USER_MESSAGE"),
           text: msg.text,
           userId: msg.userId,
-          userName: msg.userName,
+          fullName: msg.fullName,
           userAvatar: msg.userAvatar,
           timestamp: new Date(msg.timestamp),
           condensedQuestion: msg.condensedQuestion,

@@ -37,9 +37,9 @@ export const UserMenu: React.FC = () => {
     <DropdownMenu>
       <DropdownMenuTrigger className="relative h-9 w-9 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-sm cursor-pointer select-none hover:bg-accent hover:text-accent-foreground transition-colors overflow-hidden">
         {user.avatarUrl ? (
-          <img src={user.avatarUrl} alt={user.fullName || user.username} className="w-full h-full object-cover" />
+          <img src={user.avatarUrl} alt={user.fullName || user.email} className="w-full h-full object-cover" />
         ) : (
-          getInitials(user.fullName || user.username)
+          getInitials(user.fullName || user.email)
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-card border border-border">

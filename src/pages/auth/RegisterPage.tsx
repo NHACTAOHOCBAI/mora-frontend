@@ -56,13 +56,7 @@ export const RegisterPage: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      // Auto-generate username from email prefix and random string
-      const emailPrefix = data.email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
-      const randomSuffix = Math.random().toString(36).substring(2, 6);
-      const generatedUsername = `${emailPrefix}${randomSuffix}`;
-
       await registerUser({
-        username: generatedUsername,
         email: data.email,
         fullName: data.fullName,
         password: data.password,

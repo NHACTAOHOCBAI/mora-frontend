@@ -39,7 +39,7 @@ export const getSpaceMembers = async (spaceId: number): Promise<SpaceMemberRespo
 
 export const addSpaceMember = async (
   spaceId: number,
-  data: { usernameOrEmail: string; role?: SpaceRole }
+  data: { email: string; role?: SpaceRole }
 ): Promise<SpaceMemberResponse> => {
   const response = await apiClient.post<ApiResponse<SpaceMemberResponse>>(`/spaces/${spaceId}/members`, data);
   return response.data.result;

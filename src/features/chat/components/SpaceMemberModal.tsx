@@ -271,14 +271,12 @@ function MemberManager({
                           )}
                         </div>
                         {name.toLocaleLowerCase() !==
-                          member.username.toLocaleLowerCase() && (
+                          member.email.toLocaleLowerCase() && (
                           <p
                             className="text-xs text-muted-foreground truncate mt-1"
-                            title={member.username}
+                            title={member.email}
                           >
-                            {member.username.includes("@")
-                              ? member.username
-                              : `@${member.username}`}
+                            {member.email}
                           </p>
                         )}
                       </div>

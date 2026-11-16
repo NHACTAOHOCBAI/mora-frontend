@@ -24,7 +24,7 @@ export const ROLE_DETAILS: Record<
   },
 };
 export function memberName(member: SpaceMemberResponse) {
-  return member.fullName?.trim() || member.username;
+  return member.fullName?.trim() || "Thành viên";
 }
 export function filterMembers(
   members: SpaceMemberResponse[],
@@ -34,7 +34,7 @@ export function filterMembers(
   const query = search.trim().toLocaleLowerCase("vi");
   return members
     .filter((member) =>
-      `${memberName(member)} ${member.username}`
+      `${memberName(member)} ${member.email}`
         .toLocaleLowerCase("vi")
         .includes(query),
     )

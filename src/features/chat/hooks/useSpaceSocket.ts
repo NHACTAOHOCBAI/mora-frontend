@@ -78,7 +78,7 @@ export const useSpaceSocket = ({
               messageType: raw.messageType,
               text: raw.text,
               userId: raw.userId,
-              userName: raw.userName,
+              fullName: raw.fullName,
               userAvatar: raw.userAvatar,
               timestamp: raw.timestamp ? new Date(raw.timestamp) : new Date(),
               citations: raw.citations,

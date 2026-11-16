@@ -142,7 +142,7 @@ export const AdminUsersPage: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-muted-foreground">Tài khoản</label>
                 <div className="text-sm font-semibold p-2.5 bg-muted/40 border border-border/60 rounded-md">
-                  {userToEdit.username} ({userToEdit.fullName})
+                  {userToEdit.email} ({userToEdit.fullName})
                 </div>
               </div>
 

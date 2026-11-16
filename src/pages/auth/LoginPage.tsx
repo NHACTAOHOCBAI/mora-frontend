@@ -14,7 +14,7 @@ import { DotPattern } from "@/components/ui/dot-pattern";
 import { BorderBeam } from "@/components/ui/border-beam";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Email không được để trống"),
+  email: z.string().min(1, "Email không được để trống").email("Email không hợp lệ"),
   password: z.string().min(6, "Mật khẩu phải chứa ít nhất 6 ký tự"),
 });
 
@@ -40,7 +40,7 @@ export const LoginPage: React.FC = () => {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -48,7 +48,7 @@ export const LoginPage: React.FC = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       await login({
-        username: data.username,
+        email: data.email,
         password: data.password,
       });
       toast.success("Đăng nhập thành công!");
@@ -90,11 +90,11 @@ export const LoginPage: React.FC = () => {
               type="text"
               placeholder="email@example.com"
               disabled={isLoggingIn}
-              {...register("username")}
+              {...register("email")}
             />
-            {errors.username && (
+            {errors.email && (
               <span className="text-xs text-destructive font-medium">
-                {errors.username.message}
+                {errors.email.message}
               </span>
             )}
           </div>
