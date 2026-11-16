@@ -1,3 +1,4 @@
+import { ErrorView } from "@/components/shared/ErrorView";
 import { useAuthRedirect } from "@/features/auth/hooks/useAuthRedirect";
 import { setSessionToken } from "@/features/auth/session";
 import { useEffect, useState } from "react";
@@ -48,11 +49,11 @@ export const ResetPasswordPage = () => {
     }
   };
   if (!/^[A-Za-z0-9_-]{43}$/.test(token) || invalid) {
-    return <PasswordRecoveryCard title="Liên kết không còn hiệu lực" icon={<Link2Off />}
+    return <ErrorView illustration="reset-link" title="Liên kết không còn hiệu lực" icon={<Link2Off />}
       description="Liên kết khôi phục không hợp lệ, đã hết hạn hoặc đã được sử dụng. Vui lòng yêu cầu liên kết mới.">
       <Button className="h-10 w-full" render={<Link to={authHref("/forgot-password")} />}>Yêu cầu liên kết mới</Button>
       <Link to={authHref("/login")} className="text-center text-sm text-muted-foreground hover:underline">Quay về đăng nhập</Link>
-    </PasswordRecoveryCard>;
+    </ErrorView>;
   }
   if (success) {
     return <PasswordRecoveryCard title="Đã đặt lại mật khẩu" icon={<CheckCircle2 />} description="Bạn có thể đăng nhập Mora bằng mật khẩu mới. Các phiên đăng nhập cũ đã bị vô hiệu hóa.">

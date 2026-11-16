@@ -1,3 +1,5 @@
+import { ErrorView } from "@/components/shared/ErrorView";
+import { WifiOff } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -142,18 +144,13 @@ export function DashboardPage() {
             </div>
           </div>
         ) : spaces.isError ? (
-          <div
-            role="alert"
-            className="rounded-2xl border border-border p-8 text-center space-y-3"
-          >
-            <h2 className="font-medium">Không tải được danh sách không gian</h2>
-            <p className="text-sm text-muted-foreground">
-              {getErrorMessage(spaces.error)}
-            </p>
-            <Button variant="outline" onClick={() => void spaces.refetch()}>
-              Thử lại
+          <ErrorView illustration="workspace-connection" icon={<WifiOff />}
+            title="Không tải được danh sách không gian"
+            description="Vui lòng kiểm tra kết nối và thử lại. Các không gian của bạn vẫn được giữ.">
+            <Button className="h-10 w-full" disabled={spaces.isFetching} onClick={() => { void spaces.refetch(); }}>
+              {spaces.isFetching ? "Đang thử lại..." : "Thử lại"}
             </Button>
-          </div>
+          </ErrorView>
         ) : !spaces.data?.length ? (
           <div className="rounded-2xl border border-dashed border-border py-12 px-6 text-center space-y-4">
             <BookOpen className="size-8 mx-auto text-muted-foreground" />

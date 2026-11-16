@@ -1,9 +1,11 @@
+import { ErrorView } from "@/components/shared/ErrorView";
+import { workspaceError } from "./workspace-error";
+import { LockKeyhole, FileQuestion, WifiOff } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Query } from "@tanstack/react-query";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  AlertCircle,
   Trash2,
   PanelLeft,
   MessageSquare,
@@ -63,6 +65,7 @@ import { SpaceSidebar } from "./components/SpaceSidebar";
 export const SpaceDetailPage: React.FC = () => {
   const { spaceId: spaceIdParam } = useParams<{ spaceId: string }>();
   const spaceId = Number(spaceIdParam);
+  const validSpaceId = Number.isSafeInteger(spaceId) && spaceId > 0;
   const queryClient = useQueryClient();
   const [pinsOpen, setPinsOpen] = useState(false);
   const pinButtonRef = useRef<HTMLButtonElement>(null);
@@ -84,6 +87,7 @@ export const SpaceDetailPage: React.FC = () => {
   // PDF Viewer states
   const [selectedDocument, setSelectedDocument] =
     useState<DocumentResponse | null>(null);
+  const [retryError, setRetryError] = useState<unknown>(null);
   const [citationPage, setCitationPage] = useState<number>(1);
 
   // Queries & Mutations
@@ -91,7 +95,11 @@ export const SpaceDetailPage: React.FC = () => {
     data: space,
     isLoading: isSpaceLoading,
     error: spaceError,
+    refetch: retrySpace,
+    isFetching: isSpaceFetching,
   } = useSpaceDetail(spaceId, {
+    enabled: validSpaceId,
+    retry: false,
     refetchInterval: (query: Query<SpaceDetailResponse>) => {
       const docs = query.state.data?.documents;
       const hasProcessing = docs?.some(
@@ -126,7 +134,7 @@ export const SpaceDetailPage: React.FC = () => {
   const [isAiProcessing, setIsAiProcessing] = useState(false);
 
   // Chat History hooks (Initial load without 3s polling)
-  const { data: spaceHistoryData } = useSpaceChatHistory(spaceId);
+  const { data: spaceHistoryData } = useSpaceChatHistory(spaceId, { enabled: validSpaceId });
 
   // Clear History mutation
   const clearSpaceHistoryMutation = useClearSpaceChatHistory();
@@ -179,7 +187,7 @@ export const SpaceDetailPage: React.FC = () => {
   );
 
   const { sendTyping } = useSpaceSocket({
-    spaceId,
+    spaceId: validSpaceId ? spaceId : undefined,
     onMessageReceived: handleSocketMessageReceived,
     onTypingReceived: handleSocketTypingReceived,
     onStateChanged: handleStateChanged,
@@ -363,44 +371,23 @@ export const SpaceDetailPage: React.FC = () => {
     setCitationPage(pageNumber);
   };
 
-  // Error handling
-  if (isNaN(spaceId) || spaceId <= 0) {
+  const invalidSpaceId = !validSpaceId;
+  if (invalidSpaceId || spaceError || retryError) {
+    const state = workspaceError(spaceError || retryError, invalidSpaceId);
     return (
       <div className="flex h-dvh flex-col bg-background text-foreground">
         <AppHeader />
-        <div className="flex flex-1 items-center justify-center overflow-auto p-6">
-          <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
-            <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-            <h2 className="text-xl font-bold text-foreground">
-              Mã Không gian học tập không hợp lệ
-            </h2>
-            <Link to="/">
-              <Button className="cursor-pointer">Về danh sách không gian</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (spaceError) {
-    return (
-      <div className="flex h-dvh flex-col bg-background text-foreground">
-        <AppHeader />
-        <div className="flex flex-1 items-center justify-center overflow-auto p-6">
-          <div className="max-w-md text-center space-y-4 bg-card p-8 rounded-2xl shadow-md border border-border">
-            <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-            <h2 className="text-xl font-bold text-foreground">
-              Lỗi tải dữ liệu Space
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              {getErrorMessage(spaceError)}
-            </p>
-            <Link to="/">
-              <Button className="cursor-pointer">Về danh sách không gian</Button>
-            </Link>
-          </div>
-        </div>
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <ErrorView illustration={state.kind === "missing" ? "workspace-missing" : state.kind === "forbidden" ? "workspace-forbidden" : "workspace-connection"} icon={state.kind === "forbidden" ? <LockKeyhole /> : state.kind === "missing" ? <FileQuestion /> : <WifiOff />}
+            title={state.title} description={state.description}
+            code={state.kind === "forbidden" ? "403" : state.kind === "missing" ? "404" : undefined}>
+            {state.retry && <Button className="h-10 w-full" disabled={isSpaceFetching || !!retryError} onClick={() => {
+              setRetryError(spaceError);
+              void retrySpace().finally(() => setRetryError(null));
+            }}>{isSpaceFetching || retryError ? "Đang thử lại..." : "Thử lại"}</Button>}
+            <Button className="h-10 w-full" variant={state.retry ? "ghost" : "default"} render={<Link to="/" />}>Về danh sách không gian</Button>
+          </ErrorView>
+        </main>
       </div>
     );
   }

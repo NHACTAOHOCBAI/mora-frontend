@@ -1,3 +1,4 @@
+import { ErrorView } from "@/components/shared/ErrorView";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { Users, FileText, UserPlus, ArrowRight, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,24 +35,29 @@ export const JoinSpacePage = () => {
   };
   const invalid = error instanceof AppApiError &&
     ([1023, 1024].includes(error.code ?? 0) || error.status === 404);
+  if (error) {
+    return (
+      <ErrorView illustration={invalid ? "invitation" : "connection"} icon={<AlertCircle />}
+        title={invalid ? "Lời mời không còn hiệu lực" : "Không thể tải lời mời"}
+        description={invalid ? "Liên kết không hợp lệ, đã hết hạn hoặc đã bị thu hồi. Hãy liên hệ chủ nhóm để nhận lời mời mới." : "Vui lòng kiểm tra kết nối và thử lại. Phiên đăng nhập của bạn vẫn được giữ."}>
+        {!invalid && <Button className="h-10 w-full" disabled={isFetching} onClick={() => { void refetch(); }}>Thử lại</Button>}
+        <Button className="h-10 w-full" variant={invalid ? "default" : "ghost"} render={<Link to="/" />}>Về danh sách không gian</Button>
+      </ErrorView>
+    );
+  }
   return (
     <div className="flex w-full min-w-0 flex-1 items-center justify-center bg-muted/20 p-4 sm:p-8">
       <Card className="w-full max-w-md gap-5 rounded-2xl p-6 sm:p-8">
         <div className="flex flex-col items-center gap-4 text-center">
           <span aria-hidden="true" className="flex size-12 items-center justify-center rounded-full border bg-muted/60">
-            {isLoading ? <Loader2 className="size-6 animate-spin" /> : error ? <AlertCircle className="size-6" /> : <UserPlus className="size-6" />}
+            {isLoading ? <Loader2 className="size-6 animate-spin" /> : <UserPlus className="size-6" />}
           </span>
           <div className="space-y-2">
-            <h1 className="text-xl font-semibold">{isLoading ? "Đang kiểm tra lời mời..." : invalid ? "Lời mời không còn hiệu lực" : error ? "Không thể tải lời mời" : "Tham gia không gian"}</h1>
-            <p className="text-sm leading-6 text-muted-foreground">{invalid ? "Liên kết không hợp lệ, đã hết hạn hoặc đã bị thu hồi. Hãy liên hệ chủ nhóm để nhận lời mời mới." : error ? getErrorMessage(error) : "Kiểm tra thông tin bên dưới trước khi xác nhận tham gia."}</p>
+            <h1 className="text-xl font-semibold">{isLoading ? "Đang kiểm tra lời mời..." : "Tham gia không gian"}</h1>
+            <p className="text-sm leading-6 text-muted-foreground">Kiểm tra thông tin bên dưới trước khi xác nhận tham gia.</p>
           </div>
         </div>
-        {error ? (
-          <div className="flex flex-col gap-2">
-            {!invalid && <Button className="h-10" variant="outline" disabled={isFetching} onClick={() => { void refetch(); }}>Thử lại</Button>}
-            <Button className="h-10" variant="ghost" render={<Link to="/" />}>Về danh sách không gian</Button>
-          </div>
-        ) : preview && (
+        {preview && (
           <>
             <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
               <h2 className="break-words text-base font-semibold">{preview.spaceName}</h2>

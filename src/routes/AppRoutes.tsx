@@ -1,9 +1,11 @@
 import React, { lazy, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ProtectedRoute, GuestRoute } from './RouteGuard';
+import { UnexpectedErrorPage } from "@/components/shared/UnexpectedErrorPage";
 import { Loader2 } from 'lucide-react';
 
 // Lazy loading các trang
+const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -24,7 +26,9 @@ const LoadingFallback = () => (
   </div>
 );
 
-const router = createBrowserRouter([
+const router = createBrowserRouter([{
+  errorElement: <UnexpectedErrorPage />,
+  children: [
   {
     element: <MainLayout />,
     children: [
@@ -129,12 +133,13 @@ const router = createBrowserRouter([
       },
     ],
   },
-  // Mặc định chuyển về trang chủ
+  // Unknown URLs stay visible and are accessible without signing in.
   {
-    path: '*',
-    element: <Navigate to="/" replace />,
+    element: <MainLayout />,
+    children: [{ path: '*', element: <Suspense fallback={<LoadingFallback />}><NotFoundPage /></Suspense> }],
   },
-]);
+  ],
+}]);
 
 export const AppRoutes: React.FC = () => {
   return <RouterProvider router={router} />;

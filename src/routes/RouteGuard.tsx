@@ -1,3 +1,6 @@
+import { ErrorView } from "@/components/shared/ErrorView";
+import { ErrorPageFrame } from "@/components/shared/ErrorPageFrame";
+import { LockKeyhole, WifiOff } from "lucide-react";
 import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -23,14 +26,14 @@ const AuthRedirect = ({ target, signIn = false, expired = false }: { target: str
 };
 
 const SessionError = ({ forbidden, retry, pending }: { forbidden: boolean; retry: () => void; pending: boolean }) => (
-  <div className="flex min-h-dvh items-center justify-center bg-background p-6">
-    <div className="w-full max-w-md space-y-4 rounded-2xl border bg-card p-6 text-center">
-      <h1 className="text-lg font-semibold">{forbidden ? "Bạn không có quyền truy cập" : "Không thể kiểm tra phiên đăng nhập"}</h1>
-      <p className="text-sm text-muted-foreground">{forbidden ? "Tài khoản này không có quyền thực hiện yêu cầu." : "Vui lòng kiểm tra kết nối và thử lại. Phiên đăng nhập của bạn vẫn được giữ."}</p>
-      {!forbidden && <Button disabled={pending} onClick={retry}>{pending ? "Đang thử lại..." : "Thử lại"}</Button>}
-      <Button variant="ghost" render={<Link to="/" />}>Về danh sách không gian</Button>
-    </div>
-  </div>
+  <ErrorPageFrame>
+    <ErrorView illustration={forbidden ? "forbidden" : "connection"} icon={forbidden ? <LockKeyhole /> : <WifiOff />} code={forbidden ? "403" : undefined}
+      title={forbidden ? "Bạn không có quyền truy cập" : "Không thể kiểm tra phiên đăng nhập"}
+      description={forbidden ? "Tài khoản này không có quyền thực hiện yêu cầu." : "Vui lòng kiểm tra kết nối và thử lại. Phiên đăng nhập của bạn vẫn được giữ."}>
+      {!forbidden && <Button className="h-10 w-full" disabled={pending} onClick={retry}>{pending ? "Đang thử lại..." : "Thử lại"}</Button>}
+      <Button className="h-10 w-full" variant={forbidden ? "default" : "ghost"} render={<Link to="/" />}>Về trang chủ</Button>
+    </ErrorView>
+  </ErrorPageFrame>
 );
 
 export const ProtectedRoute = ({ requireAdmin = false }: { requireAdmin?: boolean }) => {
