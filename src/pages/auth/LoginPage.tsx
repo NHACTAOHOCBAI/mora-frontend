@@ -116,6 +116,9 @@ export const LoginPage: React.FC = () => {
             )}
           </div>
 
+          <div className="flex justify-end">
+            <Link to="/forgot-password" className="rounded text-sm font-medium hover:underline focus-visible:outline-2 focus-visible:outline-ring">Quên mật khẩu?</Link>
+          </div>
           <Button
             type="submit"
             disabled={isLoggingIn}

@@ -14,7 +14,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token && config.headers) {
+    if (token && config.headers && !config.url?.startsWith('/auth/')) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -32,9 +32,9 @@ apiClient.interceptors.response.use(
       const { status, config } = error.response;
       if (status === 401) {
         // Bỏ qua chuyển hướng nếu là API đăng nhập
-        if (config && !config.url?.endsWith('/auth/login')) {
+        if (config && !config.url?.startsWith('/auth/')) {
           localStorage.removeItem('token');
-          if (window.location.pathname !== '/login') {
+          if (!['/login', '/forgot-password', '/reset-password'].includes(window.location.pathname)) {
             window.location.href = '/login?expired=true';
           }
         }

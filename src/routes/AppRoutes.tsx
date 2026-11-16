@@ -4,6 +4,8 @@ import { ProtectedRoute, GuestRoute } from './RouteGuard';
 import { Loader2 } from 'lucide-react';
 
 // Lazy loading các trang
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const DashboardPage = lazy(() => import('@/pages/user/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -23,6 +25,13 @@ const LoadingFallback = () => (
 );
 
 const router = createBrowserRouter([
+  {
+    element: <MainLayout />,
+    children: [
+      { path: '/forgot-password', element: <Suspense fallback={<LoadingFallback />}><ForgotPasswordPage /></Suspense> },
+      { path: '/reset-password', element: <Suspense fallback={<LoadingFallback />}><ResetPasswordPage /></Suspense> },
+    ],
+  },
   // Guest Routes (Chỉ cho phép khách truy cập)
   {
     element: <GuestRoute />,

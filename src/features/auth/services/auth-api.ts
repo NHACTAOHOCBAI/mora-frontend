@@ -3,6 +3,12 @@ import type { AuthResponse, UserResponse } from '../types';
 import type { ApiResponse } from '@/features/chat/types';
 
 export const authApi = {
+  forgotPassword: async (email: string): Promise<void> => {
+    await apiClient.post("/auth/forgot-password", { email });
+  },
+  resetPassword: async (data: { token: string; newPassword: string }): Promise<void> => {
+    await apiClient.post("/auth/reset-password", data);
+  },
   login: async (data: { email: string; password: string }): Promise<AuthResponse> => {
     const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/login', data);
     return response.data.result;
