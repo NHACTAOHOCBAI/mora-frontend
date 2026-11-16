@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 interface UseSpaceSocketProps {
   spaceId?: number;
+  onStateChanged?: (historyChanged: boolean) => void;
   onMessageReceived?: (message: Message) => void;
   onTypingReceived?: (typingInfo: TypingNotification) => void;
 }
@@ -13,12 +14,16 @@ export const useSpaceSocket = ({
   spaceId,
   onMessageReceived,
   onTypingReceived,
+  onStateChanged,
 }: UseSpaceSocketProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const clientRef = useRef<Client | null>(null);
   const hasShownConnectionErrorRef = useRef(false);
 
   // Lưu callbacks vào ref để tránh re-subscribe không cần thiết khi callback thay đổi
+  const onStateChangedRef = useRef(onStateChanged);
+  useEffect(() => { onStateChangedRef.current = onStateChanged; }, [onStateChanged]);
+
   const onMessageReceivedRef = useRef(onMessageReceived);
   const onTypingReceivedRef = useRef(onTypingReceived);
 
@@ -52,6 +57,16 @@ export const useSpaceSocket = ({
       onConnect: () => {
         setIsConnected(true);
         hasShownConnectionErrorRef.current = false;
+
+        client.subscribe(`/topic/spaces/${spaceId}/pins`, (frame) => {
+          try {
+            const event = JSON.parse(frame.body);
+            onStateChangedRef.current?.(event.historyCleared === true);
+          } catch (error) {
+            console.error("[WebSocket] Invalid pin event", error);
+          }
+        });
+        onStateChangedRef.current?.(true);
 
         // 1. Subscribe channel nhận tin nhắn
         client.subscribe(`/topic/spaces/${spaceId}/messages`, (stompMessage) => {

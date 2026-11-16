@@ -1,5 +1,6 @@
+import { useQueryClient } from "@tanstack/react-query";
 import type { Query } from "@tanstack/react-query";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   AlertCircle,
@@ -10,6 +11,9 @@ import {
   MoreHorizontal,
   X,
   Users,
+  ChevronDown,
+  ArrowLeft,
+  Pin,
 } from "lucide-react";
 import { useSpaceDetail } from "@/features/chat/hooks/useSpace";
 import {
@@ -20,6 +24,8 @@ import {
 } from "@/features/chat/hooks/useChat";
 import { useSpaceSocket } from "@/features/chat/hooks/useSpaceSocket";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useMessagePins } from "@/features/chat/hooks/useMessagePins";
+import { PinnedMessagesPanel } from "@/features/chat/components/PinnedMessagesPanel";
 import { ChatContainer } from "@/features/chat/components/ChatContainer";
 import { PdfViewer } from "@/features/chat/components/PdfViewer";
 import { SpaceMemberModal } from "@/features/chat/components/SpaceMemberModal";
@@ -31,7 +37,6 @@ import type {
 } from "@/features/chat/types";
 import type { DocumentResponse } from "@/features/chat/services/document-api";
 import { AppHeader } from "@/components/shared/AppHeader";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -58,6 +63,10 @@ import { SpaceSidebar } from "./components/SpaceSidebar";
 export const SpaceDetailPage: React.FC = () => {
   const { spaceId: spaceIdParam } = useParams<{ spaceId: string }>();
   const spaceId = Number(spaceIdParam);
+  const queryClient = useQueryClient();
+  const [pinsOpen, setPinsOpen] = useState(false);
+  const pinButtonRef = useRef<HTMLButtonElement>(null);
+  const [jumpToMessage, setJumpToMessage] = useState<{ id: number; token: number } | null>(null);
 
   const { user: currentUser } = useAuth();
 
@@ -94,6 +103,23 @@ export const SpaceDetailPage: React.FC = () => {
       return hasProcessing ? 3000 : false;
     },
   });
+
+  const pinsQuery = useMessagePins(spaceId, !!space);
+  const pins = pinsQuery.data ?? [];
+  const pinnedIds = new Set(pins.map(pin => pin.message.id));
+  const handleStateChanged = useCallback((historyChanged: boolean) => {
+    void queryClient.invalidateQueries({ queryKey: ["message-pins", spaceId] });
+    if (historyChanged) void queryClient.invalidateQueries({ queryKey: ["chat-history", "space", spaceId] });
+  }, [queryClient, spaceId]);
+  const { togglePin } = pinsQuery;
+  const handlePin = useCallback((messageId: number, pinned: boolean) => {
+    void togglePin(messageId, pinned);
+  }, [togglePin]);
+  const handleJump = (messageId: number) => {
+    setPinsOpen(false);
+    setIsStudyOpen(false);
+    setJumpToMessage({ id: messageId, token: Date.now() });
+  };
 
   const sendSpaceMessageMutation = useSendSpaceChatMessage();
   const sendGroupMessageMutation = useSendGroupMessage();
@@ -156,6 +182,7 @@ export const SpaceDetailPage: React.FC = () => {
     spaceId,
     onMessageReceived: handleSocketMessageReceived,
     onTypingReceived: handleSocketTypingReceived,
+    onStateChanged: handleStateChanged,
   });
 
   // Tự động dọn dẹp các thông báo typing quá hạn
@@ -296,7 +323,7 @@ export const SpaceDetailPage: React.FC = () => {
           const errorText = getErrorMessage(err);
 
           const errorMessage: Message = {
-            id: Date.now() + 2,
+            id: -(Date.now() + 2),
             sender: "assistant",
             messageType: "AI_RESPONSE",
             text: errorText,
@@ -385,13 +412,6 @@ export const SpaceDetailPage: React.FC = () => {
       <AppHeader
         context={
           <>
-            <span aria-hidden="true" className="h-5 w-px shrink-0 bg-border" />
-            <Tooltip>
-              <TooltipTrigger render={<h1 />} tabIndex={0} className="min-w-0 truncate text-sm font-semibold lg:max-w-64">
-                {space?.name || "Đang tải..."}
-              </TooltipTrigger>
-              <TooltipContent>{space?.name || "Đang tải..."}</TooltipContent>
-            </Tooltip>
             <Button
               variant="ghost"
               size="icon"
@@ -403,6 +423,24 @@ export const SpaceDetailPage: React.FC = () => {
             >
               <PanelLeft className="size-4" />
             </Button>
+            <h1 className="min-w-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  aria-label="Menu không gian"
+                  title={space?.name || "Đang tải..."}
+                  className="flex max-w-full items-center gap-1.5 rounded-md px-1 py-2 text-sm font-semibold hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring lg:max-w-64"
+                >
+                  <span className="truncate">{space?.name || "Đang tải..."}</span>
+                  <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem render={<Link to="/" />}>
+                    <ArrowLeft className="size-4" />
+                    Về danh sách không gian
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </h1>
           </>
         }
         navigation={
@@ -414,7 +452,7 @@ export const SpaceDetailPage: React.FC = () => {
               type="button"
               onClick={() => setIsStudyOpen(false)}
               aria-pressed={!isStudyOpen}
-              className="relative inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
+              className="relative inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap px-3 text-sm lg:px-4 font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
             >
               <MessageSquare className="size-4" aria-hidden="true" />
               Hỏi đáp
@@ -427,7 +465,7 @@ export const SpaceDetailPage: React.FC = () => {
               type="button"
               onClick={() => setIsStudyOpen(true)}
               aria-pressed={isStudyOpen}
-              className="relative inline-flex h-11 items-center justify-center gap-2 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
+              className="relative inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap px-3 text-sm lg:px-4 font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:text-primary focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-sm"
             >
               <BookOpen className="size-4" aria-hidden="true" />
               Ôn tập
@@ -439,35 +477,15 @@ export const SpaceDetailPage: React.FC = () => {
           </nav>
         }
         actions={
-          <>
             <Button
               variant="ghost"
               onClick={() => setIsMemberModalOpen(true)}
               aria-label="Thành viên"
             >
               <Users className="size-4" />
-              <span className="hidden lg:inline">
-                Thành viên {space?.memberCount ?? 1}
-              </span>
+              <span className="hidden sm:inline">Thành viên</span>
+              <span>{space?.memberCount ?? 1}</span>
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                aria-label="Thao tác không gian"
-                className="p-2 rounded-lg hover:bg-muted"
-              >
-                <MoreHorizontal className="size-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  disabled={!isOwner || spaceMessages.length === 0}
-                  onClick={() => setShowClearHistoryAlert(true)}
-                >
-                  <Trash2 className="size-4" />
-                  Xóa lịch sử hội thoại
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
         }
       />
       <div className="flex flex-1 min-h-0 relative">
@@ -495,28 +513,62 @@ export const SpaceDetailPage: React.FC = () => {
                 }
               />
             ) : (
-              <ChatContainer
-                messages={spaceMessages}
-                onSendMessage={handleSendMessageToAi}
-                onSendGroupMessage={handleSendGroupMessage}
-                isLoading={isAiProcessing}
-                onCitationClick={handleCitationClick}
-                isDebugMode={true}
-                selectedDocCount={selectedDocIdsForAi.length}
-                totalDocCount={
-                  space?.documents?.filter(
-                    (d: DocumentResponse) => d.status === "READY",
-                  ).length || 0
-                }
-                currentUserId={currentUser?.id}
-                typingUsers={typingUserNames}
-                onTyping={sendTyping}
-                documents={space?.documents || []}
-                selectedDocumentIds={selectedDocIdsForAi}
-                onToggleDocument={handleToggleDocForAi}
-                onToggleAllDocuments={handleToggleAllDocsForAi}
-                membersCount={space?.memberCount || 1}
-              />
+              <>
+                <div role="toolbar" aria-label="Công cụ hội thoại" className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3 md:px-5">
+                  <h2 className="text-sm font-semibold">Hội thoại</h2>
+                  <div className="flex items-center gap-1">
+                    <Button ref={pinButtonRef} variant="ghost" size="sm" aria-label="Tin đã ghim" onClick={() => setPinsOpen(true)}>
+                      <Pin className="size-3.5" />
+                      Đã ghim
+                      {pinsQuery.isSuccess && <span className="text-xs text-muted-foreground">{pins.length}</span>}
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        aria-label="Thao tác hội thoại"
+                        className="p-2 rounded-lg hover:bg-muted"
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          disabled={(!isOwner && currentUser?.role !== "ROLE_ADMIN") || spaceMessages.length === 0}
+                          onClick={() => setShowClearHistoryAlert(true)}
+                        >
+                          <Trash2 className="size-4" />
+                          Xóa lịch sử hội thoại
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+                <ChatContainer
+                  messages={spaceMessages}
+                  pinnedIds={pinnedIds}
+                  pendingPinIds={pinsQuery.pendingIds}
+                  onPin={handlePin}
+                  pinsAvailable={pinsQuery.isSuccess}
+                  jumpToMessage={jumpToMessage}
+                  onSendMessage={handleSendMessageToAi}
+                  onSendGroupMessage={handleSendGroupMessage}
+                  isLoading={isAiProcessing}
+                  onCitationClick={handleCitationClick}
+                  isDebugMode={true}
+                  selectedDocCount={selectedDocIdsForAi.length}
+                  totalDocCount={
+                    space?.documents?.filter(
+                      (d: DocumentResponse) => d.status === "READY",
+                    ).length || 0
+                  }
+                  currentUserId={currentUser?.id}
+                  typingUsers={typingUserNames}
+                  onTyping={sendTyping}
+                  documents={space?.documents || []}
+                  selectedDocumentIds={selectedDocIdsForAi}
+                  onToggleDocument={handleToggleDocForAi}
+                  onToggleAllDocuments={handleToggleAllDocsForAi}
+                  membersCount={space?.memberCount || 1}
+                />
+              </>
             )}
           </section>
 
@@ -547,6 +599,19 @@ export const SpaceDetailPage: React.FC = () => {
         </div>
       </div>
 
+      <PinnedMessagesPanel
+        open={pinsOpen}
+        onOpenChange={setPinsOpen}
+        pins={pins}
+        isLoading={pinsQuery.isLoading}
+        isError={pinsQuery.isError}
+        onRetry={() => { void pinsQuery.refetch(); }}
+        pendingIds={pinsQuery.pendingIds}
+        onUnpin={messageId => handlePin(messageId, false)}
+        onJump={handleJump}
+        returnFocus={pinButtonRef}
+      />
+
       {/* Clear Chat History AlertDialog */}
       <AlertDialog
         open={showClearHistoryAlert}
@@ -559,7 +624,7 @@ export const SpaceDetailPage: React.FC = () => {
             </AlertDialogTitle>
             <AlertDialogDescription>
               Hành động này sẽ xóa sạch toàn bộ nội dung tin nhắn và câu hỏi đáp
-              của cuộc trò chuyện hiện tại. Không thể hoàn tác hành động này.
+              của cuộc trò chuyện hiện tại, bao gồm tất cả tin đã ghim. Không thể hoàn tác hành động này.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

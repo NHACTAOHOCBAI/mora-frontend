@@ -100,3 +100,11 @@ export interface ApiResponse<T> {
   message: string;
   result: T;
 }
+
+
+export interface PinnedMessageResponse {
+  message: Message;
+  pinnedByUserId: number;
+  pinnedByName: string;
+  pinnedAt: string;
+}

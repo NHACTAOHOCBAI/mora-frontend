@@ -10,8 +10,8 @@ interface AppHeaderProps {
 }
 
 export const AppHeader = ({ context, navigation, actions }: AppHeaderProps) => (
-  <header className="sticky top-0 z-50 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 border-b border-border bg-card px-3 text-foreground md:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-    <div className="flex h-16 min-w-0 items-center gap-2 lg:gap-3">
+  <header className="sticky top-0 z-50 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 border-b border-border bg-card px-3 text-foreground md:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
+    <div className="col-start-1 row-start-1 flex h-16 min-w-0 items-center gap-2 lg:max-w-96 lg:gap-3">
       <Link
         to="/"
         aria-label="Về danh sách không gian"
@@ -25,12 +25,16 @@ export const AppHeader = ({ context, navigation, actions }: AppHeaderProps) => (
       {context}
     </div>
     {navigation && (
-      <div className="col-span-2 row-start-2 flex h-11 min-w-0 items-center justify-center lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:h-16">
+      <div className="col-start-1 row-start-2 flex h-11 min-w-0 items-center lg:col-start-2 lg:row-start-1 lg:ml-3 lg:h-16">
         {navigation}
       </div>
     )}
-    <div className="col-start-2 row-start-1 flex h-16 shrink-0 items-center justify-end gap-1 sm:gap-3 lg:col-start-3">
-      {actions}
+    {actions && (
+      <div className="col-start-2 row-start-2 flex h-11 items-center justify-end lg:col-start-3 lg:row-start-1 lg:h-16">
+        {actions}
+      </div>
+    )}
+    <div className={`col-start-2 row-start-1 flex h-16 shrink-0 items-center justify-end gap-1 sm:gap-3 lg:col-start-4 ${actions ? "lg:relative lg:pl-4 lg:before:absolute lg:before:left-0 lg:before:h-5 lg:before:w-px lg:before:bg-border" : ""}`}>
       <ThemeToggle />
       <UserMenu />
     </div>

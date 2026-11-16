@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Copy,
   Check,
+  Pin,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -82,6 +83,10 @@ const renderPromptContent = (promptText: string) => {
 
 interface MemoizedMessageItemProps {
   message: Message;
+  isPinned?: boolean;
+  pinPending?: boolean;
+  pinsAvailable?: boolean;
+  onPin?: (messageId: number, pinned: boolean) => void;
   isAI: boolean;
   isAiQuery: boolean;
   isSelf: boolean;
@@ -97,6 +102,10 @@ interface MemoizedMessageItemProps {
 const MemoizedMessageItem = React.memo(
   ({
     message,
+    isPinned,
+    pinPending,
+    pinsAvailable,
+    onPin,
     isAI,
     isAiQuery,
     isSelf,
@@ -127,13 +136,37 @@ const MemoizedMessageItem = React.memo(
         data-group-start={isGroupStart}
         data-group-end={isGroupEnd}
         className={cn(
-          "flex items-end gap-2 max-w-[88%]",
+          "group/message flex items-end gap-2 max-w-[88%]",
           isSelf && !isAI ? "ml-auto justify-end" : "mr-auto",
         )}
       >
+        {(!isSelf || isAI) && <div className="w-8 shrink-0" aria-hidden="true" />}
+
+        {/* Bubble Container */}
+        <div
+          className={`gap-1 min-w-0 max-w-full flex flex-col ${isSelf && !isAI ? "items-end" : "items-start"}`}
+        >
+          {isGroupStart && (!isSelf || isAI || isAiQuery) && (
+            <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-muted-foreground">
+              {(!isSelf || isAI) && (
+                <span>
+                  {isAI ? "Trợ lý AI Mora" : message.userName || "Thành viên"}
+                </span>
+              )}
+              {isAiQuery && (
+                <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] px-1.5 py-0 h-4 font-semibold gap-1">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  Hỏi Mora
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Keep the bubble selectable and its nested links/buttons interactive. */}
+          <div className="relative min-w-0 max-w-full">
         {(!isSelf || isAI) && (
           <div
-            className="w-8 shrink-0"
+            className="absolute -left-10 bottom-0 w-8"
             data-message-avatar={isGroupEnd || isAI ? "visible" : "placeholder"}
           >
             {(isGroupEnd || isAI) && (
@@ -162,27 +195,6 @@ const MemoizedMessageItem = React.memo(
           </div>
         )}
 
-        {/* Bubble Container */}
-        <div
-          className={`gap-1 min-w-0 max-w-full flex flex-col ${isSelf && !isAI ? "items-end" : "items-start"}`}
-        >
-          {isGroupStart && (!isSelf || isAI || isAiQuery) && (
-            <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-muted-foreground">
-              {(!isSelf || isAI) && (
-                <span>
-                  {isAI ? "Trợ lý AI Mora" : message.userName || "Thành viên"}
-                </span>
-              )}
-              {isAiQuery && (
-                <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] px-1.5 py-0 h-4 font-semibold gap-1">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  Hỏi Mora
-                </Badge>
-              )}
-            </div>
-          )}
-
-          {/* Keep the bubble selectable and its nested links/buttons interactive. */}
           <Tooltip disabled={!hasTimestamp || showTimestamp}>
             <TooltipTrigger
               render={<div />}
@@ -342,6 +354,21 @@ const MemoizedMessageItem = React.memo(
               {fullTimeLabel}
             </TooltipContent>
           </Tooltip>
+          </div>
+          {onPin && message.id > 0 && (
+            <button
+              type="button"
+              disabled={pinPending || !pinsAvailable}
+              onClick={() => onPin(message.id, !isPinned)}
+              aria-label={isPinned ? "Bỏ ghim tin nhắn" : "Ghim tin nhắn"}
+              aria-pressed={!!isPinned}
+              title={isPinned ? "Bỏ ghim tin nhắn" : "Ghim cho cả nhóm"}
+              className={cn("inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-40 md:opacity-0 md:group-hover/message:opacity-100 md:group-focus-within/message:opacity-100", isPinned && "md:opacity-100")}
+            >
+              <Pin className="size-3" />
+              {isPinned && "Đã ghim"}
+            </button>
+          )}
           {showTimestamp && hasTimestamp && (
             <time
               id={`${timestampId}-touch`}
@@ -439,6 +466,10 @@ const MemoizedMessageItem = React.memo(
     );
   },
   (prevProps, nextProps) =>
+    prevProps.isPinned === nextProps.isPinned &&
+    prevProps.pinPending === nextProps.pinPending &&
+    prevProps.pinsAvailable === nextProps.pinsAvailable &&
+    prevProps.onPin === nextProps.onPin &&
     prevProps.message === nextProps.message &&
     prevProps.copiedId === nextProps.copiedId &&
     prevProps.isDebugMode === nextProps.isDebugMode &&
@@ -454,6 +485,11 @@ const MemoizedMessageItem = React.memo(
 
 interface ChatContainerProps {
   messages: Message[];
+  pinnedIds?: ReadonlySet<number>;
+  pendingPinIds?: ReadonlySet<number>;
+  onPin?: (messageId: number, pinned: boolean) => void;
+  pinsAvailable?: boolean;
+  jumpToMessage?: { id: number; token: number } | null;
   onSendMessage: (text: string) => void;
   onSendGroupMessage?: (text: string) => void;
   isLoading: boolean;
@@ -473,6 +509,11 @@ interface ChatContainerProps {
 
 export const ChatContainer: React.FC<ChatContainerProps> = ({
   messages,
+  pinnedIds,
+  pendingPinIds,
+  onPin,
+  pinsAvailable,
+  jumpToMessage,
   onSendMessage,
   onSendGroupMessage,
   isLoading,
@@ -494,6 +535,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showAiSuggestion, setShowAiSuggestion] = useState(false);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const jumpingRef = useRef(!!jumpToMessage);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -671,8 +714,31 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   }, []);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!jumpingRef.current) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    if (!jumpToMessage) return;
+    const target = messagesRef.current?.querySelector<HTMLElement>(`[data-message-id="${jumpToMessage.id}"]`);
+    if (!target) {
+      toast.error("Tin nhắn này không còn trong hội thoại.");
+      return;
+    }
+    jumpingRef.current = true;
+    target.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
+    target.classList.add("ring-2", "ring-primary/40", "rounded-xl");
+    target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+    const timer = setTimeout(() => {
+      target.classList.remove("ring-2", "ring-primary/40", "rounded-xl");
+      jumpingRef.current = false;
+    }, 2000);
+    return () => {
+      clearTimeout(timer);
+      target.classList.remove("ring-2", "ring-primary/40", "rounded-xl");
+      jumpingRef.current = false;
+    };
+  }, [jumpToMessage]);
 
   const readyDocuments = documents.filter((doc) => doc.status === "READY");
   const scopeLabel =
@@ -687,7 +753,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   return (
     <div className="flex flex-col flex-1 min-h-0 text-foreground">
       {/* Messages List */}
-      <div className="flex-1 overflow-y-auto p-4 md:px-8 md:py-10 flex flex-col w-full">
+      <div ref={messagesRef} className="flex-1 overflow-y-auto p-4 md:px-8 md:py-10 flex flex-col w-full">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-4">
             <div className="p-4 bg-card rounded-2xl border border-border text-muted-foreground shadow-sm">
@@ -738,6 +804,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
               >
                 <MemoizedMessageItem
                   message={message}
+                  isPinned={pinnedIds?.has(message.id)}
+                  pinPending={pendingPinIds?.has(message.id)}
+                  pinsAvailable={pinsAvailable}
+                  onPin={onPin}
                   isAI={isAI}
                   isAiQuery={isAiQuery}
                   isSelf={isSelf}
