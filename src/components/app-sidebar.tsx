@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, UsersIcon } from "lucide-react"
+import { LayoutDashboardIcon, UsersIcon, FolderIcon, FileTextIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -19,11 +19,14 @@ const data = {
     avatar: "/frog-logo.png",
   },
   navMain: [
+    { title: "Tổng quan", url: "/admin", icon: <LayoutDashboardIcon /> },
     {
       title: "Quản lý thành viên",
-      url: "/admin/user",
+      url: "/admin/users",
       icon: <UsersIcon />,
     },
+    { title: "Không gian", url: "/admin/spaces", icon: <FolderIcon /> },
+    { title: "Tài liệu & xử lý", url: "/admin/documents", icon: <FileTextIcon /> },
     {
       title: "Quay lại Dashboard",
       url: "/",
@@ -39,11 +42,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
+              size="lg"
               className="data-[slot=sidebar-menu-button]:p-1.5!"
-              render={<Link to="/admin/user" />}
+              render={<Link to="/admin" />}
             >
-              <div className="p-0.5 bg-muted rounded-md border border-border flex items-center justify-center w-7 h-7 overflow-hidden">
-                <img src="/frog-logo.png" alt="Mora Logo" className="w-5 h-5 object-contain dark:invert" />
+              <div className="size-9 shrink-0 bg-muted rounded-lg border border-border flex items-center justify-center overflow-hidden">
+                <img src="/frog-logo.png" alt="Mora Logo" className="size-7 object-contain dark:invert" />
               </div>
               <span className="type-card-title">Mora Admin</span>
             </SidebarMenuButton>

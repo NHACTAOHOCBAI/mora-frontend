@@ -40,6 +40,7 @@ interface UseTableProps<T> {
     columns: ColumnDef<T>[];
     defaultPageSize?: number;
     dependencies?: any[];
+    extraParams?: QueryParams;
 }
 
 function isTableDataPayload<T>(value: unknown): value is TableDataPayload<T> {
@@ -90,7 +91,7 @@ const normalizePayload = <T,>(
     };
 };
 
-const useTable = <T,>({ use, columns, defaultPageSize = 10, dependencies = [] }: UseTableProps<T>) => {
+const useTable = <T,>({ use, columns, defaultPageSize = 10, dependencies = [], extraParams = {} }: UseTableProps<T>) => {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [pagination, setPagination] = useState({
         pageIndex: 0,
@@ -105,6 +106,7 @@ const useTable = <T,>({ use, columns, defaultPageSize = 10, dependencies = [] }:
     }, dependencies);
 
     const { data, isFetching, isError, error, refetch } = use({
+        ...extraParams,
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         search: filter,

@@ -24,10 +24,10 @@ export function NavMain({
     <SidebarGroup>
       <SidebarGroupLabel>Quản trị</SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="gap-1.5">
           {items.map((item) => {
-            const isActive = item.url === '/' 
-              ? location.pathname === '/' 
+            const isActive = item.url === '/' || item.url === '/admin'
+              ? location.pathname === item.url
               : location.pathname.startsWith(item.url) || (item.url === '/admin/user' && location.pathname === '/admin/users')
 
             return (

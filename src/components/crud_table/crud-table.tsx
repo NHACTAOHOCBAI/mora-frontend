@@ -18,6 +18,7 @@ interface CrudTableProps<T extends { id: number }> {
     dependencies?: any[];
     filterElement?: React.ReactNode;
     onSelectionChange?: (selectedRows: T[]) => void;
+    extraParams?: QueryParams;
 }
 
 export default function CrudTable<T extends { id: number }>({
@@ -29,11 +30,13 @@ export default function CrudTable<T extends { id: number }>({
     dependencies,
     filterElement,
     onSelectionChange,
+    extraParams,
 }: CrudTableProps<T>) {
     const { table, isFetching, filter, setFilter, setPagination } = useTable<T>({
         use: useQuery,
         columns,
         dependencies,
+        extraParams,
     });
 
     const rowSelection = table.getState().rowSelection;

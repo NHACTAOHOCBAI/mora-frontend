@@ -5,4 +5,5 @@ export type QueryParams = {
     sortOrder?: "ASC" | "DESC";
     sortBy?: string;
     role?: string;
+    status?: string;
 };

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { UserResponse } from "@/features/auth/types";
+import { Link } from "react-router-dom";
 
 export const userColumns = (
     onEdit: (user: UserResponse) => void,
@@ -47,7 +48,7 @@ export const userColumns = (
     {
         accessorKey: "id",
         header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
-        cell: ({ row }) => <span className="font-medium text-muted-foreground">{row.original.id}</span>,
+        cell: ({ row }) => <Link to={`/admin/users/${row.original.id}`} className="font-medium text-muted-foreground hover:underline">{row.original.id}</Link>,
     },
     {
         accessorKey: "fullName",

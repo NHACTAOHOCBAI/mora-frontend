@@ -14,6 +14,12 @@ const DashboardPage = lazy(() => import('@/pages/user/DashboardPage').then(m => 
 const SpaceDetailPage = lazy(() => import('@/pages/user/space-detail/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
 const SpaceSettingsPage = lazy(() => import('@/pages/user/SpaceSettingsPage').then(m => ({ default: m.SpaceSettingsPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
+const AdminSpacesPage = lazy(() => import('@/pages/admin/AdminSpacesPage').then(m => ({ default: m.AdminSpacesPage })));
+const AdminDocumentsPage = lazy(() => import('@/pages/admin/AdminDocumentsPage').then(m => ({ default: m.AdminDocumentsPage })));
+const AdminSpaceDetailPage = lazy(() => import('@/pages/admin/AdminDetailPages').then(m => ({ default: m.AdminSpaceDetailPage })));
+const AdminDocumentDetailPage = lazy(() => import('@/pages/admin/AdminDetailPages').then(m => ({ default: m.AdminDocumentDetailPage })));
+const AdminUserDetailPage = lazy(() => import('@/pages/admin/AdminDetailPages').then(m => ({ default: m.AdminUserDetailPage })));
 const ProfilePage = lazy(() => import('@/pages/user/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const JoinSpacePage = lazy(() => import('@/pages/user/JoinSpacePage').then(m => ({ default: m.JoinSpacePage })));
 const PrivacyPage = lazy(() => import('@/pages/legal/LegalPage').then(m => ({ default: () => <m.LegalPage kind="privacy" /> })));
@@ -134,6 +140,7 @@ const router = createBrowserRouter([{
       {
         element: <AdminLayout />,
         children: [
+          { path: '/admin', element: <Suspense fallback={<LoadingFallback />}><AdminDashboardPage /></Suspense> },
           {
             path: '/admin/users',
             element: (
@@ -142,6 +149,11 @@ const router = createBrowserRouter([{
               </Suspense>
             ),
           },
+          { path: '/admin/users/:id', element: <Suspense fallback={<LoadingFallback />}><AdminUserDetailPage /></Suspense> },
+          { path: '/admin/spaces', element: <Suspense fallback={<LoadingFallback />}><AdminSpacesPage /></Suspense> },
+          { path: '/admin/spaces/:id', element: <Suspense fallback={<LoadingFallback />}><AdminSpaceDetailPage /></Suspense> },
+          { path: '/admin/documents', element: <Suspense fallback={<LoadingFallback />}><AdminDocumentsPage /></Suspense> },
+          { path: '/admin/documents/:id', element: <Suspense fallback={<LoadingFallback />}><AdminDocumentDetailPage /></Suspense> },
           {
             path: '/admin/user',
             element: (
