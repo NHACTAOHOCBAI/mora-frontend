@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { DocumentResponse } from "../services/document-api";
 import {
   DropdownMenu,
@@ -901,11 +902,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                     key={doc.id}
                     className="flex items-start gap-2 text-sm py-1 cursor-pointer"
                   >
-                    <input
-                      type="checkbox"
-                      className="mt-1 accent-current"
+                    <Checkbox
+                      className="mt-0.5"
                       checked={selectedDocumentIds.includes(doc.id)}
-                      onChange={() => onToggleDocument?.(doc.id)}
+                      onCheckedChange={() => onToggleDocument?.(doc.id)}
                     />
                     <span className="break-words min-w-0">{doc.name}</span>
                   </label>
@@ -928,7 +928,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
               }
               disabled={isLoading}
               rows={2}
-              className="min-h-12 max-h-40 resize-none border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
+              className="min-h-12 max-h-40 resize-none border-0 bg-transparent px-2.5 py-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
             />
             <Button
               type="button"
