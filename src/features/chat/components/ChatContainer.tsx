@@ -9,7 +9,6 @@ import {
   Loader2,
   Search,
   Sparkles,
-  MessageSquare,
   Copy,
   Check,
   Pin,
@@ -758,25 +757,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       {/* Messages List */}
       <div ref={messagesRef} className="flex-1 overflow-y-auto p-4 md:px-8 md:py-10 flex flex-col w-full">
         {messages.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto space-y-4">
-            <div className="p-4 bg-card rounded-2xl border border-border text-muted-foreground shadow-sm">
-              <MessageSquare className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-bold text-foreground text-sm">
-                Bắt đầu hội thoại trong Không gian
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                Nhắn tin trao đổi tự do giữa các thành viên, hoặc gõ{" "}
-                <span className="font-semibold text-primary font-mono">
-                  @Mora
-                </span>{" "}
-                (hoặc bấm nút{" "}
-                <span className="font-semibold text-primary">✨ Hỏi AI</span>)
-                để AI tra cứu tài liệu và trả lời trích dẫn minh bạch cho cả
-                nhóm.
-              </p>
-            </div>
+          <div className="flex-1 flex items-center justify-center text-center">
+            <p className="text-sm text-muted-foreground">
+              Bắt đầu cuộc trò chuyện của bạn.
+            </p>
           </div>
         ) : (
           messages.map((message, index) => {
