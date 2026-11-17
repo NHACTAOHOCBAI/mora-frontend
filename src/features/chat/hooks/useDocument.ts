@@ -8,6 +8,7 @@ export const useUploadDocument = () => {
       uploadDocument(spaceId, file),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['space', variables.spaceId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 };
@@ -18,6 +19,7 @@ export const useDeleteDocument = () => {
     mutationFn: ({ id }: { id: number; spaceId: number }) => deleteDocument(id),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['space', variables.spaceId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 };

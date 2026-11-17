@@ -12,8 +12,10 @@ import {
   Trash2,
   ArrowRight,
   BookOpen,
+  Clock3,
+  RefreshCw,
 } from "lucide-react";
-import { useSpaces, useDeleteSpace } from "@/features/chat/hooks/useSpace";
+import { useSpaces, useDeleteSpace, useDashboard } from "@/features/chat/hooks/useSpace";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import type { SpaceResponse } from "@/features/chat/types";
 import {
@@ -43,9 +45,16 @@ import {
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api-error";
 
+const dateTime = (value?: string) => value && Number.isFinite(Date.parse(value))
+  ? new Date(value).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })
+  : "—";
+
+const processingLabel = { UPLOADING: "Đang tải lên", PARSING: "Đang đọc PDF", INDEXING: "Đang lập chỉ mục" } as const;
+
 export function DashboardPage() {
   const { user } = useAuth();
   const spaces = useSpaces();
+  const dashboard = useDashboard();
   const remove = useDeleteSpace();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SpaceSort>("newest");
@@ -90,6 +99,30 @@ export function DashboardPage() {
           Tạo không gian
         </Button>
       </header>
+      {dashboard.isLoading ? (
+        <section className="grid gap-4 lg:grid-cols-3" aria-label="Đang tải tổng quan">
+          {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-36 rounded-2xl" />)}
+        </section>
+      ) : dashboard.isError ? (
+        <section className="rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span>Không tải được phần tiếp tục học. Danh sách không gian vẫn có thể sử dụng.</span>
+          <Button variant="outline" size="sm" disabled={dashboard.isFetching} onClick={() => void dashboard.refetch()}><RefreshCw className="size-3.5" />Thử lại</Button>
+        </section>
+      ) : dashboard.data && (dashboard.data.recentSpaces.length > 0 || dashboard.data.processingDocuments.length > 0) ? (
+        <section className="space-y-5" aria-label="Tiếp tục học">
+          <div className="flex items-center gap-2"><Clock3 className="size-4 text-muted-foreground" /><h2 className="font-semibold">Tiếp tục học</h2></div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {dashboard.data.recentSpaces.length > 0 && <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+              <h3 className="text-sm font-medium">Không gian gần đây</h3>
+              <div className="space-y-2">{dashboard.data.recentSpaces.map(space => <Link key={space.id} to={`/space/${space.id}`} className="block rounded-lg p-2 -mx-2 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"><p className="text-sm font-medium truncate">{space.name}</p><p className="text-xs text-muted-foreground mt-1">Hoạt động {dateTime(space.lastActivityAt || space.updatedAt)}</p></Link>)}</div>
+            </div>}
+            {dashboard.data.processingDocuments.length > 0 && <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+              <h3 className="text-sm font-medium">Tài liệu đang xử lý</h3>
+              <div className="space-y-2">{dashboard.data.processingDocuments.map(document => <Link key={document.id} to={`/space/${document.spaceId}`} className="block rounded-lg p-2 -mx-2 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"><p className="text-sm font-medium truncate">{document.name}</p><p className="text-xs text-muted-foreground mt-1 truncate">{processingLabel[document.status]} · {document.spaceName}</p></Link>)}</div>
+            </div>}
+          </div>
+        </section>
+      ) : null}
       <section className="space-y-4" aria-label="Không gian của bạn">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">

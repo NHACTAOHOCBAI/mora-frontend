@@ -7,10 +7,16 @@ import type {
   SpaceJoinPreviewResponse,
   SpaceRole,
   ApiResponse,
+  DashboardResponse,
 } from '../types';
 
 export const getSpaces = async (): Promise<SpaceResponse[]> => {
   const response = await apiClient.get<ApiResponse<SpaceResponse[]>>('/spaces');
+  return response.data.result;
+};
+
+export const getDashboard = async (): Promise<DashboardResponse> => {
+  const response = await apiClient.get<ApiResponse<DashboardResponse>>('/spaces/dashboard');
   return response.data.result;
 };
 
@@ -64,7 +70,7 @@ export const removeSpaceMember = async (spaceId: number, userId: number): Promis
 
 export const createSpaceInvitation = async (
   spaceId: number,
-  data: { role: SpaceRole; durationDays?: number; inviteEmail?: string }
+  data: { role: SpaceRole; durationDays?: number }
 ): Promise<SpaceInvitationResponse> => {
   const response = await apiClient.post<ApiResponse<SpaceInvitationResponse>>(`/spaces/${spaceId}/invitations`, data);
   return response.data.result;

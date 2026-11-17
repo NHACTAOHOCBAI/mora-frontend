@@ -41,7 +41,6 @@ export interface SpaceInvitationResponse {
   spaceId: number;
   spaceName: string;
   inviteCode: string;
-  inviteEmail?: string;
   role: SpaceRole;
   status: InvitationStatus;
   expiresAt?: string;
@@ -67,10 +66,23 @@ export interface SpaceResponse {
   description: string;
   createdAt: string;
   updatedAt: string;
+  lastActivityAt?: string;
   currentUserRole?: SpaceRole;
   memberCount?: number;
   documentCount?: number;
   ownerName?: string;
+}
+
+export interface DashboardResponse {
+  recentSpaces: SpaceResponse[];
+  processingDocuments: Array<{
+    id: number;
+    name: string;
+    status: 'UPLOADING' | 'PARSING' | 'INDEXING';
+    spaceId: number;
+    spaceName: string;
+    updatedAt?: string;
+  }>;
 }
 
 export interface SpaceDetailResponse {

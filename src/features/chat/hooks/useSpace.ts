@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 import {
   getSpaces,
+  getDashboard,
   getSpace,
   createSpace,
   deleteSpace,
@@ -30,6 +31,11 @@ export const useSpaces = () => {
   });
 };
 
+export const useDashboard = () => useQuery({
+  queryKey: ['dashboard'],
+  queryFn: getDashboard,
+});
+
 export const useSpaceDetail = (id: number, options?: Omit<UseQueryOptions<SpaceDetailResponse>, 'queryKey' | 'queryFn'>) => {
   return useQuery<SpaceDetailResponse>({
     queryKey: ['space', id],
@@ -46,6 +52,7 @@ export const useCreateSpace = () => {
       createSpace(name, description),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 };
@@ -56,6 +63,7 @@ export const useDeleteSpace = () => {
     mutationFn: (id: number) => deleteSpace(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['spaces'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 };
@@ -131,7 +139,7 @@ export const useCreateSpaceInvitation = () => {
       data,
     }: {
       spaceId: number;
-      data: { role: SpaceRole; durationDays?: number; inviteEmail?: string };
+      data: { role: SpaceRole; durationDays?: number };
     }) => createSpaceInvitation(spaceId, data),
     onSuccess: (_, { spaceId }) => {
       queryClient.invalidateQueries({ queryKey: ['space-invitations', spaceId] });
@@ -164,6 +172,9 @@ export const useJoinSpaceByInviteCode = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (inviteCode: string) => joinSpaceByInviteCode(inviteCode),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['spaces'] }),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['spaces'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    ]),
   });
 };
