@@ -13,8 +13,6 @@ import {
   MoreHorizontal,
   X,
   Users,
-  ChevronDown,
-  ArrowLeft,
   Pin,
 } from "lucide-react";
 import { useSpaceDetail } from "@/features/chat/hooks/useSpace";
@@ -38,7 +36,6 @@ import type {
   SpaceDetailResponse,
 } from "@/features/chat/types";
 import type { DocumentResponse } from "@/features/chat/services/document-api";
-import { AppHeader } from "@/components/shared/AppHeader";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -375,19 +372,16 @@ export const SpaceDetailPage: React.FC = () => {
   if (invalidSpaceId || spaceError || retryError) {
     const state = workspaceError(spaceError || retryError, invalidSpaceId);
     return (
-      <div className="flex h-dvh flex-col bg-background text-foreground">
-        <AppHeader />
-        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <ErrorView illustration={state.kind === "missing" ? "workspace-missing" : state.kind === "forbidden" ? "workspace-forbidden" : "workspace-connection"} icon={state.kind === "forbidden" ? <LockKeyhole /> : state.kind === "missing" ? <FileQuestion /> : <WifiOff />}
-            title={state.title} description={state.description}
-            code={state.kind === "forbidden" ? "403" : state.kind === "missing" ? "404" : undefined}>
-            {state.retry && <Button className="h-10 w-full" disabled={isSpaceFetching || !!retryError} onClick={() => {
-              setRetryError(spaceError);
-              void retrySpace().finally(() => setRetryError(null));
-            }}>{isSpaceFetching || retryError ? "Đang thử lại..." : "Thử lại"}</Button>}
-            <Button className="h-10 w-full" variant={state.retry ? "ghost" : "default"} render={<Link to="/" />}>Về danh sách không gian</Button>
-          </ErrorView>
-        </main>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-background text-foreground">
+        <ErrorView illustration={state.kind === "missing" ? "workspace-missing" : state.kind === "forbidden" ? "workspace-forbidden" : "workspace-connection"} icon={state.kind === "forbidden" ? <LockKeyhole /> : state.kind === "missing" ? <FileQuestion /> : <WifiOff />}
+          title={state.title} description={state.description}
+          code={state.kind === "forbidden" ? "403" : state.kind === "missing" ? "404" : undefined}>
+          {state.retry && <Button className="h-10 w-full" disabled={isSpaceFetching || !!retryError} onClick={() => {
+            setRetryError(spaceError);
+            void retrySpace().finally(() => setRetryError(null));
+          }}>{isSpaceFetching || retryError ? "Đang thử lại..." : "Thử lại"}</Button>}
+          <Button className="h-10 w-full" variant={state.retry ? "ghost" : "default"} render={<Link to="/" />}>Về danh sách không gian</Button>
+        </ErrorView>
       </div>
     );
   }
@@ -395,10 +389,9 @@ export const SpaceDetailPage: React.FC = () => {
   const isOwner = space?.currentUserRole === "OWNER";
 
   return (
-    <div className="flex flex-col h-dvh w-full overflow-hidden bg-background text-foreground transition-colors duration-200">
-      <AppHeader
-        context={
-          <>
+    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col overflow-hidden bg-background text-foreground transition-colors duration-200">
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 border-b border-border bg-card px-3 md:flex-nowrap md:px-6">
+        <div className="flex h-14 min-w-0 flex-1 items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -410,31 +403,13 @@ export const SpaceDetailPage: React.FC = () => {
             >
               <PanelLeft className="size-4" />
             </Button>
-            <h1 className="min-w-0">
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  aria-label="Menu không gian"
-                  title={space?.name || "Đang tải..."}
-                  className="flex max-w-full items-center gap-1.5 rounded-md px-1 py-2 text-sm font-semibold hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring lg:max-w-64"
-                >
-                  <span className="truncate">{space?.name || "Đang tải..."}</span>
-                  <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem render={<Link to="/" />}>
-                    <ArrowLeft className="size-4" />
-                    Về danh sách không gian
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </h1>
-          </>
-        }
-        navigation={
-          <nav
-            aria-label="Không gian học"
-            className="flex h-11 gap-1"
-          >
+            <div className="min-w-0 truncate text-sm">
+              <Link to="/" className="text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">Không gian học tập</Link>
+              <span className="mx-2 text-muted-foreground" aria-hidden="true">/</span>
+              <h1 className="inline font-semibold" title={space?.name || "Đang tải..."}>{space?.name || "Đang tải..."}</h1>
+            </div>
+        </div>
+        <nav aria-label="Không gian học" className="order-3 flex h-11 w-full gap-1 md:order-none md:w-auto">
             <button
               type="button"
               onClick={() => setIsStudyOpen(false)}
@@ -461,20 +436,13 @@ export const SpaceDetailPage: React.FC = () => {
                 className={`absolute bottom-0 inset-x-3 h-0.5 rounded-full bg-primary transition-transform duration-200 motion-reduce:transition-none ${isStudyOpen ? "scale-x-100" : "scale-x-0"}`}
               />
             </button>
-          </nav>
-        }
-        actions={
-            <Button
-              variant="ghost"
-              onClick={() => setIsMemberModalOpen(true)}
-              aria-label="Thành viên"
-            >
-              <Users className="size-4" />
-              <span className="hidden sm:inline">Thành viên</span>
-              <span>{space?.memberCount ?? 1}</span>
-            </Button>
-        }
-      />
+        </nav>
+        <Button variant="ghost" onClick={() => setIsMemberModalOpen(true)} aria-label="Thành viên">
+          <Users className="size-4" />
+          <span className="hidden sm:inline">Thành viên</span>
+          <span>{space?.memberCount ?? 1}</span>
+        </Button>
+      </div>
       <div className="flex flex-1 min-h-0 relative">
         {/* 1. Left Sidebar */}
         <SpaceSidebar

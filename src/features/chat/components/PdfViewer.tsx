@@ -36,7 +36,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const isProgrammaticScrollRef = useRef(false);
-  const scrollTimeoutRef = useRef<any>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastReportedPageRef = useRef<number>(currentPage);
 
   // Theo dõi kích thước container để tự động Fit-to-Width hoàn hảo
@@ -94,11 +94,6 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
     }
   }, [currentPage, scrollToPage]);
 
-  // Cập nhật inputPage khi activePage thay đổi
-  useEffect(() => {
-    setInputPage(activePage.toString());
-  }, [activePage]);
-
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     const initialPage = currentPage && currentPage > 0 ? currentPage : 1;
@@ -134,6 +129,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
         if (maxRatio > 0.15 && mostVisiblePage !== activePage) {
           lastReportedPageRef.current = mostVisiblePage;
           setActivePage(mostVisiblePage);
+          setInputPage(mostVisiblePage.toString());
           onPageChange?.(mostVisiblePage);
         }
       },
@@ -201,7 +197,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
   const basePageWidth = containerWidth > 0 ? containerWidth : undefined;
 
   return (
-    <div className="flex flex-col h-full bg-card border-l border-border select-none relative overflow-hidden">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden border-l border-border bg-card select-none">
       {/* Control Bar - Clean Modern PDF Toolbar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-card border-b border-border text-foreground shrink-0 shadow-2xs z-10">
         {/* Điều hướng trang */}
@@ -306,7 +302,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
       {/* PDF Document Container */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-auto p-0 flex flex-col items-center scroll-smooth bg-background divide-y divide-border/50 [&_.react-pdf__Page]:!max-w-none [&_.react-pdf__Page__canvas]:!max-w-none [&_.react-pdf__Page__canvas]:!mx-auto"
+        className="flex min-h-0 flex-1 flex-col items-center divide-y divide-border/50 overflow-x-auto overflow-y-auto bg-background p-0 scroll-smooth [&_.react-pdf__Page]:!max-w-none [&_.react-pdf__Page__canvas]:!max-w-none [&_.react-pdf__Page__canvas]:!mx-auto"
       >
         <Document
           file={url}

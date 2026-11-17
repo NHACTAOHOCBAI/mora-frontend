@@ -106,15 +106,15 @@ const router = createBrowserRouter([{
               </Suspense>
             ),
           },
+          {
+            path: '/space/:spaceId',
+            element: (
+              <Suspense fallback={<LoadingFallback />}>
+                <SpaceDetailPage />
+              </Suspense>
+            ),
+          },
         ],
-      },
-      {
-        path: '/space/:spaceId',
-        element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <SpaceDetailPage />
-          </Suspense>
-        ),
       },
     ],
   },
