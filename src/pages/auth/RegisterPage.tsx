@@ -94,17 +94,17 @@ export const RegisterPage: React.FC = () => {
       <Card className="relative z-10 overflow-hidden w-full max-w-md p-8 border border-border bg-card/90 rounded-2xl">
         <BorderBeam size={300} duration={8} />
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight">
+          <h1 className="type-page-title">
             Tạo tài khoản
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="type-body text-muted-foreground">
             Bắt đầu khám phá không gian học tập Mora
           </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-6">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label className="type-form-label text-muted-foreground">
               Họ và tên
             </label>
             <Input
@@ -121,7 +121,7 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label className="type-form-label text-muted-foreground">
               Địa chỉ Email
             </label>
             <Input
@@ -138,7 +138,7 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label className="type-form-label text-muted-foreground">
               Mật khẩu
             </label>
             <Input
@@ -155,7 +155,7 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label className="type-form-label text-muted-foreground">
               Xác nhận mật khẩu
             </label>
             <Input
@@ -174,7 +174,7 @@ export const RegisterPage: React.FC = () => {
           <Button
             type="submit"
             disabled={isRegistering}
-            className="w-full mt-2 cursor-pointer py-5 rounded-xl font-bold"
+            className="w-full mt-2 cursor-pointer py-5 rounded-xl font-medium"
           >
             {isRegistering ? (
               <>

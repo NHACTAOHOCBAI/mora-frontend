@@ -63,7 +63,7 @@ export const ForgotPasswordPage = () => {
       ) : (
         <form onSubmit={event => { void form.handleSubmit(submit)(event); }} className="space-y-4" noValidate>
           <div className="space-y-1.5">
-            <label htmlFor="recovery-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email tài khoản</label>
+            <label htmlFor="recovery-email" className="type-form-label text-muted-foreground">Email tài khoản</label>
             <Input id="recovery-email" type="email" autoComplete="email" autoFocus className="h-10"
               placeholder="ban@example.com" disabled={mutation.isPending}
               aria-invalid={!!form.formState.errors.email} aria-describedby="recovery-email-error"

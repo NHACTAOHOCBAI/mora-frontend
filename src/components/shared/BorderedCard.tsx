@@ -33,12 +33,12 @@ export const BorderedCard: React.FC<BorderedCardProps> = ({
     >
       <div className={cn("border-b border-border/80 p-6 flex flex-row justify-between items-center gap-4", headerClassName)}>
         <div className="flex flex-col gap-1">
-          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <h3 className="type-card-title text-foreground flex items-center gap-2">
             {icon}
             {title}
           </h3>
           {description && (
-            <p className="text-xs text-muted-foreground">
+            <p className="type-meta text-muted-foreground">
               {description}
             </p>
           )}

@@ -144,8 +144,8 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-          Cài Đặt Tài Khoản
+        <h1 className="type-page-title text-foreground">
+          Cài đặt tài khoản
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           Quản lý thông tin cá nhân và mật khẩu tài khoản.
@@ -191,7 +191,7 @@ export const ProfilePage: React.FC = () => {
             />
 
             <div className="mt-4 space-y-1 w-full px-4 overflow-hidden">
-              <h3 className="font-bold text-lg text-foreground truncate" title={user.fullName}>{user.fullName}</h3>
+              <h3 className="type-section-title text-foreground truncate" title={user.fullName}>{user.fullName}</h3>
               <p className="text-sm text-muted-foreground truncate" title={user.email}>{user.email}</p>
             </div>
 
@@ -224,7 +224,7 @@ export const ProfilePage: React.FC = () => {
           >
             <form onSubmit={handleSubmitProfile(onProfileSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <label className="type-form-label text-muted-foreground">
                   Họ và tên
                 </label>
                 <Input
@@ -264,7 +264,7 @@ export const ProfilePage: React.FC = () => {
           >
             <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <label className="type-form-label text-muted-foreground">
                   Mật khẩu hiện tại
                 </label>
                 <Input
@@ -281,7 +281,7 @@ export const ProfilePage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <label className="type-form-label text-muted-foreground">
                     Mật khẩu mới
                   </label>
                   <Input
@@ -297,7 +297,7 @@ export const ProfilePage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <label className="type-form-label text-muted-foreground">
                     Xác nhận mật khẩu mới
                   </label>
                   <Input

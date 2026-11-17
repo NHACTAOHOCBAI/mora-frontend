@@ -53,7 +53,7 @@ export const PinnedMessagesPanel = ({
               <article key={pin.message.id} className="rounded-xl border p-3 space-y-2 min-w-0">
                 <p className="text-xs font-semibold truncate">{pin.message.sender === "assistant" ? "Trợ lý AI Mora" : pin.message.fullName || "Thành viên"}</p>
                 <p className="whitespace-pre-wrap break-words line-clamp-4 text-sm">{pin.message.text}</p>
-                <p className="text-[11px] text-muted-foreground break-words">{pin.pinnedByName} đã ghim · {new Date(pin.pinnedAt).toLocaleString("vi-VN")}</p>
+                <p className="type-meta text-muted-foreground break-words">{pin.pinnedByName} đã ghim · {new Date(pin.pinnedAt).toLocaleString("vi-VN")}</p>
                 <div className="flex justify-between gap-2">
                   <Button size="sm" variant="outline" onClick={() => onJump(pin.message.id)}>Xem trong hội thoại</Button>
                   <Button size="sm" variant="ghost" disabled={pendingIds.has(pin.message.id)} onClick={() => onUnpin(pin.message.id)}>Bỏ ghim</Button>

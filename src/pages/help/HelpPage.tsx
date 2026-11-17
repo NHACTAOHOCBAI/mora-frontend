@@ -24,16 +24,17 @@ export const HelpPage = () => {
 
   const toggleIssue = (question: string) => setOpenIssues(current => {
     const next = new Set(current);
-    next.has(question) ? next.delete(question) : next.add(question);
+    if (next.has(question)) next.delete(question);
+    else next.add(question);
     return next;
   });
 
   return <div className="bg-background px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
   <div className="mx-auto grid w-full max-w-6xl gap-12 lg:grid-cols-[11rem_minmax(0,46rem)] lg:gap-16">
     <aside className="hidden lg:block"><nav aria-label="Nội dung trợ giúp" className="sticky top-24 border-l border-border pl-4"><p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Hướng dẫn</p><ol className="space-y-3">{sections.map((section, index) => <li key={section.id}><a className="text-sm text-muted-foreground hover:text-foreground" href={`#${section.id}`}>{index + 1}. {section.title}</a></li>)}<li><a className="text-sm text-muted-foreground hover:text-foreground" href="#troubleshooting">Xử lý sự cố</a></li></ol></nav></aside>
-    <article className="min-w-0"><header className="border-b border-border pb-10"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Trợ giúp</p><h1 className="mt-5 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Hướng dẫn sử dụng Mora</h1><p className="mt-5 text-base leading-7 text-muted-foreground">Các thao tác cơ bản để làm việc với tài liệu, nhóm học và Mora.</p></header>
-      <div>{sections.map((section, index) => <section id={section.id} key={section.id} className="scroll-mt-28 border-b border-border py-10 sm:py-12"><p className="text-sm text-muted-foreground">{String(index + 1).padStart(2, "0")}</p><h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em]">{section.title}</h2><p className="mt-4 max-w-2xl leading-8 text-muted-foreground">{section.intro}</p><ol className="mt-5 max-w-2xl list-decimal space-y-2 pl-5 leading-8 text-muted-foreground">{section.steps.map(step => <li key={step}>{step}</li>)}</ol></section>)}</div>
-      <section id="troubleshooting" className="scroll-mt-28 py-10 sm:py-12"><p className="text-sm text-muted-foreground">06</p><h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em]">Xử lý sự cố</h2><div className="mt-5 divide-y divide-border border-t border-border">{issues.map(([question, answer]) => {
+    <article className="min-w-0"><header className="border-b border-border pb-10"><p className="type-meta font-medium text-muted-foreground">Trợ giúp</p><h1 className="mt-5 type-page-title">Hướng dẫn sử dụng Mora</h1><p className="mt-5 type-body-relaxed text-muted-foreground">Các thao tác cơ bản để làm việc với tài liệu, nhóm học và Mora.</p></header>
+      <div>{sections.map((section, index) => <section id={section.id} key={section.id} className="scroll-mt-28 border-b border-border py-10 sm:py-12"><p className="type-body text-muted-foreground">{String(index + 1).padStart(2, "0")}</p><h2 className="mt-3 type-section-title">{section.title}</h2><p className="mt-4 max-w-2xl type-body-relaxed text-muted-foreground">{section.intro}</p><ol className="mt-5 max-w-2xl list-decimal space-y-2 pl-5 type-body-relaxed text-muted-foreground">{section.steps.map(step => <li key={step}>{step}</li>)}</ol></section>)}</div>
+      <section id="troubleshooting" className="scroll-mt-28 py-10 sm:py-12"><p className="type-body text-muted-foreground">06</p><h2 className="mt-3 type-section-title">Xử lý sự cố</h2><div className="mt-5 divide-y divide-border border-t border-border">{issues.map(([question, answer]) => {
         const isOpen = openIssues.has(question);
         return <div key={question} className="py-1"><button type="button" className="flex w-full cursor-pointer items-center justify-between gap-4 py-4 text-left font-medium" onClick={() => toggleIssue(question)} aria-expanded={isOpen}>{question}<ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" /></button><div className={`grid transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}><div className="overflow-hidden"><p className="max-w-2xl pb-4 leading-8 text-muted-foreground">{answer}</p></div></div></div>;
       })}</div></section>

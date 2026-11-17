@@ -436,11 +436,14 @@ export const SpaceDetailPage: React.FC = () => {
                 className={`absolute bottom-0 inset-x-3 h-0.5 rounded-full bg-primary transition-transform duration-200 motion-reduce:transition-none ${isStudyOpen ? "scale-x-100" : "scale-x-0"}`}
               />
             </button>
+            <Link
+              to={`/space/${spaceId}/settings`}
+              className="relative inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 lg:px-4"
+            >
+              <Settings className="size-4" aria-hidden="true" />
+              Cài đặt
+            </Link>
         </nav>
-        <Button variant="ghost" aria-label="Cài đặt Space" render={<Link to={`/space/${spaceId}/settings`} />}>
-          <Settings className="size-4" />
-          <span className="hidden sm:inline">Cài đặt</span>
-        </Button>
       </div>
       <div className="flex flex-1 min-h-0 relative">
         {/* 1. Left Sidebar */}
@@ -469,7 +472,7 @@ export const SpaceDetailPage: React.FC = () => {
             ) : (
               <>
                 <div role="toolbar" aria-label="Công cụ hội thoại" className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3 md:px-5">
-                  <h2 className="text-sm font-semibold">Hội thoại</h2>
+                  <h2 className="type-card-title">Hội thoại</h2>
                   <div className="flex items-center gap-1">
                     <Button ref={pinButtonRef} variant="ghost" size="sm" aria-label="Tin đã ghim" onClick={() => setPinsOpen(true)}>
                       <Pin className="size-3.5" />

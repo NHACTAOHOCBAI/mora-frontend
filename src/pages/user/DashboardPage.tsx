@@ -100,7 +100,7 @@ export function DashboardPage() {
           <h1
             ref={headingRef}
             tabIndex={-1}
-            className="text-2xl font-semibold tracking-tight outline-none"
+            className="type-page-title outline-none"
           >
             Không gian học tập
           </h1>
@@ -147,8 +147,8 @@ export function DashboardPage() {
                       </span>
                     </div>
                     <div className="mt-7 min-w-0">
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Không gian hoạt động gần nhất</p>
-                      <h3 title={space.name} className="mt-2 truncate text-xl font-semibold tracking-tight sm:text-2xl">{space.name}</h3>
+                      <p className="type-meta font-medium text-muted-foreground">Không gian hoạt động gần nhất</p>
+                      <h3 title={space.name} className="mt-2 truncate type-section-title">{space.name}</h3>
                       <p className="mt-2 text-sm text-muted-foreground">Hoạt động gần nhất {dateTime(space.lastActivityAt || space.updatedAt)}</p>
                     </div>
                     {(typeof space.documentCount === "number" || typeof space.memberCount === "number") && (
@@ -175,7 +175,7 @@ export function DashboardPage() {
             {hasAttention && (
               <aside className="rounded-2xl border border-border bg-card p-5" aria-labelledby="attention-heading">
                 <div className="flex items-center justify-between gap-3">
-                  <div><h3 id="attention-heading" className="font-semibold">{attentionCopy.title}</h3><p className="mt-1 text-xs text-muted-foreground">{attentionCopy.description}</p></div>
+                  <div><h3 id="attention-heading" className="type-card-title">{attentionCopy.title}</h3><p className="type-meta mt-1 text-muted-foreground">{attentionCopy.description}</p></div>
                 </div>
                 <div className="mt-4 space-y-3">
                   {dashboard.data.processingDocuments.map((document) => (

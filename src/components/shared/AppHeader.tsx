@@ -20,7 +20,7 @@ export const AppHeader = ({ context, navigation, actions }: AppHeaderProps) => (
         <span className="flex size-9 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted p-1">
           <img src="/frog-logo.png" alt="" className="size-7 object-contain dark:invert" />
         </span>
-        {!context && <span className="text-lg font-bold tracking-wider">Mora</span>}
+        {!context && <span className="text-lg font-semibold tracking-tight">Mora</span>}
       </Link>
       {context}
     </div>

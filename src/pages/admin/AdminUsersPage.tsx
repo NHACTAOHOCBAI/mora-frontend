@@ -105,7 +105,7 @@ export const AdminUsersPage: React.FC = () => {
   return (
     <div className="space-y-4 w-full">
       <div>
-        <h1 className="text-2xl font-semibold">Quản Lý Thành Viên</h1>
+        <h1 className="type-page-title">Quản lý thành viên</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Danh sách tất cả người dùng hệ thống. Bạn có thể thay đổi vai trò hoặc khóa/mở khóa tài khoản thành viên.
         </p>
@@ -131,7 +131,7 @@ export const AdminUsersPage: React.FC = () => {
       <Dialog open={userToEdit !== null} onOpenChange={(open) => !open && setUserToEdit(null)}>
         <DialogContent className="sm:max-w-[450px] border border-border/80 bg-card rounded-xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Chỉnh Sửa Thành Viên</DialogTitle>
+            <DialogTitle className="type-card-title">Chỉnh sửa thành viên</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Thay đổi vai trò và trạng thái hoạt động của tài khoản người dùng.
             </DialogDescription>

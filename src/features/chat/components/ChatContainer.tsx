@@ -146,14 +146,14 @@ const MemoizedMessageItem = React.memo(
           className={`gap-1 min-w-0 max-w-full flex flex-col ${isSelf && !isAI ? "items-end" : "items-start"}`}
         >
           {isGroupStart && (!isSelf || isAI || isAiQuery) && (
-            <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 px-1 type-meta text-muted-foreground">
               {(!isSelf || isAI) && (
                 <span>
                   {isAI ? "Trợ lý AI Mora" : message.fullName || "Thành viên"}
                 </span>
               )}
               {isAiQuery && (
-                <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] px-1.5 py-0 h-4 font-semibold gap-1">
+                <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] px-1.5 py-0 h-5 font-semibold gap-1">
                   <Sparkles className="w-2.5 h-2.5" />
                   Hỏi Mora
                 </Badge>
@@ -289,13 +289,13 @@ const MemoizedMessageItem = React.memo(
                     const isInline = !match;
                     return isInline ? (
                       <code
-                        className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px] text-primary"
+                        className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs text-primary"
                         {...props}
                       >
                         {children}
                       </code>
                     ) : (
-                      <pre className="bg-muted p-3 rounded-lg font-mono text-[11px] overflow-x-auto my-2 border border-border">
+                      <pre className="bg-muted p-3 rounded-lg font-mono text-xs leading-5 overflow-x-auto my-2 border border-border">
                         <code className={className} {...props}>
                           {children}
                         </code>
@@ -304,7 +304,7 @@ const MemoizedMessageItem = React.memo(
                   },
                   table: ({ children }) => (
                     <div className="overflow-x-auto my-3 border border-border rounded-xl shadow-xs">
-                      <table className="w-full border-collapse text-left text-[11px]">
+                      <table className="w-full border-collapse text-left text-xs leading-5">
                         {children}
                       </table>
                     </div>
@@ -375,14 +375,14 @@ const MemoizedMessageItem = React.memo(
             <time
               id={`${timestampId}-touch`}
               dateTime={timestamp.toISOString()}
-              className="text-[10px] text-muted-foreground px-1"
+              className="type-meta text-muted-foreground px-1"
             >
               {timeLabel}
             </time>
           )}
 
           {isDebugMode && isAI && message.condensedQuestion && (
-            <div className="text-[10px] text-muted-foreground pl-1 italic flex items-center gap-1">
+            <div className="type-meta text-muted-foreground pl-1 italic flex items-center gap-1">
               <Search className="w-3 h-3 text-muted-foreground/80" />
               <span>Truy vấn tối ưu: {message.condensedQuestion}</span>
             </div>
@@ -432,7 +432,7 @@ const MemoizedMessageItem = React.memo(
 
               return (
                 <div className="flex flex-wrap gap-1.5 pt-0.5 pl-1">
-                  <span className="text-[11px] text-muted-foreground flex items-center gap-1 py-1 font-medium">
+                  <span className="type-meta text-muted-foreground flex items-center gap-1 py-1 font-medium">
                     <MapPin className="w-3 h-3 shrink-0" /> Nguồn trích dẫn:
                   </span>
                   {uniqueCitations.map((citation, idx) => {
@@ -452,7 +452,7 @@ const MemoizedMessageItem = React.memo(
                         }
                         variant="outline"
                         size="sm"
-                        className="h-6 max-w-[260px] text-[11px] font-semibold rounded-lg transition-all duration-200 flex items-center gap-1 cursor-pointer bg-card hover:border-primary hover:text-primary"
+                        className="h-7 max-w-[260px] text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-1 cursor-pointer bg-card hover:border-primary hover:text-primary"
                         title={`Tài liệu: ${citation.documentName || (docId ? `Tài liệu #${docId}` : "Chưa rõ")} - Trang ${citation.pageNumber}${quotesText ? `\nTrích dẫn:\n"${quotesText}"` : ""}`}
                       >
                         <MapPin className="w-2.5 h-2.5 text-primary shrink-0" />
@@ -957,10 +957,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       >
         <DialogContent className="sm:max-w-[700px] w-[90vw] bg-card text-foreground border-border max-h-[85vh] flex flex-col p-6 rounded-2xl shadow-2xl z-50">
           <DialogHeader className="border-b border-border pb-3 flex flex-col">
-            <DialogTitle className="text-sm font-bold text-foreground">
+            <DialogTitle className="type-card-title text-foreground">
               Chi tiết Prompt gửi tới OpenAI
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-[11px] mt-1">
+            <DialogDescription className="type-meta text-muted-foreground mt-1">
               Nội dung System Prompt và ngữ cảnh trích xuất từ tài liệu
             </DialogDescription>
           </DialogHeader>

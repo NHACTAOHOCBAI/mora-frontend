@@ -64,7 +64,7 @@ export const ResetPasswordPage = () => {
     <PasswordRecoveryCard title="Đặt lại mật khẩu" icon={<KeyRound />} description="Chọn mật khẩu mới cho tài khoản Mora của bạn.">
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4" noValidate>
         <div className="space-y-1.5">
-          <label htmlFor="new-password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mật khẩu mới</label>
+          <label htmlFor="new-password" className="type-form-label text-muted-foreground">Mật khẩu mới</label>
           <div className="relative">
             <Input id="new-password" type={visible ? "text" : "password"} autoComplete="new-password"
               autoFocus className="h-10 pr-10" disabled={mutation.isPending}
@@ -80,7 +80,7 @@ export const ResetPasswordPage = () => {
           <p id="new-password-error" className="text-xs text-destructive">{form.formState.errors.newPassword?.message}</p>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="confirm-password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Xác nhận mật khẩu mới</label>
+          <label htmlFor="confirm-password" className="type-form-label text-muted-foreground">Xác nhận mật khẩu mới</label>
           <Input id="confirm-password" type={visible ? "text" : "password"} autoComplete="new-password" className="h-10"
             disabled={mutation.isPending} aria-invalid={!!form.formState.errors.confirmPassword}
             aria-describedby="confirm-password-error" {...form.register("confirmPassword")} />

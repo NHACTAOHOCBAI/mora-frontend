@@ -189,6 +189,27 @@ input:-webkit-autofill:active {
 }
 
 @layer utilities {
+  .type-page-title {
+    @apply text-2xl font-semibold leading-8 tracking-tight sm:text-3xl sm:leading-9;
+  }
+  .type-section-title {
+    @apply text-xl font-semibold leading-7 tracking-tight;
+  }
+  .type-card-title {
+    @apply text-base font-semibold leading-6;
+  }
+  .type-body {
+    @apply text-sm leading-5;
+  }
+  .type-body-relaxed {
+    @apply text-sm leading-6;
+  }
+  .type-meta {
+    @apply text-xs leading-[18px];
+  }
+  .type-form-label {
+    @apply text-sm font-medium leading-5;
+  }
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */

@@ -213,7 +213,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
             <ChevronLeft className="w-3.5 h-3.5" />
           </Button>
 
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1 type-meta text-muted-foreground">
             <span>Trang</span>
             <Input
               type="text"
@@ -221,7 +221,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
               onChange={(e) => setInputPage(e.target.value)}
               onKeyDown={handleInputKeyDown}
               onBlur={handleInputBlur}
-              className="w-8 h-5 text-center text-[11px] font-medium px-0 py-0 bg-muted/40 border-border/60 text-foreground focus-visible:ring-1 focus-visible:ring-primary rounded-xs shadow-none"
+              className="w-9 h-6 text-center text-xs font-medium px-0 py-0 bg-muted/40 border-border/60 text-foreground focus-visible:ring-1 focus-visible:ring-primary rounded-xs shadow-none"
               title="Nhập số trang và nhấn Enter"
             />
             <span className="text-muted-foreground/80">/ {numPages || '?'}</span>
@@ -254,7 +254,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ url, currentPage, onPageCh
 
           <button
             onClick={handleFitWidth}
-            className="text-[11px] font-mono font-medium min-w-[40px] px-1.5 py-0.5 text-center hover:bg-muted rounded cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs font-mono font-medium min-w-[44px] px-1.5 py-0.5 text-center hover:bg-muted rounded cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
             title="Nhấn để vừa chiều rộng (100%)"
           >
             {Math.round(zoomLevel * 100)}%

@@ -20,8 +20,8 @@ export const ErrorView = ({ icon, title, description, code, children, illustrati
         <ErrorIllustration code={code}
           kind={illustration || (code === "404" ? "missing" : code === "403" ? "forbidden" : "unexpected")} icon={icon} />
         <div className="flex flex-col items-center gap-3">
-          <h1 ref={heading} tabIndex={-1} className="text-2xl font-semibold leading-tight tracking-tight outline-none sm:text-4xl">{title}</h1>
-          <p className="max-w-md text-sm leading-7 text-muted-foreground">{description}</p>
+          <h1 ref={heading} tabIndex={-1} className="type-page-title outline-none">{title}</h1>
+          <p className="max-w-md type-body-relaxed text-muted-foreground">{description}</p>
         </div>
         <div className="flex w-full max-w-60 flex-col gap-2 pt-1 [&_a]:inline-flex [&_a]:h-10 [&_a]:items-center [&_a]:justify-center [&_button]:h-10">{children}</div>
       </section>

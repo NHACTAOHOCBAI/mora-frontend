@@ -13,8 +13,8 @@ export const PasswordRecoveryCard = ({ title, description, children, icon }: Pas
       <div className="flex flex-col items-center gap-4 text-center">
         {icon && <span aria-hidden="true" className="inline-flex size-12 shrink-0 items-center justify-center rounded-full border border-border bg-muted/60 text-foreground [&_svg]:size-6 [&_svg]:stroke-[1.75]">{icon}</span>}
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+          <h1 className="type-section-title">{title}</h1>
+          <p className="type-body-relaxed text-muted-foreground">{description}</p>
         </div>
       </div>
       {children}

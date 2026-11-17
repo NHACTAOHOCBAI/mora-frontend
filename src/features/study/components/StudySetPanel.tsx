@@ -29,6 +29,7 @@ import type { Citation, QuizGrade, StudySet } from "../services/study-api";
 import type { DocumentResponse } from "@/features/chat/services/document-api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api-error";
+import { SpaceViewFrame } from "@/components/shared/SpaceViewFrame";
 
 export function StudySetPanel({
   spaceId,
@@ -81,22 +82,15 @@ export function StudySetPanel({
       />
     );
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto p-5 md:p-10 space-y-6 w-full max-w-5xl mx-auto">
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div>
-          <h2 className="font-bold flex items-center gap-2">
-            <Brain className="w-5 h-5 text-primary" />
-            Ôn tập tài liệu
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Flashcard và quiz dùng chung trong Space.
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)} className="gap-2">
+    <SpaceViewFrame
+      title="Ôn tập tài liệu"
+      description="Flashcard và quiz dùng chung trong không gian học tập."
+      icon={Brain}
+      actions={<Button onClick={() => setOpen(true)} className="gap-2">
           <Sparkles className="w-4 h-4" />
           Tạo bộ mới
-        </Button>
-      </div>
+        </Button>}
+    >
       {isLoading ? (
         <Loader2 className="animate-spin mx-auto mt-12 text-primary" />
       ) : isError ? (
@@ -121,7 +115,7 @@ export function StudySetPanel({
             <div key={s.id} className="border bg-card rounded-xl p-4 space-y-3">
               <div>
                 <h3 className="font-semibold">{s.title}</h3>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="type-meta text-muted-foreground mt-1">
                   {s.flashcards.length} thẻ · {s.quizQuestions.length} câu quiz
                   · {s.createdByName || "Thành viên"}
                 </p>
@@ -208,7 +202,7 @@ export function StudySetPanel({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </SpaceViewFrame>
   );
 }
 
@@ -271,7 +265,7 @@ function StudySession({
           <ChevronLeft className="size-4" />
           Tất cả bộ học
         </Button>
-        <h2 className="font-semibold text-2xl break-words">{set.title}</h2>
+        <h2 className="type-page-title break-words">{set.title}</h2>
         <div className="flex gap-2" aria-label="Hình thức ôn tập">
           <Button
             variant={tab === "cards" ? "default" : "outline"}

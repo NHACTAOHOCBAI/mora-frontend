@@ -53,16 +53,16 @@ export const JoinSpacePage = () => {
             {isLoading ? <Loader2 className="size-6 animate-spin" /> : <UserPlus className="size-6" />}
           </span>
           <div className="space-y-2">
-            <h1 className="text-xl font-semibold">{isLoading ? "Đang kiểm tra lời mời..." : "Tham gia không gian"}</h1>
-            <p className="text-sm leading-6 text-muted-foreground">Kiểm tra thông tin bên dưới trước khi xác nhận tham gia.</p>
+            <h1 className="type-section-title">{isLoading ? "Đang kiểm tra lời mời..." : "Tham gia không gian học tập"}</h1>
+            <p className="type-body-relaxed text-muted-foreground">Kiểm tra thông tin bên dưới trước khi xác nhận tham gia.</p>
           </div>
         </div>
         {preview && (
           <>
             <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
-              <h2 className="break-words text-base font-semibold">{preview.spaceName}</h2>
-              {preview.spaceDescription && <p className="break-words text-sm leading-6 text-muted-foreground">{preview.spaceDescription}</p>}
-              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+              <h2 className="break-words type-card-title">{preview.spaceName}</h2>
+              {preview.spaceDescription && <p className="break-words type-body-relaxed text-muted-foreground">{preview.spaceDescription}</p>}
+              <div className="flex flex-wrap gap-4 type-meta text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5"><Users className="size-3.5" />{preview.memberCount} thành viên</span>
                 <span className="inline-flex items-center gap-1.5"><FileText className="size-3.5" />{preview.documentCount} tài liệu</span>
               </div>

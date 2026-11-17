@@ -45,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <div className="p-0.5 bg-muted rounded-md border border-border flex items-center justify-center w-7 h-7 overflow-hidden">
                 <img src="/frog-logo.png" alt="Mora Logo" className="w-5 h-5 object-contain dark:invert" />
               </div>
-              <span className="text-base font-semibold">Mora Admin</span>
+              <span className="type-card-title">Mora Admin</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

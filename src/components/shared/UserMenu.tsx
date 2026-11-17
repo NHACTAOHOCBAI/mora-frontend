@@ -48,7 +48,7 @@ export const UserMenu: React.FC = () => {
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-semibold leading-none">{user.fullName}</p>
               <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-              <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mt-1">
+              <p className="type-meta font-medium text-muted-foreground mt-1">
                 Vai trò: {user.role === 'ROLE_ADMIN' ? 'Admin' : 'User'}
               </p>
             </div>
