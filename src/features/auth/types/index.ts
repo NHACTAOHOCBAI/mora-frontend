@@ -9,6 +9,11 @@ export interface UserResponse {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  termsAcceptedVersion?: string;
+  termsAcceptedAt?: string;
+  privacyAcceptedVersion?: string;
+  privacyAcceptedAt?: string;
+  legalAcceptanceRequired: boolean;
 }
 
 export interface AuthResponse {

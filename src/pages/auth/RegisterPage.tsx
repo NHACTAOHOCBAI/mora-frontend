@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api-error";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const registerSchema = z
   .object({
@@ -30,6 +31,8 @@ const registerSchema = z
       .min(6, "Mật khẩu phải chứa ít nhất 6 ký tự")
       .max(100, "Mật khẩu không được quá 100 ký tự"),
     confirmPassword: z.string().min(1, "Vui lòng xác nhận lại mật khẩu"),
+    acceptsTerms: z.boolean().refine(Boolean, "Bạn cần đồng ý Điều khoản sử dụng"),
+    acceptsPrivacy: z.boolean().refine(Boolean, "Bạn cần đồng ý Chính sách quyền riêng tư"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Mật khẩu xác nhận không khớp",
@@ -45,6 +48,8 @@ export const RegisterPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -53,6 +58,8 @@ export const RegisterPage: React.FC = () => {
       fullName: "",
       password: "",
       confirmPassword: "",
+      acceptsTerms: false,
+      acceptsPrivacy: false,
     },
   });
 
@@ -62,6 +69,8 @@ export const RegisterPage: React.FC = () => {
         email: data.email,
         fullName: data.fullName,
         password: data.password,
+        acceptsTerms: data.acceptsTerms,
+        acceptsPrivacy: data.acceptsPrivacy,
       });
       toast.success("Đăng ký tài khoản thành công! Hãy đăng nhập.");
     } catch (err: unknown) {
@@ -176,6 +185,19 @@ export const RegisterPage: React.FC = () => {
               "Đăng ký tài khoản"
             )}
           </Button>
+
+          <div className="space-y-3 pt-1 text-sm text-muted-foreground">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <Checkbox className="mt-0.5" disabled={isRegistering} checked={watch("acceptsTerms")} onCheckedChange={(checked) => setValue("acceptsTerms", checked === true, { shouldValidate: true })} />
+              <span>Tôi đồng ý với <Link to="/terms" className="font-medium text-foreground underline underline-offset-4">Điều khoản sử dụng</Link>.</span>
+            </label>
+            {errors.acceptsTerms && <span className="block text-xs text-destructive font-medium">{errors.acceptsTerms.message}</span>}
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <Checkbox className="mt-0.5" disabled={isRegistering} checked={watch("acceptsPrivacy")} onCheckedChange={(checked) => setValue("acceptsPrivacy", checked === true, { shouldValidate: true })} />
+              <span>Tôi đã đọc và đồng ý với <Link to="/privacy" className="font-medium text-foreground underline underline-offset-4">Chính sách quyền riêng tư</Link>.</span>
+            </label>
+            {errors.acceptsPrivacy && <span className="block text-xs text-destructive font-medium">{errors.acceptsPrivacy.message}</span>}
+          </div>
         </form>
 
         <div className="text-center text-sm text-muted-foreground mt-6">

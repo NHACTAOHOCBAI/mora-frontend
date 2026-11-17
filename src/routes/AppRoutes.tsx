@@ -15,8 +15,12 @@ const SpaceDetailPage = lazy(() => import('@/pages/user/space-detail/SpaceDetail
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 const ProfilePage = lazy(() => import('@/pages/user/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const JoinSpacePage = lazy(() => import('@/pages/user/JoinSpacePage').then(m => ({ default: m.JoinSpacePage })));
+const PrivacyPage = lazy(() => import('@/pages/legal/LegalPage').then(m => ({ default: () => <m.LegalPage kind="privacy" /> })));
+const TermsPage = lazy(() => import('@/pages/legal/LegalPage').then(m => ({ default: () => <m.LegalPage kind="terms" /> })));
+const HelpPage = lazy(() => import('@/pages/help/HelpPage').then(m => ({ default: m.HelpPage })));
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { MainLayout } from '@/layouts/MainLayout';
+import { PublicLayout } from '@/layouts/PublicLayout';
 
 // Loading component tạm thời
 const LoadingFallback = () => (
@@ -30,7 +34,15 @@ const router = createBrowserRouter([{
   errorElement: <UnexpectedErrorPage />,
   children: [
   {
-    element: <MainLayout />,
+    element: <PublicLayout />,
+    children: [
+      { path: '/privacy', element: <Suspense fallback={<LoadingFallback />}><PrivacyPage /></Suspense> },
+      { path: '/terms', element: <Suspense fallback={<LoadingFallback />}><TermsPage /></Suspense> },
+      { path: '/help', element: <Suspense fallback={<LoadingFallback />}><HelpPage /></Suspense> },
+    ],
+  },
+  {
+    element: <PublicLayout />,
     children: [
       { path: '/forgot-password', element: <Suspense fallback={<LoadingFallback />}><ForgotPasswordPage /></Suspense> },
       { path: '/reset-password', element: <Suspense fallback={<LoadingFallback />}><ResetPasswordPage /></Suspense> },
@@ -41,7 +53,7 @@ const router = createBrowserRouter([{
     element: <GuestRoute />,
     children: [
       {
-        element: <MainLayout />,
+        element: <PublicLayout />,
         children: [
           {
             path: '/login',
@@ -135,7 +147,7 @@ const router = createBrowserRouter([{
   },
   // Unknown URLs stay visible and are accessible without signing in.
   {
-    element: <MainLayout />,
+    element: <PublicLayout />,
     children: [{ path: '*', element: <Suspense fallback={<LoadingFallback />}><NotFoundPage /></Suspense> }],
   },
   ],

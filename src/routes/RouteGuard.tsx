@@ -1,6 +1,6 @@
 import { ErrorView } from "@/components/shared/ErrorView";
 import { ErrorPageFrame } from "@/components/shared/ErrorPageFrame";
-import { LockKeyhole, WifiOff } from "lucide-react";
+import { LockKeyhole, ShieldCheck, WifiOff } from "lucide-react";
 import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -8,6 +8,8 @@ import { authPath, clearReturnTo, pendingReturnTo, rememberReturnTo } from "@/fe
 import { AppApiError } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/api-error";
+import { toast } from "sonner";
 
 const AuthLoading = () => (
   <div role="status" className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6">
@@ -36,6 +38,30 @@ const SessionError = ({ forbidden, retry, pending }: { forbidden: boolean; retry
   </ErrorPageFrame>
 );
 
+const LegalAcceptanceGate = () => {
+  const auth = useAuth();
+  const accept = async () => {
+    try {
+      await auth.acceptLegalDocuments();
+      toast.success("Cảm ơn bạn đã xác nhận các văn bản pháp lý.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+  return <ErrorPageFrame>
+    <ErrorView illustration="forbidden" icon={<ShieldCheck />} title="Cập nhật điều khoản sử dụng" description="Để tiếp tục dùng Mora, vui lòng đọc và đồng ý với Điều khoản sử dụng cùng Chính sách quyền riêng tư hiện hành.">
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm">
+        <Link className="font-medium underline underline-offset-4" to="/terms">Điều khoản sử dụng</Link>
+        <Link className="font-medium underline underline-offset-4" to="/privacy">Chính sách quyền riêng tư</Link>
+      </div>
+      <Button className="h-10 w-full" disabled={auth.isAcceptingLegalDocuments} onClick={() => { void accept(); }}>
+        {auth.isAcceptingLegalDocuments ? "Đang lưu..." : "Tôi đồng ý và tiếp tục"}
+      </Button>
+      <Button className="h-10 w-full" variant="ghost" onClick={() => auth.logout("/terms")}>Đăng xuất</Button>
+    </ErrorView>
+  </ErrorPageFrame>;
+};
+
 export const ProtectedRoute = ({ requireAdmin = false }: { requireAdmin?: boolean }) => {
   const auth = useAuth();
   const location = useLocation();
@@ -44,6 +70,7 @@ export const ProtectedRoute = ({ requireAdmin = false }: { requireAdmin?: boolea
   const forbidden = auth.error instanceof AppApiError && auth.error.status === 403;
   if (forbidden || (!auth.user && auth.error)) return <SessionError forbidden={forbidden} retry={() => { void auth.retrySession(); }} pending={auth.isFetching} />;
   if (!auth.user) return <AuthLoading />;
+  if (auth.user.legalAcceptanceRequired) return <LegalAcceptanceGate />;
   if (requireAdmin && auth.user.role !== "ROLE_ADMIN") return <SessionError forbidden retry={() => {}} pending={false} />;
   return <Outlet />;
 };

@@ -11,11 +11,6 @@ export const MainLayout: React.FC = () => {
       <main className="flex-1 flex flex-col relative">
         <Outlet />
       </main>
-
-      {/* Global Footer */}
-      <footer className="relative z-10 py-4 text-center text-xs text-muted-foreground border-t border-border bg-card/30 shrink-0">
-        &copy; {new Date().getFullYear()} Mora. Tất cả các quyền được bảo lưu.
-      </footer>
     </div>
   );
 };

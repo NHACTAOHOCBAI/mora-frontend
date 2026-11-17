@@ -14,8 +14,13 @@ export const authApi = {
     return response.data.result;
   },
 
-  register: async (data: { email: string; fullName: string; password: string }): Promise<UserResponse> => {
+  register: async (data: { email: string; fullName: string; password: string; acceptsTerms: boolean; acceptsPrivacy: boolean }): Promise<UserResponse> => {
     const response = await apiClient.post<ApiResponse<UserResponse>>('/auth/register', data);
+    return response.data.result;
+  },
+
+  acceptLegalDocuments: async (): Promise<UserResponse> => {
+    const response = await apiClient.post<ApiResponse<UserResponse>>("/users/legal-acceptance", { acceptsTerms: true, acceptsPrivacy: true });
     return response.data.result;
   },
 

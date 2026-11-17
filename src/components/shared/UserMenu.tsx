@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, ShieldAlert, User, Undo2 } from 'lucide-react';
+import { CircleHelp, LogOut, ShieldAlert, User, Undo2 } from 'lucide-react';
 
 export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
@@ -59,6 +59,10 @@ export const UserMenu: React.FC = () => {
         >
           <User className="mr-2 h-4 w-4" />
           <span>Thông tin cá nhân</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/help')} className="cursor-pointer font-medium">
+          <CircleHelp className="mr-2 h-4 w-4" />
+          <span>Trợ giúp</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator className="bg-border" />

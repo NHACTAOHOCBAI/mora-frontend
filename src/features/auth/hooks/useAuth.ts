@@ -24,6 +24,10 @@ export const useAuth = () => {
     mutationFn: authApi.register,
     onSuccess: () => navigate(authPath("/login", pendingReturnTo()), { replace: true }),
   });
+  const legalAcceptanceMutation = useMutation({
+    mutationFn: authApi.acceptLegalDocuments,
+    onSuccess: data => queryClient.setQueryData(["currentUser", session.revision], data),
+  });
   const logout = (returnTo?: string) => {
     clearReturnTo();
     if (returnTo) rememberReturnTo(returnTo);
@@ -42,5 +46,8 @@ export const useAuth = () => {
     loginError: loginMutation.error,
     register: registerMutation.mutateAsync, isRegistering: registerMutation.isPending,
     registerError: registerMutation.error, logout,
+    acceptLegalDocuments: legalAcceptanceMutation.mutateAsync,
+    isAcceptingLegalDocuments: legalAcceptanceMutation.isPending,
+    legalAcceptanceError: legalAcceptanceMutation.error,
   };
 };
