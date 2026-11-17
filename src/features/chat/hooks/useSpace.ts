@@ -15,6 +15,7 @@ import {
   revokeSpaceInvitation,
   previewSpaceInvitation,
   joinSpaceByInviteCode,
+  respondToMemberInvitation,
 } from '../services/space-api';
 import type {
   SpaceDetailResponse,
@@ -177,4 +178,8 @@ export const useJoinSpaceByInviteCode = () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
     ]),
   });
+};
+export const useRespondToMemberInvitation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: ({ id, action }: { id: number; action: 'accept' | 'decline' }) => respondToMemberInvitation(id, action), onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: ['dashboard'] }), queryClient.invalidateQueries({ queryKey: ['spaces'] })]) });
 };

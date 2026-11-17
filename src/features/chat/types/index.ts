@@ -83,6 +83,13 @@ export interface DashboardResponse {
     spaceName: string;
     updatedAt?: string;
   }>;
+  pendingMemberInvitations: SpaceMemberInvitationResponse[];
+  pendingMemberInvitationCount: number;
+}
+
+export interface SpaceMemberInvitationResponse {
+  id: number; spaceId: number; spaceName: string; inviterName: string; inviteeEmail: string;
+  role: SpaceRole; status: InvitationStatus; createdAt: string;
 }
 
 export interface SpaceDetailResponse {

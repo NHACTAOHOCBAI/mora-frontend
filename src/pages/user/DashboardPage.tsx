@@ -12,10 +12,9 @@ import {
   Trash2,
   ArrowRight,
   BookOpen,
-  Clock3,
   RefreshCw,
 } from "lucide-react";
-import { useSpaces, useDeleteSpace, useDashboard } from "@/features/chat/hooks/useSpace";
+import { useSpaces, useDeleteSpace, useDashboard, useRespondToMemberInvitation } from "@/features/chat/hooks/useSpace";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import type { SpaceResponse } from "@/features/chat/types";
 import {
@@ -55,6 +54,7 @@ export function DashboardPage() {
   const { user } = useAuth();
   const spaces = useSpaces();
   const dashboard = useDashboard();
+  const respondInvitation = useRespondToMemberInvitation();
   const remove = useDeleteSpace();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SpaceSort>("newest");
@@ -64,6 +64,24 @@ export function DashboardPage() {
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const visibleSpaces = filterAndSortSpaces(spaces.data || [], search, sort);
+  const hasAttention = !!dashboard.data && (dashboard.data.processingDocuments.length > 0 || dashboard.data.pendingMemberInvitations.length > 0);
+  const attentionCount = dashboard.data
+    ? dashboard.data.processingDocuments.length + dashboard.data.pendingMemberInvitations.length
+    : 0;
+  const attentionCopy = dashboard.data?.pendingMemberInvitations.length && dashboard.data.processingDocuments.length
+    ? { title: "Có gì mới", description: `${attentionCount} cập nhật trong không gian của bạn` }
+    : dashboard.data?.pendingMemberInvitations.length
+      ? { title: "Lời mời tham gia", description: `${dashboard.data.pendingMemberInvitations.length} lời mời dành cho bạn` }
+      : { title: "Tài liệu đang chuẩn bị", description: "Mora đang hoàn tất tài liệu của bạn" };
+  const respondToInvitation = (id: number, action: "accept" | "decline") => {
+    respondInvitation.mutate(
+      { id, action },
+      {
+        onSuccess: () => toast.success(action === "accept" ? "Đã tham gia không gian" : "Đã từ chối lời mời"),
+        onError: (error) => toast.error(getErrorMessage(error)),
+      },
+    );
+  };
   const confirmDelete = () => {
     if (!deleting || remove.isPending) return;
     setDeleteError(null);
@@ -100,26 +118,78 @@ export function DashboardPage() {
         </Button>
       </header>
       {dashboard.isLoading ? (
-        <section className="grid gap-4 lg:grid-cols-3" aria-label="Đang tải tổng quan">
-          {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-36 rounded-2xl" />)}
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]" aria-label="Đang tải tổng quan">
+          <Skeleton className="h-48 rounded-2xl" /><Skeleton className="h-48 rounded-2xl" />
         </section>
       ) : dashboard.isError ? (
         <section className="rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <span>Không tải được phần tiếp tục học. Danh sách không gian vẫn có thể sử dụng.</span>
           <Button variant="outline" size="sm" disabled={dashboard.isFetching} onClick={() => void dashboard.refetch()}><RefreshCw className="size-3.5" />Thử lại</Button>
         </section>
-      ) : dashboard.data && (dashboard.data.recentSpaces.length > 0 || dashboard.data.processingDocuments.length > 0) ? (
-        <section className="space-y-5" aria-label="Tiếp tục học">
-          <div className="flex items-center gap-2"><Clock3 className="size-4 text-muted-foreground" /><h2 className="font-semibold">Tiếp tục học</h2></div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            {dashboard.data.recentSpaces.length > 0 && <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-              <h3 className="text-sm font-medium">Không gian gần đây</h3>
-              <div className="space-y-2">{dashboard.data.recentSpaces.map(space => <Link key={space.id} to={`/space/${space.id}`} className="block rounded-lg p-2 -mx-2 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"><p className="text-sm font-medium truncate">{space.name}</p><p className="text-xs text-muted-foreground mt-1">Hoạt động {dateTime(space.lastActivityAt || space.updatedAt)}</p></Link>)}</div>
-            </div>}
-            {dashboard.data.processingDocuments.length > 0 && <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-              <h3 className="text-sm font-medium">Tài liệu đang xử lý</h3>
-              <div className="space-y-2">{dashboard.data.processingDocuments.map(document => <Link key={document.id} to={`/space/${document.spaceId}`} className="block rounded-lg p-2 -mx-2 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"><p className="text-sm font-medium truncate">{document.name}</p><p className="text-xs text-muted-foreground mt-1 truncate">{processingLabel[document.status]} · {document.spaceName}</p></Link>)}</div>
-            </div>}
+      ) : dashboard.data && (dashboard.data.recentSpaces.length > 0 || dashboard.data.processingDocuments.length > 0 || dashboard.data.pendingMemberInvitations.length > 0) ? (
+        <section aria-label="Tiếp tục học">
+          <div className={`grid gap-4 ${hasAttention ? "lg:grid-cols-[minmax(0,1.65fr)_minmax(19rem,1fr)]" : ""}`}>
+            {dashboard.data.recentSpaces.length > 0 && (
+              <div className="overflow-hidden rounded-2xl border border-border bg-card">
+                {dashboard.data.recentSpaces.slice(0, 1).map((space) => (
+                  <Link
+                    key={space.id}
+                    to={`/space/${space.id}`}
+                    className="group block bg-gradient-to-br from-primary/[0.08] via-card to-card p-5 transition-colors hover:from-primary/[0.12] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring sm:p-6"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <Folder className="size-5" />
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                        Tiếp tục học
+                        <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                    <div className="mt-7 min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Không gian hoạt động gần nhất</p>
+                      <h3 title={space.name} className="mt-2 truncate text-xl font-semibold tracking-tight sm:text-2xl">{space.name}</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">Hoạt động gần nhất {dateTime(space.lastActivityAt || space.updatedAt)}</p>
+                    </div>
+                    {(typeof space.documentCount === "number" || typeof space.memberCount === "number") && (
+                      <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                        {typeof space.documentCount === "number" && <span className="inline-flex items-center gap-1.5"><FileText className="size-4" />{space.documentCount} tài liệu</span>}
+                        {typeof space.memberCount === "number" && <span className="inline-flex items-center gap-1.5"><Users className="size-4" />{space.memberCount} thành viên</span>}
+                      </div>
+                    )}
+                  </Link>
+                ))}
+                {dashboard.data.recentSpaces.length > 1 && (
+                  <div className="grid border-t border-border sm:grid-cols-2">
+                    {dashboard.data.recentSpaces.slice(1).map((space) => (
+                      <Link key={space.id} to={`/space/${space.id}`} className="group flex min-w-0 items-center gap-3 px-5 py-4 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring sm:px-6 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-b-0 sm:[&:first-child]:border-r">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"><Folder className="size-4" /></span>
+                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium group-hover:underline">{space.name}</span><span className="mt-0.5 block truncate text-xs text-muted-foreground">{dateTime(space.lastActivityAt || space.updatedAt)}</span></span>
+                        <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {hasAttention && (
+              <aside className="rounded-2xl border border-border bg-card p-5" aria-labelledby="attention-heading">
+                <div className="flex items-center justify-between gap-3">
+                  <div><h3 id="attention-heading" className="font-semibold">{attentionCopy.title}</h3><p className="mt-1 text-xs text-muted-foreground">{attentionCopy.description}</p></div>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {dashboard.data.processingDocuments.map((document) => (
+                    <Link key={document.id} to={`/space/${document.spaceId}`} className="group block rounded-xl border border-border/70 bg-muted/30 p-3 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
+                      <div className="flex items-start gap-3"><span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-background"><FileText className="size-3.5" /></span><span className="min-w-0"><span className="block truncate text-sm font-medium group-hover:underline">{document.name}</span><span className="mt-1 block truncate text-xs text-muted-foreground">{processingLabel[document.status]} · {document.spaceName}</span></span></div>
+                    </Link>
+                  ))}
+                  {dashboard.data.pendingMemberInvitations.map((invitation) => {
+                    const isResponding = respondInvitation.isPending && respondInvitation.variables?.id === invitation.id;
+                    return <div key={invitation.id} className="rounded-xl border border-border/70 bg-muted/30 p-3"><p className="truncate text-sm font-medium">{invitation.spaceName}</p><p className="mt-1 text-xs text-muted-foreground">Mời bởi {invitation.inviterName}</p><div className="mt-3 flex gap-2"><Button size="sm" disabled={isResponding} onClick={() => respondToInvitation(invitation.id, "accept")}>{isResponding ? "Đang xử lý..." : "Chấp nhận"}</Button><Button size="sm" variant="outline" disabled={isResponding} onClick={() => respondToInvitation(invitation.id, "decline")}>Từ chối</Button></div></div>;
+                  })}
+                </div>
+              </aside>
+            )}
           </div>
         </section>
       ) : null}

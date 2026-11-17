@@ -5,7 +5,6 @@ import { Loader2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAddSpaceMember } from "../hooks/useSpace";
-import { memberName } from "../utils/member-management";
 import { MemberRoleChoices } from "./MemberRoleSelect";
 import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
@@ -37,7 +36,7 @@ export function AddSpaceMemberForm({
       { spaceId, data: values },
       {
         onSuccess: (member) => {
-          toast.success(`Đã thêm ${memberName(member)} vào nhóm`);
+          toast.success(`Đã gửi lời mời đến ${member.inviteeEmail}`);
           onAdded();
         },
         onError: (error) =>
@@ -65,8 +64,7 @@ export function AddSpaceMemberForm({
           id="member-account-hint"
           className="text-xs text-muted-foreground leading-5"
         >
-          Người được thêm cần có tài khoản Mora. Họ sẽ được thêm ngay, không cần
-          chấp nhận lời mời.
+          Người nhận cần có tài khoản Mora và sẽ tự xác nhận trước khi tham gia.
         </p>
         {form.formState.errors.email && (
           <p
@@ -101,7 +99,7 @@ export function AddSpaceMemberForm({
         ) : (
           <UserPlus className="size-4" />
         )}
-        {add.isPending ? "Đang thêm..." : "Thêm thành viên"}
+        {add.isPending ? "Đang gửi..." : "Gửi lời mời"}
       </Button>
     </form>
   );

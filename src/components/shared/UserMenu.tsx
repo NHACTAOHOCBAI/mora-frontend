@@ -13,10 +13,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CircleHelp, LogOut, ShieldAlert, User, Undo2 } from 'lucide-react';
+import { useDashboard } from '@/features/chat/hooks/useSpace';
 
 export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const dashboard = useDashboard();
 
   if (!user) return null;
 
@@ -38,6 +40,7 @@ export const UserMenu: React.FC = () => {
         ) : (
           toAlias(user.fullName || user.email)
         )}
+        {(dashboard.data?.pendingMemberInvitationCount ?? 0) > 0 && <span className="absolute right-0 top-0 size-2.5 rounded-full border-2 border-background bg-destructive" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-card border border-border">
         <DropdownMenuGroup>
@@ -64,6 +67,7 @@ export const UserMenu: React.FC = () => {
           <CircleHelp className="mr-2 h-4 w-4" />
           <span>Trợ giúp</span>
         </DropdownMenuItem>
+        {(dashboard.data?.pendingMemberInvitationCount ?? 0) > 0 && <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer font-medium"><User className="mr-2 h-4 w-4" /><span>Lời mời ({dashboard.data?.pendingMemberInvitationCount})</span></DropdownMenuItem>}
 
         <DropdownMenuSeparator className="bg-border" />
 
