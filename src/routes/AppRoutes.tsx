@@ -12,6 +12,7 @@ const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ defau
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const DashboardPage = lazy(() => import('@/pages/user/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const SpaceDetailPage = lazy(() => import('@/pages/user/space-detail/SpaceDetailPage').then(m => ({ default: m.SpaceDetailPage })));
+const SpaceSettingsPage = lazy(() => import('@/pages/user/SpaceSettingsPage').then(m => ({ default: m.SpaceSettingsPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
 const ProfilePage = lazy(() => import('@/pages/user/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const JoinSpacePage = lazy(() => import('@/pages/user/JoinSpacePage').then(m => ({ default: m.JoinSpacePage })));
@@ -103,6 +104,14 @@ const router = createBrowserRouter([{
             element: (
               <Suspense fallback={<LoadingFallback />}>
                 <JoinSpacePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/space/:spaceId/settings',
+            element: (
+              <Suspense fallback={<LoadingFallback />}>
+                <SpaceSettingsPage />
               </Suspense>
             ),
           },

@@ -5,7 +5,9 @@ import {
   getDashboard,
   getSpace,
   createSpace,
+  updateSpace,
   deleteSpace,
+  leaveSpace,
   getSpaceMembers,
   addSpaceMember,
   updateMemberRole,
@@ -66,6 +68,29 @@ export const useDeleteSpace = () => {
       queryClient.invalidateQueries({ queryKey: ['spaces'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
+  });
+};
+
+export const useUpdateSpace = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ spaceId, data }: { spaceId: number; data: { name: string; description: string } }) => updateSpace(spaceId, data),
+    onSuccess: (_, { spaceId }) => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['space', spaceId] }),
+      queryClient.invalidateQueries({ queryKey: ['spaces'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    ]),
+  });
+};
+
+export const useLeaveSpace = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ spaceId, successorUserId }: { spaceId: number; successorUserId?: number }) => leaveSpace(spaceId, successorUserId),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['spaces'] }),
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    ]),
   });
 };
 

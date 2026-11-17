@@ -4,7 +4,7 @@ import { LockKeyhole, FileQuestion, WifiOff } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Query } from "@tanstack/react-query";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   Trash2,
   PanelLeft,
@@ -12,7 +12,7 @@ import {
   BookOpen,
   MoreHorizontal,
   X,
-  Users,
+  Settings,
   Pin,
 } from "lucide-react";
 import { useSpaceDetail } from "@/features/chat/hooks/useSpace";
@@ -28,7 +28,6 @@ import { useMessagePins } from "@/features/chat/hooks/useMessagePins";
 import { PinnedMessagesPanel } from "@/features/chat/components/PinnedMessagesPanel";
 import { ChatContainer } from "@/features/chat/components/ChatContainer";
 import { PdfViewer } from "@/features/chat/components/PdfViewer";
-import { SpaceMemberModal } from "@/features/chat/components/SpaceMemberModal";
 import { StudySetPanel } from "@/features/study/components/StudySetPanel";
 import type {
   Message,
@@ -75,8 +74,9 @@ export const SpaceDetailPage: React.FC = () => {
     () => window.innerWidth < 768,
   );
   const [showClearHistoryAlert, setShowClearHistoryAlert] = useState(false);
-  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
-  const [isStudyOpen, setIsStudyOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isStudyOpen = searchParams.get("view") === "study";
+  const setIsStudyOpen = (open: boolean) => setSearchParams(open ? { view: "study" } : {});
 
   // Selective RAG Document Scope state
   const [selectedDocIdsForAi, setSelectedDocIdsForAi] = useState<number[]>([]);
@@ -437,10 +437,9 @@ export const SpaceDetailPage: React.FC = () => {
               />
             </button>
         </nav>
-        <Button variant="ghost" onClick={() => setIsMemberModalOpen(true)} aria-label="Thành viên">
-          <Users className="size-4" />
-          <span className="hidden sm:inline">Thành viên</span>
-          <span>{space?.memberCount ?? 1}</span>
+        <Button variant="ghost" aria-label="Cài đặt Space" render={<Link to={`/space/${spaceId}/settings`} />}>
+          <Settings className="size-4" />
+          <span className="hidden sm:inline">Cài đặt</span>
         </Button>
       </div>
       <div className="flex flex-1 min-h-0 relative">
@@ -596,17 +595,6 @@ export const SpaceDetailPage: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Space Member & Invitation Modal */}
-      {space && (
-        <SpaceMemberModal
-          spaceId={space.id}
-          spaceName={space.name}
-          currentUserRole={space.currentUserRole}
-          currentUserId={currentUser?.id}
-          open={isMemberModalOpen}
-          onOpenChange={setIsMemberModalOpen}
-        />
-      )}
     </div>
   );
 };

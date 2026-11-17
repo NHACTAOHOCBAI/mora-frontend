@@ -31,8 +31,17 @@ export const createSpace = async (name: string, description: string): Promise<Sp
   return response.data.result;
 };
 
+export const updateSpace = async (id: number, data: { name: string; description: string }): Promise<SpaceResponse> => {
+  const response = await apiClient.patch<ApiResponse<SpaceResponse>>(`/spaces/${id}`, data);
+  return response.data.result;
+};
+
 export const deleteSpace = async (id: number): Promise<void> => {
   await apiClient.delete<ApiResponse<void>>(`/spaces/${id}`);
+};
+
+export const leaveSpace = async (id: number, successorUserId?: number): Promise<void> => {
+  await apiClient.post<ApiResponse<void>>(`/spaces/${id}/leave`, successorUserId ? { successorUserId } : {});
 };
 
 // ==========================================

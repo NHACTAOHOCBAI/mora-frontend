@@ -7,7 +7,7 @@ export const safeReturnTo = (value: string | null | undefined): string | null =>
     const url = new URL(value, "https://mora.invalid");
     if (url.origin !== "https://mora.invalid") return null;
     const allowed = url.pathname === "/" || url.pathname === "/profile" ||
-      /^\/space\/[1-9]\d*$/.test(url.pathname) ||
+      /^\/space\/[1-9]\d*(?:\/settings)?$/.test(url.pathname) ||
       /^\/join\/[A-Za-z0-9-]+$/.test(url.pathname) ||
       /^\/admin\/users?$/.test(url.pathname);
     return allowed ? url.pathname + url.search + url.hash : null;
