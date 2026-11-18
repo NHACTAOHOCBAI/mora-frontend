@@ -7,7 +7,6 @@ import {
   User,
   MapPin,
   Loader2,
-  Search,
   Sparkles,
   Copy,
   Check,
@@ -16,13 +15,6 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Message, Citation } from "../types";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,44 +35,6 @@ import {
 import { cn, toAlias } from "@/lib/utils";
 import { canGroupMessages, getMessageKind } from "../utils/message-grouping";
 
-const renderPromptContent = (promptText: string) => {
-  if (!promptText) return null;
-  const imgRegex = /<img\s+src="([^"]+)"\s*\/?>/g;
-  const elements: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = imgRegex.exec(promptText)) !== null) {
-    const textBefore = promptText.substring(lastIndex, match.index);
-    if (textBefore) {
-      elements.push(<span key={`text-${lastIndex}`}>{textBefore}</span>);
-    }
-
-    const imgSrc = match[1];
-    elements.push(
-      <div
-        key={`img-${match.index}`}
-        className="my-3 p-2 bg-muted rounded-lg border border-border block max-w-full"
-      >
-        <img
-          src={imgSrc}
-          alt="Prompt Attachment"
-          className="max-h-[200px] max-w-full object-contain rounded-md"
-        />
-      </div>,
-    );
-
-    lastIndex = imgRegex.lastIndex;
-  }
-
-  const textAfter = promptText.substring(lastIndex);
-  if (textAfter) {
-    elements.push(<span key={`text-${lastIndex}`}>{textAfter}</span>);
-  }
-
-  return elements;
-};
-
 interface MemoizedMessageItemProps {
   message: Message;
   isPinned?: boolean;
@@ -92,11 +46,9 @@ interface MemoizedMessageItemProps {
   isSelf: boolean;
   isGroupStart: boolean;
   isGroupEnd: boolean;
-  isDebugMode?: boolean;
   copiedId: number | null;
   onCitationClick: (pageNumber: number, documentId?: number) => void;
   handleCopyText: (id: number, text: string) => void;
-  setSelectedPrompt: (prompt: string | null) => void;
 }
 
 const MemoizedMessageItem = React.memo(
@@ -111,11 +63,9 @@ const MemoizedMessageItem = React.memo(
     isSelf,
     isGroupStart,
     isGroupEnd,
-    isDebugMode,
     copiedId,
     onCitationClick,
     handleCopyText,
-    setSelectedPrompt,
   }: MemoizedMessageItemProps) => {
     const [showTimestamp, setShowTimestamp] = useState(false);
     const timestampId = useId();
@@ -230,16 +180,6 @@ const MemoizedMessageItem = React.memo(
               onPointerCancel={() => {
                 touchStart.current = null;
               }}
-              onDoubleClick={() => {
-                if (isDebugMode && isAI && message.promptSent) {
-                  setSelectedPrompt(message.promptSent);
-                }
-              }}
-              title={
-                isDebugMode && isAI && message.promptSent
-                  ? "Double click để xem chi tiết prompt đã gửi"
-                  : undefined
-              }
               className={`px-3 py-2 rounded-2xl text-xs leading-5 border select-text relative group max-w-full break-words focus-visible:outline-2 focus-visible:outline-ring ${
                 isAI
                   ? "bg-card border-border text-foreground shadow-xs hover:border-primary/30 transition-colors"
@@ -382,13 +322,6 @@ const MemoizedMessageItem = React.memo(
             </time>
           )}
 
-          {isDebugMode && isAI && message.condensedQuestion && (
-            <div className="type-meta text-muted-foreground pl-1 italic flex items-center gap-1">
-              <Search className="w-3 h-3 text-muted-foreground/80" />
-              <span>Truy vấn tối ưu: {message.condensedQuestion}</span>
-            </div>
-          )}
-
           {/* Citations */}
           {isAI &&
             message.citations &&
@@ -433,9 +366,6 @@ const MemoizedMessageItem = React.memo(
 
               return (
                 <div className="flex flex-wrap gap-1.5 pt-0.5 pl-1">
-                  <span className="type-meta text-muted-foreground flex items-center gap-1 py-1 font-medium">
-                    <MapPin className="w-3 h-3 shrink-0" /> Nguồn trích dẫn:
-                  </span>
                   {uniqueCitations.map((citation, idx) => {
                     const docId = citation.documentId;
                     const docDisplayName = citation.documentName
@@ -475,15 +405,13 @@ const MemoizedMessageItem = React.memo(
     prevProps.onPin === nextProps.onPin &&
     prevProps.message === nextProps.message &&
     prevProps.copiedId === nextProps.copiedId &&
-    prevProps.isDebugMode === nextProps.isDebugMode &&
     prevProps.isAI === nextProps.isAI &&
     prevProps.isAiQuery === nextProps.isAiQuery &&
     prevProps.isSelf === nextProps.isSelf &&
     prevProps.isGroupStart === nextProps.isGroupStart &&
     prevProps.isGroupEnd === nextProps.isGroupEnd &&
     prevProps.onCitationClick === nextProps.onCitationClick &&
-    prevProps.handleCopyText === nextProps.handleCopyText &&
-    prevProps.setSelectedPrompt === nextProps.setSelectedPrompt,
+    prevProps.handleCopyText === nextProps.handleCopyText,
 );
 
 interface ChatContainerProps {
@@ -497,7 +425,6 @@ interface ChatContainerProps {
   onSendGroupMessage?: (text: string) => void;
   isLoading: boolean;
   onCitationClick: (pageNumber: number, documentId?: number) => void;
-  isDebugMode?: boolean;
   selectedDocCount?: number;
   totalDocCount?: number;
   currentUserId?: number;
@@ -521,7 +448,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   onSendGroupMessage,
   isLoading,
   onCitationClick,
-  isDebugMode = false,
   selectedDocCount = 0,
   totalDocCount = 0,
   currentUserId,
@@ -535,7 +461,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [mode, setMode] = useState<"ai" | "group">("ai");
-  const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [showAiSuggestion, setShowAiSuggestion] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -801,11 +726,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                   isSelf={isSelf}
                   isGroupStart={isGroupStart}
                   isGroupEnd={isGroupEnd}
-                  isDebugMode={isDebugMode}
                   copiedId={copiedId}
                   onCitationClick={onCitationClick}
                   handleCopyText={handleCopyText}
-                  setSelectedPrompt={setSelectedPrompt}
                 />
               </div>
             );
@@ -950,27 +873,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         </div>
       </div>
 
-      {/* Debug Dialog for prompt */}
-      <Dialog
-        open={selectedPrompt !== null}
-        onOpenChange={(open) => !open && setSelectedPrompt(null)}
-      >
-        <DialogContent className="sm:max-w-[700px] w-[90vw] bg-card text-foreground border-border max-h-[85vh] flex flex-col p-6 rounded-2xl shadow-2xl z-50">
-          <DialogHeader className="border-b border-border pb-3 flex flex-col">
-            <DialogTitle className="type-card-title text-foreground">
-              Chi tiết Prompt gửi tới OpenAI
-            </DialogTitle>
-            <DialogDescription className="type-meta text-muted-foreground mt-1">
-              Nội dung System Prompt và ngữ cảnh trích xuất từ tài liệu
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto mt-4 pr-1 select-text">
-            <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed bg-muted p-4 rounded-xl border border-border max-h-[50vh] overflow-y-auto">
-              {renderPromptContent(selectedPrompt || "")}
-            </pre>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

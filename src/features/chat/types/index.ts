@@ -21,8 +21,6 @@ export interface Message {
   userAvatar?: string;
   timestamp: string | Date;
   citations?: Citation[];
-  condensedQuestion?: string;
-  promptSent?: string;
   selectedDocumentIds?: number[];
 }
 

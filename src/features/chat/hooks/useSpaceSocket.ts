@@ -82,8 +82,6 @@ export const useSpaceSocket = ({
               userAvatar: raw.userAvatar,
               timestamp: raw.timestamp ? new Date(raw.timestamp) : new Date(),
               citations: raw.citations,
-              condensedQuestion: raw.condensedQuestion,
-              promptSent: raw.promptSent,
               selectedDocumentIds: raw.selectedDocumentIds,
             };
             onMessageReceivedRef.current?.(msg);

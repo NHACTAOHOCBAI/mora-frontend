@@ -245,8 +245,6 @@ export const SpaceDetailPage: React.FC = () => {
           fullName: msg.fullName,
           userAvatar: msg.userAvatar,
           timestamp: new Date(msg.timestamp),
-          condensedQuestion: msg.condensedQuestion,
-          promptSent: msg.promptSent,
           citations: msg.citations,
           selectedDocumentIds: msg.selectedDocumentIds,
         })),
@@ -509,7 +507,6 @@ export const SpaceDetailPage: React.FC = () => {
                   onSendGroupMessage={handleSendGroupMessage}
                   isLoading={isAiProcessing}
                   onCitationClick={handleCitationClick}
-                  isDebugMode={true}
                   selectedDocCount={selectedDocIdsForAi.length}
                   totalDocCount={
                     space?.documents?.filter(
