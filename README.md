@@ -1,6 +1,6 @@
 # Mora Frontend
 
-Ứng dụng web cho Mora — nền tảng học tập có không gian cộng tác, tài liệu, chat hỗ trợ AI và khu vực quản trị/đánh giá chất lượng RAG.
+Ứng dụng web của Mora — không gian học tập cộng tác, nơi nhóm có thể tập hợp tài liệu, hỏi đáp với AI có dẫn nguồn và tạo bộ ôn tập từ chính tài liệu của mình.
 
 ## Vai trò trong hệ thống
 
@@ -40,7 +40,17 @@ src/
 └── types/       # Kiểu dữ liệu dùng chung
 ```
 
-Các route chính gồm đăng nhập/đăng ký, dashboard, hồ sơ, không gian học tập, tham gia qua lời mời và quản lý người dùng. Các trang được lazy-load; route quản trị yêu cầu quyền `ADMIN`.
+## Khả năng hiện có
+
+- Landing page công khai tại `/`, cùng Điều khoản, Chính sách quyền riêng tư và Trợ giúp.
+- Đăng ký, đăng nhập, chấp nhận văn bản pháp lý, hồ sơ, đổi mật khẩu và khôi phục mật khẩu.
+- Dashboard tại `/app`: tạo, tham gia và quản lý Space học tập.
+- Tải PDF, theo dõi trạng thái xử lý, chọn tài liệu làm phạm vi hỏi đáp.
+- Chat nhóm realtime; hỏi AI dựa trên tài liệu với citation theo tài liệu/trang; ghim tin nhắn.
+- Tạo bộ ôn tập, flashcard và quiz từ tài liệu trong Space.
+- Trung tâm quản trị tại `/admin` cho Admin: tổng quan, thành viên, Space và tài liệu & xử lý.
+
+Các trang nặng được lazy-load. Route `/app`, `/space/:spaceId` và các thao tác tài khoản yêu cầu đăng nhập; `/admin` yêu cầu `ROLE_ADMIN`.
 
 ## Chat trong không gian học tập
 
@@ -50,6 +60,8 @@ Mỗi không gian có hai loại tin nhắn, dùng chung lịch sử nhưng có 
 | --- | --- | --- |
 | Chat nhóm | `POST /api/chat/space/message` | Backend lưu và phát ngay cho thành viên; không gọi AI. |
 | Câu hỏi AI | `POST /api/chat/space` | Backend gọi AI Service theo kiến trúc RAG, rồi phát câu hỏi và phản hồi AI. |
+
+Bộ ôn tập dùng các endpoint `/api/spaces/{spaceId}/study-sets` và `/api/study-sets/{id}/quiz/grade`; Backend yêu cầu AI Service tạo flashcard/quiz từ tài liệu mà thành viên đã chọn.
 
 `useSpaceChatHistory` tải lịch sử bằng React Query. Sau khi gửi thành công, các mutation làm mới cache `chat-history`; đồng thời `useSpaceSocket` nhận bản cập nhật realtime để các thành viên trong cùng space nhìn thấy message ngay.
 
@@ -94,7 +106,7 @@ npm install
 npm run dev
 ```
 
-Vite sẽ in URL local (thông thường là `http://localhost:5173`).
+Vite sẽ in URL local (thông thường là `http://localhost:5173`). Landing page ở `/`; dashboard sau khi đăng nhập ở `/app`.
 
 Các lệnh hữu ích:
 
@@ -117,6 +129,7 @@ docker compose --env-file .env up --build
 
 ## Liên quan đến các service khác
 
-- Cài và chạy hạ tầng, Backend tại [`../mora-backend/README.md`](../mora-backend/README.md).
+- Cài và chạy Backend tại [`../mora-backend/README.md`](../mora-backend/README.md).
 - Cài và chạy AI Service tại [`../mora-ai/README.md`](../mora-ai/README.md).
+- Chạy toàn bộ stack qua Docker Compose tại [`../mora-infra/README.md`](../mora-infra/README.md).
 - Không đặt API key, mật khẩu cơ sở dữ liệu hay secret trong frontend.
