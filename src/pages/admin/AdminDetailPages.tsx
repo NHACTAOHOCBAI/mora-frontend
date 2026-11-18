@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import type React from 'react';
-import { ArrowLeft, CalendarDays, FileText, FolderOpen, History, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, FileText, FolderOpen, HardDrive, History, UserRound, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,21 @@ export function AdminDocumentDetailPage() {
   if (query.isLoading) return <Loading />;
   const doc = query.data;
   if (!doc) return <p>Không tìm thấy tài liệu.</p>;
-  return <div className="space-y-5"><Back to="/admin/documents" label="Tài liệu & xử lý" /><header><h1 className="type-page-title">{doc.name}</h1><p className="mt-1 text-sm text-muted-foreground">Thông tin xử lý của tài liệu.</p></header><Card><CardContent className="grid gap-5 p-5 sm:grid-cols-2"><Info label="Trạng thái"><StatusBadge status={doc.status} /></Info><Info label="Space"><Link className="font-medium underline" to={`/admin/spaces/${doc.spaceId}`}>{doc.spaceName}</Link></Info><Info label="Người tải">{doc.uploadedById ? <Link className="underline" to={`/admin/users/${doc.uploadedById}`}>{doc.uploadedByName}</Link> : doc.uploadedByName}</Info><Info label="Dung lượng">{bytes(doc.fileSize)}</Info><Info label="Định dạng">{doc.contentType || '—'}</Info><Info label="Tạo lúc">{dateTime(doc.createdAt)}</Info></CardContent></Card>{doc.status === 'FAILED' && <Card className="border-destructive/40"><CardHeader><CardTitle className="type-card-title text-destructive">Lỗi xử lý</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><p><span className="text-muted-foreground">Mã lỗi: </span>{doc.failureCode || 'PROCESSING_FAILED'}</p><p className="text-muted-foreground">{doc.failureMessage || 'Không thể xử lý tài liệu.'}</p><p className="type-meta text-muted-foreground">Thất bại lúc {dateTime(doc.failedAt)}</p></CardContent></Card>}</div>;
+  return <div className="mx-auto w-full max-w-5xl space-y-6">
+    <Back to="/admin/documents" label="Tài liệu & xử lý" />
+    <section className="rounded-2xl border bg-card px-5 py-6 sm:px-7">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 gap-4"><span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-foreground text-background"><FileText className="size-6" /></span><div className="min-w-0"><h1 title={doc.name} className="truncate type-page-title">{doc.name}</h1><p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground"><HardDrive className="size-3.5" />{bytes(doc.fileSize)}{doc.contentType ? ` · ${doc.contentType}` : ''}</p></div></div>
+        <StatusBadge status={doc.status} />
+      </div>
+      <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 type-meta text-muted-foreground"><span className="inline-flex items-center gap-1.5"><CalendarDays className="size-3.5" />Tải lên {dateTime(doc.createdAt)}</span><span className="inline-flex items-center gap-1.5"><History className="size-3.5" />Cập nhật {dateTime(doc.updatedAt || doc.createdAt)}</span></div>
+    </section>
+    <section className="grid gap-4 lg:grid-cols-2">
+      <Card><CardHeader><CardTitle>Thuộc về</CardTitle><CardDescription>Nguồn gốc và người chịu trách nhiệm tải tài liệu.</CardDescription></CardHeader><CardContent className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1"><Info label="Không gian"><Link className="font-medium underline" to={`/admin/spaces/${doc.spaceId}`}>{doc.spaceName}</Link></Info><Info label="Người tải"><span className="inline-flex items-center gap-1.5"><UserRound className="size-3.5 text-muted-foreground" />{doc.uploadedById ? <Link className="underline" to={`/admin/users/${doc.uploadedById}`}>{doc.uploadedByName}</Link> : doc.uploadedByName}</span></Info></CardContent></Card>
+      <Card><CardHeader><CardTitle>Xử lý</CardTitle><CardDescription>Thông tin kỹ thuật và tiến trình hiện tại của tài liệu.</CardDescription></CardHeader><CardContent className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1"><Info label="Trạng thái"><StatusBadge status={doc.status} /></Info><Info label="Định dạng">{doc.contentType || 'Chưa xác định'}</Info></CardContent></Card>
+    </section>
+    {doc.status === 'FAILED' && <Card className="border-destructive/40"><CardHeader><CardTitle className="type-card-title text-destructive">Không thể xử lý tài liệu</CardTitle><CardDescription>Thông tin này giúp kiểm tra nguyên nhân thất bại của pipeline.</CardDescription></CardHeader><CardContent className="space-y-2 text-sm"><p><span className="text-muted-foreground">Mã lỗi: </span><span className="font-medium">{doc.failureCode || 'PROCESSING_FAILED'}</span></p><p className="text-muted-foreground">{doc.failureMessage || 'Không thể xử lý tài liệu.'}</p><p className="type-meta text-muted-foreground">Thất bại lúc {dateTime(doc.failedAt)}</p></CardContent></Card>}
+  </div>;
 }
 
 export function AdminUserDetailPage() {
