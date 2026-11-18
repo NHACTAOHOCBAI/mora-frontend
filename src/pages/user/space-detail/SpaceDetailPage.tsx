@@ -470,7 +470,6 @@ export const SpaceDetailPage: React.FC = () => {
             ) : (
               <>
                 <div role="toolbar" aria-label="Công cụ hội thoại" className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3 md:px-5">
-                  <h2 className="type-card-title">Hội thoại</h2>
                   <div className="flex items-center gap-1">
                     <Button ref={pinButtonRef} variant="ghost" size="sm" aria-label="Tin đã ghim" onClick={() => setPinsOpen(true)}>
                       <Pin className="size-3.5" />

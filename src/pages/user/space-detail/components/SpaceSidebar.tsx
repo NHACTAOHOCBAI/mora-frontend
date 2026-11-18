@@ -218,7 +218,7 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
                           );
                       }}
                     >
-                      <span className="p-2 bg-primary/5 text-primary rounded-lg shrink-0">
+                      <span className="flex size-8 shrink-0 self-start items-center justify-center rounded-lg bg-primary/5 text-primary">
                         {processing ? (
                           <Loader2 className="size-4 animate-spin" />
                         ) : (
