@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CircleHelp, LogOut, ShieldAlert, User, Undo2 } from 'lucide-react';
+import { CircleHelp, LogOut, ShieldCheck, User, Undo2 } from 'lucide-react';
 import { useDashboard } from '@/features/chat/hooks/useSpace';
 
 export const UserMenu: React.FC = () => {
@@ -74,11 +74,11 @@ export const UserMenu: React.FC = () => {
         {user.role === 'ROLE_ADMIN' && (
           <>
             <DropdownMenuItem
-              onClick={() => navigate('/admin/users')}
+              onClick={() => navigate('/admin')}
               className="cursor-pointer font-medium"
             >
-              <ShieldAlert className="mr-2 h-4 w-4" />
-              <span>Quản lý thành viên</span>
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              <span>Trung tâm quản trị</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
           </>
