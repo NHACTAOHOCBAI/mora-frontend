@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowRight, ArrowUp, BookOpen, BookOpenCheck, Brain, Check, ChevronDown, ChevronLeft, ChevronRight, FileSearch, FileText, Folder, ListChecks, MapPin, MessageSquare, MoreHorizontal, PanelLeft, Pin, RotateCcw, SearchCheck, Settings, Upload, Users, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,17 @@ const faqs = [
 ];
 
 const reveal = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } };
+
+const useMotionAllowed = () => {
+  const reduced = useReducedMotion();
+  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
+  useEffect(() => {
+    const update = () => setVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
+  }, []);
+  return !reduced && visible;
+};
 
 /** Trang giới thiệu công khai; mockup có thể được thay bằng ảnh chụp demo đã làm sạch. */
 export const LandingPage = () => {
@@ -74,9 +85,7 @@ const Reveal = ({ children, delay = 0 }: { children: ReactNode; delay?: number }
 const UseCase = ({ item, reverse }: { item: typeof useCases[number]; reverse: boolean }) => <div className={`grid items-center gap-8 lg:grid-cols-2 lg:gap-20 ${reverse ? "lg:[&>*:first-child]:order-2" : ""}`}><Reveal><div><div className="flex items-center gap-3"><span className="text-sm font-semibold text-muted-foreground">{item.number}</span><span className="h-px w-10 bg-border" /><span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{item.eyebrow}</span></div><h3 className="mt-6 max-w-lg text-2xl font-semibold tracking-[-0.025em] sm:text-3xl">{item.title}</h3><p className="mt-5 max-w-lg text-sm leading-6 text-muted-foreground">{item.description}</p></div></Reveal><Reveal delay={0.1}><UseCasePreview type={item.preview} /></Reveal></div>;
 
 const UseCasePreview = ({ type }: { type: "study" | "spaces" | "pdf" }) => {
-  if (type === "study") return <StudyPreview />;
-  if (type === "spaces") return <SpacesPreview />;
-  return <PdfPreview />;
+  return type === "study" ? <StudyPreview /> : type === "spaces" ? <SpacesPreview /> : <PdfPreview />;
 };
 
 const PreviewFrame = ({ children, label }: { children: ReactNode; label: string }) => <div aria-label={label} className="overflow-hidden rounded-2xl border border-border bg-muted/50 p-2 shadow-sm sm:p-3"><div className="overflow-hidden rounded-xl border border-border bg-card">{children}</div></div>;
@@ -98,7 +107,7 @@ const PdfPreview = () => {
 const ProductPreview = () => <SpacePreview />;
 
 const SpacePreview = ({ compact = false, prompt = "Tài liệu vừa tải lên là tài liệu gì?" }: { compact?: boolean; prompt?: string }) => {
-  const shouldReduceMotion = useReducedMotion();
+  const motionAllowed = useMotionAllowed();
   const container = compact ? "rounded-2xl shadow-sm" : "mx-auto max-w-2xl rounded-2xl shadow-2xl shadow-foreground/10";
   return <div aria-label="Minh hoạ giao diện Space của Mora" className={`overflow-hidden border border-border bg-background ${container}`}>
     <div className="flex h-11 items-center border-b border-border bg-card px-3 text-xs">
@@ -108,7 +117,7 @@ const SpacePreview = ({ compact = false, prompt = "Tài liệu vừa tải lên 
     </div>
     <div className={`grid bg-muted/50 ${compact ? "min-h-64 grid-cols-[7.5rem_1fr]" : "min-h-80 grid-cols-[9rem_1fr] sm:grid-cols-[10rem_1fr]"}`}>
       <aside className="border-r border-border bg-card p-2.5"><div className="flex items-center justify-between text-[10px] font-medium"><span>Tài liệu</span><span className="text-muted-foreground">1</span></div><div className="mt-3 flex items-center justify-center gap-1 rounded-lg border border-border bg-muted/40 px-1 py-2 text-[10px] font-medium"><Upload className="size-3" />Tải PDF lên</div><p className="mt-2 text-[9px] text-muted-foreground">PDF · tối đa 15 MB</p><div className="mt-5 flex items-start gap-2 rounded-lg p-1.5"><span className="flex size-5 shrink-0 items-center justify-center self-start rounded-md bg-primary/5 text-primary"><FileText className="size-3" /></span><span className="min-w-0 text-[10px]"><span className="block truncate font-medium">CHƯƠNG 1.pdf</span><span className="mt-0.5 block text-muted-foreground">Đã sẵn sàng</span></span></div></aside>
-      <div className="min-w-0 p-2.5 sm:p-3"><div className="flex h-full flex-col rounded-xl border border-border bg-card"><div className="flex items-center justify-end border-b border-border px-3 py-2 text-[11px] font-semibold"><span className="text-muted-foreground">Đã ghim 0</span></div><div className="flex-1 space-y-2 overflow-hidden p-3"><div className="flex gap-2"><span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-semibold">AN</span><div className="rounded-2xl border border-border bg-muted/60 px-2.5 py-1.5 text-[10px] leading-4">{prompt}</div></div><motion.div initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : compact ? 0.3 : 0.9 }} className="ml-7 max-w-[92%]"><p className="mb-1 text-[9px] text-muted-foreground">Trợ lý AI Mora</p><div className="rounded-2xl border border-border px-2.5 py-2 text-[10px] leading-4">Dựa trên tài liệu đã chọn, đây là nội dung liên quan để bạn tiếp tục đối chiếu.<div className="mt-2 flex flex-wrap gap-1"><CitationChip /><CitationChip page="86" /></div></div></motion.div></div><div className="border-t border-border p-2"><div className="flex items-end gap-2 rounded-lg border border-border px-2 py-1.5"><div className="min-w-0 flex-1"><span className="rounded-md bg-primary/10 px-1.5 py-1 text-[9px] font-medium text-primary">Hỏi Mora</span><p className="mt-1 text-[10px] text-muted-foreground">Bạn muốn hiểu điều gì từ tài liệu?</p></div><ArrowUp className="size-5 rounded-md bg-muted p-1 text-muted-foreground" /></div></div></div></div>
+      <div className="min-w-0 p-2.5 sm:p-3"><div className="flex h-full flex-col rounded-xl border border-border bg-card"><div className="flex items-center justify-end border-b border-border px-3 py-2 text-[11px] font-semibold"><span className="text-muted-foreground">Đã ghim 0</span></div><div className="flex-1 space-y-2 overflow-hidden p-3"><div className="flex gap-2"><span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-semibold">AN</span><div className="rounded-2xl border border-border bg-muted/60 px-2.5 py-1.5 text-[10px] leading-4">{prompt}</div></div><motion.div initial={motionAllowed ? { opacity: 0, y: 8 } : false} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionAllowed ? 0.45 : 0, delay: motionAllowed ? (compact ? 0.3 : 0.9) : 0 }} className="ml-7 max-w-[92%]"><p className="mb-1 text-[9px] text-muted-foreground">Trợ lý AI Mora</p><div className="rounded-2xl border border-border px-2.5 py-2 text-[10px] leading-4">Dựa trên tài liệu đã chọn, đây là nội dung liên quan để bạn tiếp tục đối chiếu.<div className="mt-2 flex w-fit flex-wrap gap-1 rounded-md"><CitationChip /><CitationChip page="86" /></div></div></motion.div></div><div className="border-t border-border p-2"><div className="flex items-end gap-2 rounded-lg border border-border px-2 py-1.5"><div className="min-w-0 flex-1"><span className="rounded-md bg-primary/10 px-1.5 py-1 text-[9px] font-medium text-primary">Hỏi Mora</span><p className="mt-1 text-[10px] text-muted-foreground">Bạn muốn hiểu điều gì từ tài liệu?</p></div><ArrowUp className="size-5 rounded-md bg-muted p-1 text-muted-foreground" /></div></div></div></div>
     </div>
   </div>;
 };
