@@ -214,7 +214,7 @@ export function DashboardPage() {
           >
             <SelectTrigger
               aria-label="Sắp xếp không gian"
-              className="h-10 data-[size=default]:h-10 w-full sm:w-44 bg-card"
+              className="w-full sm:w-44"
             >
               <SelectValue>
                 {sort === "newest" ? "Mới tạo" : "Tên A–Z"}

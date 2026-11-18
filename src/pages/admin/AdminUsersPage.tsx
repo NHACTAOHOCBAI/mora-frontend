@@ -149,7 +149,7 @@ export const AdminUsersPage: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-muted-foreground">Vai trò thành viên</label>
                 <Select value={editRole} onValueChange={(val) => setEditRole(val as Role)}>
-                  <SelectTrigger className="w-full h-10 border border-border cursor-pointer bg-background">
+                  <SelectTrigger className="w-full border border-border cursor-pointer">
                     <SelectValue placeholder="Chọn vai trò" />
                   </SelectTrigger>
                   <SelectContent>
@@ -162,7 +162,7 @@ export const AdminUsersPage: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-muted-foreground">Trạng thái hoạt động</label>
                 <Select value={editActive ? "true" : "false"} onValueChange={(val) => setEditActive(val === "true")}>
-                  <SelectTrigger className="w-full h-10 border border-border cursor-pointer bg-background">
+                  <SelectTrigger className="w-full border border-border cursor-pointer">
                     <SelectValue placeholder="Chọn trạng thái" />
                   </SelectTrigger>
                   <SelectContent>
