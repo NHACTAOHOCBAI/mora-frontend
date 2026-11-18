@@ -7,14 +7,15 @@ interface AppHeaderProps {
   context?: ReactNode;
   navigation?: ReactNode;
   actions?: ReactNode;
+  homeHref?: string;
 }
 
-export const AppHeader = ({ context, navigation, actions }: AppHeaderProps) => (
+export const AppHeader = ({ context, navigation, actions, homeHref = "/" }: AppHeaderProps) => (
   <header className="sticky top-0 z-50 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 border-b border-border bg-card px-3 text-foreground md:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
     <div className="col-start-1 row-start-1 flex h-16 min-w-0 items-center gap-2 lg:max-w-96 lg:gap-3">
       <Link
-        to="/"
-        aria-label="Về danh sách không gian"
+        to={homeHref}
+        aria-label={homeHref === "/app" ? "Về danh sách không gian" : "Về trang giới thiệu Mora"}
         className="inline-flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <span className="flex size-9 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted p-1">

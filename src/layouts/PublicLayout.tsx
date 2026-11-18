@@ -1,9 +1,17 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { AppHeader } from "@/components/shared/AppHeader";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
-export const PublicLayout = () => (
+export const PublicLayout = () => {
+  const { pathname } = useLocation();
+  const { user } = useAuth();
+  const isLanding = pathname === "/";
+  const actions = isLanding && !user ? <><Button size="sm" variant="ghost" render={<Link to="/login?redirect=%2Fapp" />}>Đăng nhập</Button><Button size="sm" render={<Link to="/register?redirect=%2Fapp" />}>Đăng ký miễn phí</Button></> : undefined;
+  const navigation = isLanding ? <nav aria-label="Điều hướng giới thiệu" className="flex h-full items-center gap-4 overflow-x-auto text-sm text-muted-foreground sm:gap-6"><a href="#features" className="whitespace-nowrap hover:text-foreground">Tính năng</a><a href="#use-cases" className="whitespace-nowrap hover:text-foreground">Tình huống học</a><a href="#how-it-works" className="whitespace-nowrap hover:text-foreground">Cách hoạt động</a><a href="#faq" className="whitespace-nowrap hover:text-foreground">Câu hỏi</a></nav> : undefined;
+  return (
   <div className="flex min-h-screen flex-col bg-background text-foreground transition-colors duration-200">
-    <AppHeader />
+    <AppHeader navigation={navigation} actions={actions} />
     <main className="relative flex flex-1 flex-col"><Outlet /></main>
     <footer className="shrink-0 border-t border-border bg-background px-5 pt-10 text-sm text-muted-foreground sm:px-8 sm:pt-12">
       <div className="mx-auto grid w-full max-w-7xl gap-9 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(10rem,1fr)_minmax(10rem,1fr)] lg:gap-12">
@@ -29,4 +37,5 @@ export const PublicLayout = () => (
       </div>
     </footer>
   </div>
-);
+  );
+};

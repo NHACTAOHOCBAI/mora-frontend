@@ -18,7 +18,7 @@ import { useDashboard } from '@/features/chat/hooks/useSpace';
 export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const dashboard = useDashboard();
+  const dashboard = useDashboard(!!user);
 
   if (!user) return null;
 
@@ -67,7 +67,7 @@ export const UserMenu: React.FC = () => {
           <CircleHelp className="mr-2 h-4 w-4" />
           <span>Trợ giúp</span>
         </DropdownMenuItem>
-        {(dashboard.data?.pendingMemberInvitationCount ?? 0) > 0 && <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer font-medium"><User className="mr-2 h-4 w-4" /><span>Lời mời ({dashboard.data?.pendingMemberInvitationCount})</span></DropdownMenuItem>}
+        {(dashboard.data?.pendingMemberInvitationCount ?? 0) > 0 && <DropdownMenuItem onClick={() => navigate('/app')} className="cursor-pointer font-medium"><User className="mr-2 h-4 w-4" /><span>Lời mời ({dashboard.data?.pendingMemberInvitationCount})</span></DropdownMenuItem>}
 
         <DropdownMenuSeparator className="bg-border" />
 

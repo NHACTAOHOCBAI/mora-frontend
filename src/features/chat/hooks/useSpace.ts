@@ -34,9 +34,10 @@ export const useSpaces = () => {
   });
 };
 
-export const useDashboard = () => useQuery({
+export const useDashboard = (enabled = true) => useQuery({
   queryKey: ['dashboard'],
   queryFn: getDashboard,
+  enabled,
 });
 
 export const useSpaceDetail = (id: number, options?: Omit<UseQueryOptions<SpaceDetailResponse>, 'queryKey' | 'queryFn'>) => {

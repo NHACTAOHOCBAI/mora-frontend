@@ -380,7 +380,7 @@ export const SpaceDetailPage: React.FC = () => {
             setRetryError(spaceError);
             void retrySpace().finally(() => setRetryError(null));
           }}>{isSpaceFetching || retryError ? "Đang thử lại..." : "Thử lại"}</Button>}
-          <Button className="h-10 w-full" variant={state.retry ? "ghost" : "default"} render={<Link to="/" />}>Về danh sách không gian</Button>
+          <Button className="h-10 w-full" variant={state.retry ? "ghost" : "default"} render={<Link to="/app" />}>Về danh sách không gian</Button>
         </ErrorView>
       </div>
     );
@@ -404,7 +404,7 @@ export const SpaceDetailPage: React.FC = () => {
               <PanelLeft className="size-4" />
             </Button>
             <div className="min-w-0 truncate text-sm">
-              <Link to="/" className="text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">Không gian học tập</Link>
+              <Link to="/app" className="text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">Không gian học tập</Link>
               <span className="mx-2 text-muted-foreground" aria-hidden="true">/</span>
               <h1 className="inline font-semibold" title={space?.name || "Đang tải..."}>{space?.name || "Đang tải..."}</h1>
             </div>

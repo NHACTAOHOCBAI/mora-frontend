@@ -41,7 +41,7 @@ export const JoinSpacePage = () => {
         title={invalid ? "Lời mời không còn hiệu lực" : "Không thể tải lời mời"}
         description={invalid ? "Liên kết không hợp lệ, đã hết hạn hoặc đã bị thu hồi. Hãy liên hệ chủ nhóm để nhận lời mời mới." : "Vui lòng kiểm tra kết nối và thử lại. Phiên đăng nhập của bạn vẫn được giữ."}>
         {!invalid && <Button className="h-10 w-full" disabled={isFetching} onClick={() => { void refetch(); }}>Thử lại</Button>}
-        <Button className="h-10 w-full" variant={invalid ? "default" : "ghost"} render={<Link to="/" />}>Về danh sách không gian</Button>
+        <Button className="h-10 w-full" variant={invalid ? "default" : "ghost"} render={<Link to="/app" />}>Về danh sách không gian</Button>
       </ErrorView>
     );
   }
@@ -84,7 +84,7 @@ export const JoinSpacePage = () => {
                 {joinMutation.isPending ? "Đang tham gia..." : preview.isAlreadyMember ? "Mở không gian" : "Tham gia không gian"}
                 {!joinMutation.isPending && <ArrowRight className="size-4" />}
               </Button>
-              <Button variant="ghost" className="h-10 w-full" disabled={joinMutation.isPending} render={<Link to="/" />}>Để sau</Button>
+              <Button variant="ghost" className="h-10 w-full" disabled={joinMutation.isPending} render={<Link to="/app" />}>Để sau</Button>
             </div>
           </>
         )}

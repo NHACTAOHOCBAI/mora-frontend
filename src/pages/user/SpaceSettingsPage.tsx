@@ -76,7 +76,7 @@ export function SpaceSettingsPage() {
   const successors = members.filter((member) => member.userId !== user?.id);
 
   if (!validId || spaceQuery.isError) {
-    return <ErrorView icon={<LockKeyhole />} title="Không thể mở cài đặt Space" description="Space không tồn tại hoặc bạn không có quyền truy cập." illustration="workspace-forbidden"><Button render={<Link to="/" />}>Về danh sách không gian</Button></ErrorView>;
+    return <ErrorView icon={<LockKeyhole />} title="Không thể mở cài đặt Space" description="Space không tồn tại hoặc bạn không có quyền truy cập." illustration="workspace-forbidden"><Button render={<Link to="/app" />}>Về danh sách không gian</Button></ErrorView>;
   }
   if (!space) {
     return <div className="flex flex-1 items-center justify-center"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>;
@@ -110,13 +110,13 @@ export function SpaceSettingsPage() {
       return;
     }
     leaveSpace.mutate({ spaceId, successorUserId }, {
-      onSuccess: () => { toast.success("Bạn đã rời Space"); navigate("/"); },
+      onSuccess: () => { toast.success("Bạn đã rời Space"); navigate("/app"); },
       onError: (error) => toast.error(getErrorMessage(error)),
     });
   };
   const confirmDelete = () => {
     deleteSpace.mutate(spaceId, {
-      onSuccess: () => { toast.success("Đã xóa Space"); navigate("/"); },
+      onSuccess: () => { toast.success("Đã xóa Space"); navigate("/app"); },
       onError: (error) => toast.error(getErrorMessage(error)),
     });
   };
@@ -126,7 +126,7 @@ export function SpaceSettingsPage() {
       <div className="flex shrink-0 flex-wrap items-center gap-x-3 border-b border-border bg-card px-3 md:flex-nowrap md:px-6">
         <div className="flex h-14 min-w-0 flex-1 items-center gap-2">
           <Button variant="ghost" size="icon" id="space-documents-toggle" aria-label="Đóng/mở tài liệu" aria-expanded={!isSidebarCollapsed} aria-controls="space-documents-sidebar" onClick={() => setIsSidebarCollapsed((value) => !value)}><PanelLeft className="size-4" /></Button>
-          <div className="min-w-0 truncate text-sm"><Link to="/" className="text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">Không gian học tập</Link><span className="mx-2 text-muted-foreground" aria-hidden="true">/</span><span className="font-semibold" title={space.name}>{space.name}</span></div>
+          <div className="min-w-0 truncate text-sm"><Link to="/app" className="text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">Không gian học tập</Link><span className="mx-2 text-muted-foreground" aria-hidden="true">/</span><span className="font-semibold" title={space.name}>{space.name}</span></div>
         </div>
         <nav aria-label="Không gian học" className="order-3 flex h-11 w-full gap-1 md:order-none md:w-auto">
           <Link to={`/space/${spaceId}`} className="relative inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-sm px-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 lg:px-4"><MessageSquare className="size-4" />Hỏi đáp</Link>

@@ -25,6 +25,7 @@ const JoinSpacePage = lazy(() => import('@/pages/user/JoinSpacePage').then(m => 
 const PrivacyPage = lazy(() => import('@/pages/legal/LegalPage').then(m => ({ default: () => <m.LegalPage kind="privacy" /> })));
 const TermsPage = lazy(() => import('@/pages/legal/LegalPage').then(m => ({ default: () => <m.LegalPage kind="terms" /> })));
 const HelpPage = lazy(() => import('@/pages/help/HelpPage').then(m => ({ default: m.HelpPage })));
+const LandingPage = lazy(() => import('@/pages/landing/LandingPage').then(m => ({ default: m.LandingPage })));
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { MainLayout } from '@/layouts/MainLayout';
 import { PublicLayout } from '@/layouts/PublicLayout';
@@ -43,6 +44,7 @@ const router = createBrowserRouter([{
   {
     element: <PublicLayout />,
     children: [
+      { path: '/', element: <Suspense fallback={<LoadingFallback />}><LandingPage /></Suspense> },
       { path: '/privacy', element: <Suspense fallback={<LoadingFallback />}><PrivacyPage /></Suspense> },
       { path: '/terms', element: <Suspense fallback={<LoadingFallback />}><TermsPage /></Suspense> },
       { path: '/help', element: <Suspense fallback={<LoadingFallback />}><HelpPage /></Suspense> },
@@ -90,7 +92,7 @@ const router = createBrowserRouter([{
         element: <MainLayout />,
         children: [
           {
-            path: '/',
+            path: '/app',
             element: (
               <Suspense fallback={<LoadingFallback />}>
                 <DashboardPage />

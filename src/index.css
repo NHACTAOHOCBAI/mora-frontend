@@ -217,4 +217,14 @@ input:-webkit-autofill:active {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  .landing-panel {
+    @apply w-full;
+  }
+  @media (min-width: 1024px) {
+    .landing-panel {
+      min-height: calc(100dvh - 4rem);
+      display: flex;
+      align-items: center;
+    }
+  }
 }

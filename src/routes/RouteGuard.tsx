@@ -83,6 +83,6 @@ export const GuestRoute = () => {
   const forbidden = auth.error instanceof AppApiError && auth.error.status === 403;
   if (forbidden || (!auth.user && auth.error)) return <SessionError forbidden={forbidden} retry={() => { void auth.retrySession(); }} pending={auth.isFetching} />;
   if (!auth.user) return <AuthLoading />;
-  const target = pendingReturnTo(location.search) || (auth.user.role === "ROLE_ADMIN" ? "/admin" : "/");
+  const target = pendingReturnTo(location.search) || (auth.user.role === "ROLE_ADMIN" ? "/admin" : "/app");
   return <AuthRedirect target={target} />;
 };
