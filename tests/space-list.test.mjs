@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   filterAndSortSpaces,
   canDeleteSpace,
+  paginateSpaces,
 } from "../src/features/chat/utils/space-list.ts";
 const spaces = [
   { id: 1, name: "Zeta", createdAt: "2026-10-01", currentUserRole: "OWNER" },
@@ -47,4 +48,8 @@ test("only owners and administrators may delete", () => {
     false,
   );
   assert.equal(canDeleteSpace(spaces[2], "ROLE_ADMIN"), true);
+});
+test("paginates an already filtered and sorted space list", () => {
+  assert.deepEqual(paginateSpaces(spaces, 1, 2).map((space) => space.id), [1, 2]);
+  assert.deepEqual(paginateSpaces(spaces, 2, 2).map((space) => space.id), [3]);
 });

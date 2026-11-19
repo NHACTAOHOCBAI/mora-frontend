@@ -1,5 +1,5 @@
 import { ErrorView } from "@/components/shared/ErrorView";
-import { WifiOff } from "lucide-react";
+import { WifiOff, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -20,6 +20,7 @@ import type { SpaceResponse } from "@/features/chat/types";
 import {
   filterAndSortSpaces,
   canDeleteSpace,
+  paginateSpaces,
 } from "@/features/chat/utils/space-list";
 import type { SpaceSort } from "@/features/chat/utils/space-list";
 import { MemberRoleBadge } from "@/features/chat/components/MemberRoleSelect";
@@ -49,6 +50,7 @@ const dateTime = (value?: string) => value && Number.isFinite(Date.parse(value))
   : "—";
 
 const processingLabel = { UPLOADING: "Đang tải lên", PARSING: "Đang đọc PDF", INDEXING: "Đang lập chỉ mục" } as const;
+const SPACES_PER_PAGE = 9;
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -58,12 +60,16 @@ export function DashboardPage() {
   const remove = useDeleteSpace();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SpaceSort>("newest");
+  const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleting, setDeleting] = useState<SpaceResponse | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const visibleSpaces = filterAndSortSpaces(spaces.data || [], search, sort);
+  const pageCount = Math.max(1, Math.ceil(visibleSpaces.length / SPACES_PER_PAGE));
+  const currentPage = Math.min(page, pageCount);
+  const paginatedSpaces = paginateSpaces(visibleSpaces, currentPage, SPACES_PER_PAGE);
   const hasAttention = !!dashboard.data && (dashboard.data.processingDocuments.length > 0 || dashboard.data.pendingMemberInvitations.length > 0);
   const attentionCount = dashboard.data
     ? dashboard.data.processingDocuments.length + dashboard.data.pendingMemberInvitations.length
@@ -202,14 +208,20 @@ export function DashboardPage() {
               aria-label="Tìm không gian"
               placeholder="Tìm không gian theo tên..."
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
               className="h-10 pl-9 bg-card"
             />
           </div>
           <Select
             value={sort}
             onValueChange={(value) => {
-              if (value === "newest" || value === "name") setSort(value);
+              if (value === "newest" || value === "name") {
+                setSort(value);
+                setPage(1);
+              }
             }}
           >
             <SelectTrigger
@@ -289,7 +301,7 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-                {visibleSpaces.map((space) => (
+                {paginatedSpaces.map((space) => (
                   <article
                     key={space.id}
                     aria-labelledby={`space-title-${space.id}`}
@@ -380,13 +392,35 @@ export function DashboardPage() {
                 ))}
               </div>
             )}
+            <nav className="flex flex-col items-center justify-between gap-3 pt-1 sm:flex-row" aria-label="Phân trang không gian">
+              <p className="text-sm text-muted-foreground" aria-live="polite">
+                Trang {currentPage} / {pageCount}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon-sm" onClick={() => setPage(1)} disabled={currentPage === 1} aria-label="Về trang đầu">
+                  <ChevronsLeft className="size-4" />
+                </Button>
+                <Button variant="outline" size="icon-sm" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1} aria-label="Trang trước">
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button variant="outline" size="icon-sm" onClick={() => setPage(currentPage + 1)} disabled={currentPage === pageCount} aria-label="Trang sau">
+                  <ChevronRight className="size-4" />
+                </Button>
+                <Button variant="outline" size="icon-sm" onClick={() => setPage(pageCount)} disabled={currentPage === pageCount} aria-label="Tới trang cuối">
+                  <ChevronsRight className="size-4" />
+                </Button>
+              </div>
+            </nav>
           </>
         )}
       </section>
       <CreateSpaceDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={() => setSearch("")}
+        onCreated={() => {
+          setSearch("");
+          setPage(1);
+        }}
         returnFocus={createButtonRef}
       />
       <MemberConfirmDialog

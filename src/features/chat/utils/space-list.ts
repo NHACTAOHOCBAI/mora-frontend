@@ -21,3 +21,11 @@ export function filterAndSortSpaces(
 export function canDeleteSpace(space: SpaceResponse, userRole?: string) {
   return space.currentUserRole === "OWNER" || userRole === "ROLE_ADMIN";
 }
+
+export function paginateSpaces(
+  spaces: SpaceResponse[],
+  page: number,
+  pageSize: number,
+) {
+  return spaces.slice((page - 1) * pageSize, page * pageSize);
+}
