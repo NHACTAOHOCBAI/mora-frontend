@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react';
-import { BenchmarkRunFilters, BenchmarkRunList, RunStatusBadge, canDeleteRun, defaultRunFilters, formatRunTime, matchesRunFilters } from '@/features/admin/components/BenchmarkRunSelect';
+import { BenchmarkRunFilters, BenchmarkRunList, RunStatusBadge, canDeleteRun, defaultRunFilters, formatRunTime, matchesRunFilters, runDisplayName } from '@/features/admin/components/BenchmarkRunSelect';
 import { BenchmarkBulkDelete } from '@/features/admin/components/BenchmarkBulkDelete';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BenchmarkMetricDetails } from '@/features/admin/components/BenchmarkMetricDetails';
@@ -8,9 +8,11 @@ import type { BenchmarkDocument } from '@/features/admin/services/benchmark-api'
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { Upload, Download, Play, CheckCircle2, Loader2, Trash2, List, Ellipsis } from 'lucide-react';
+import { Upload, Download, Play, CheckCircle2, Loader2, Trash2, List, Ellipsis, Pencil } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import CustomTable from '@/components/table/custom-table';
 import { MarkdownResponse } from '@/components/shared/MarkdownResponse';
@@ -22,6 +24,7 @@ import { getErrorMessage } from '@/lib/api-error';
 import { benchmarkApi as api, type BenchmarkDataset, type BenchmarkQuestion, type BenchmarkRun, type GroupSummary, type MetricSummary, type RunDetail, type BenchmarkSample } from '@/features/admin/services/benchmark-api';
 
 const fieldClass = 'w-full rounded-md border bg-background px-3 py-2 text-sm';
+const runNameLimit = 100;
 const types = { DIRECT: 'Trực tiếp', SYNTHESIS: 'Tổng hợp', VISUAL: 'Visual' };
 const metrics = [['contextPrecision', 'Context Precision'], ['faithfulness', 'Faithfulness'], ['answerRelevance', 'Answer Relevance'], ['citationAccuracy', 'Citation Accuracy'], ['latency', 'Latency (ms)']] as const;
 const number = (value: number | null | undefined, digits = 3) => value == null ? '—' : value.toFixed(digits);
@@ -55,9 +58,20 @@ export function AdminBenchmarksPage() {
     await act(async () => { const d = await api.importDataset(JSON.parse(await file.text())); setDatasetId(d.id); setTab('datasets'); }, 'Đã nhập dataset nháp');
     e.target.value = '';
   }
-  async function start(smoke: boolean) {
+  async function start(smoke: boolean, name: string) {
     if (!datasetId) return;
-    await act(async () => { const r = await api.start(datasetId, smoke); setBulkMode(false); setRunFilters(defaultRunFilters); setRunId(r.id); setTab('runs'); }, 'Đã bắt đầu benchmark');
+    await act(async () => { const r = await api.start(datasetId, smoke, name); setBulkMode(false); setRunFilters(defaultRunFilters); setRunId(r.id); setTab('runs'); }, 'Đã bắt đầu benchmark');
+  }
+  async function renameRun(id: number, name: string) {
+    const updated = await api.renameRun(id, name);
+    const listKey = ['benchmarks', 'runs'];
+    const detailKey = ['benchmarks', 'run', id];
+    await Promise.all([cache.cancelQueries({ queryKey: listKey }), cache.cancelQueries({ queryKey: detailKey })]);
+    cache.setQueryData<BenchmarkRun[]>(listKey, current => current?.map(item => item.id === id ? { ...item, name: updated.name } : item));
+    cache.setQueryData<RunDetail>(detailKey, current => current && { ...current, run: { ...current.run, name: updated.name } });
+    void cache.invalidateQueries({ queryKey: listKey });
+    void cache.invalidateQueries({ queryKey: detailKey });
+    toast.success('Đã cập nhật tên lượt chạy');
   }
   async function removeDeletedRuns(ids: number[]) {
     const deleted = new Set(ids);
@@ -135,7 +149,7 @@ export function AdminBenchmarksPage() {
       <main className="min-w-0 space-y-4">
         {!datasetId && <div className="rounded-xl border border-dashed px-6 py-12 text-center"><h2 className="font-medium">Chưa chọn dataset</h2><p className="mt-1 text-sm text-muted-foreground">Chọn một dataset để tải tài liệu và duyệt ground truth.</p></div>}
         {dataset.data && <>
-          <DatasetHeader data={dataset.data} pending={pending || !!active} start={start} download={() => act(() => api.download(`/datasets/${datasetId}/export`, `dataset-${datasetId}.json`), 'Đã xuất dataset')} />
+          <DatasetHeader key={dataset.data.id} data={dataset.data} pending={pending || !!active} start={start} download={() => act(() => api.download(`/datasets/${datasetId}/export`, `dataset-${datasetId}.json`), 'Đã xuất dataset')} />
           <Card className="space-y-3 p-4"><div><h2 className="type-card-title">Tài liệu nguồn</h2><p className="type-meta mt-1 text-muted-foreground">Tải đúng PDF gốc. Hệ thống kiểm tra SHA-256 và số trang trước khi parse/index.</p></div>
             {dataset.data.documents.map(d => <div key={d.code} className="flex flex-wrap items-center justify-between gap-3 border-t pt-3 text-sm"><div><b>{d.code}</b> · {d.fileName}<p className="type-meta mt-1 text-muted-foreground">{d.pageCount} trang · {d.status}</p></div>
               {d.documentId == null ? <label className="inline-flex h-8 cursor-pointer items-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs hover:bg-accent">Tải PDF<input type="file" aria-label={`Tải PDF ${d.code}`} accept="application/pdf,.pdf" className="sr-only" disabled={pending} onChange={e => { const f = e.target.files?.[0]; if (f) void act(() => api.upload(datasetId!, d.code, f), 'Đang xử lý PDF'); }} /></label> : d.storageUrl && <a href={d.storageUrl} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline">Mở PDF</a>}
@@ -169,7 +183,7 @@ export function AdminBenchmarksPage() {
           </Sheet>
         </div>
         <section aria-label="Kết quả lượt chạy" className="min-w-0 space-y-4">
-          {selectedRun && <RunResults key={selectedRun.run.id} detail={selectedRun} pending={pending || !!active} action={act} onDelete={deleteRun} />}
+          {selectedRun && <RunResults key={selectedRun.run.id} detail={selectedRun} pending={pending || !!active} action={act} onDelete={deleteRun} onRename={renameRun} />}
           {!selectedRun && (run.isFetching || runs.isLoading) && <Card className="p-5 text-sm text-muted-foreground"><p role="status">Đang tải kết quả…</p></Card>}
           {!selectedRun && !run.isFetching && !runs.isLoading && (
             <div className="rounded-xl border border-dashed px-6 py-12 text-center">
@@ -188,15 +202,20 @@ export function AdminBenchmarksPage() {
   </div>;
 }
 
-function DatasetHeader({ data, pending, start, download }: { data: BenchmarkDataset; pending: boolean; start: (smoke: boolean) => void; download: () => void }) {
+function DatasetHeader({ data, pending, start, download }: { data: BenchmarkDataset; pending: boolean; start: (smoke: boolean, name: string) => void; download: () => void }) {
+  const [runName, setRunName] = useState('');
   const approved = data.questions.filter(q => q.approved).length;
   const ready = data.documents.every(d => d.status === 'READY');
   const reviewed = approved === data.questions.length;
   return <Card className="space-y-4 p-4"><div><h2 className="type-section-title">{data.name}</h2><p className="mt-1 text-sm text-muted-foreground">{data.description}</p></div>
     <div className="flex flex-wrap gap-2 text-sm"><span className="rounded-full border px-2.5 py-1">{data.documents.length} PDF</span><span className="rounded-full border px-2.5 py-1">{data.questions.length} câu hỏi</span><span className="rounded-full border px-2.5 py-1">{approved} đã duyệt</span><span className="rounded-full border px-2.5 py-1">{ready ? 'Corpus sẵn sàng' : 'Chờ tài liệu READY'}</span></div>
+    <label className="grid max-w-md gap-1.5 text-sm font-medium">
+      <span>Tên lượt chạy <span className="font-normal text-muted-foreground">(không bắt buộc)</span></span>
+      <Input value={runName} onChange={event => setRunName(event.target.value)} maxLength={runNameLimit} placeholder="Ví dụ Rerank top 8" />
+    </label>
     <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={pending} onClick={download}><Download className="size-4" />Xuất JSON</Button>
-      <Button variant="outline" disabled={pending || !ready || !reviewed} onClick={() => start(true)}><Play className="size-4" />Smoke test · 1 mẫu</Button>
-      <Button disabled={pending || !ready || !reviewed} onClick={() => start(false)}><Play className="size-4" />Chạy chính thức · {data.questions.length * 3} mẫu</Button></div>
+      <Button variant="outline" disabled={pending || !ready || !reviewed} onClick={() => start(true, runName)}><Play className="size-4" />Smoke test · 1 mẫu</Button>
+      <Button disabled={pending || !ready || !reviewed} onClick={() => start(false, runName)}><Play className="size-4" />Chạy chính thức · {data.questions.length * 3} mẫu</Button></div>
     <p className="text-xs text-muted-foreground">Duyệt toàn bộ câu hỏi và chờ PDF index xong để chạy. API key và model được cấu hình tại server.</p>
   </Card>;
 }
@@ -234,13 +253,15 @@ const samplesPerPage = 20;
 const percent = new Intl.NumberFormat('vi-VN', { style: 'percent', maximumFractionDigits: 1 });
 const rate = (value: number | null) => value == null ? '—' : percent.format(value);
 
-function RunResults({ detail, pending, action, onDelete }: {
+function RunResults({ detail, pending, action, onDelete, onRename }: {
   detail: RunDetail; pending: boolean; action: (f: () => Promise<unknown>, message: string) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
+  onRename: (id: number, name: string) => Promise<void>;
 }) {
   const [group, setGroup] = useState('ALL');
   const [samplePage, setSamplePage] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const actionsButton = useRef<HTMLButtonElement>(null);
   const r = detail.run;
   const summary = detail.summary[group];
@@ -260,13 +281,13 @@ function RunResults({ detail, pending, action, onDelete }: {
     <>
       <Card className="gap-4 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="type-section-title">Lượt #{r.id}</h2>
+              <h2 className="type-section-title min-w-0 break-words">{runDisplayName(r)}</h2>
               <RunStatusBadge status={r.status} />
             </div>
             <p className="text-sm text-muted-foreground">
-              Dataset {r.datasetId} · {r.smoke ? 'Chạy thử' : 'Chính thức'} · <time dateTime={r.createdAt || undefined}>{formatRunTime(r.createdAt)}</time>
+              {r.name && `Lượt #${r.id} · `}Dataset {r.datasetId} · {r.smoke ? 'Chạy thử' : 'Chính thức'} · <time dateTime={r.createdAt || undefined}>{formatRunTime(r.createdAt)}</time>
             </p>
             <p className="text-sm font-medium tabular-nums">{finished}/{total} mẫu đã xử lý</p>
           </div>
@@ -281,6 +302,8 @@ function RunResults({ detail, pending, action, onDelete }: {
             <DropdownMenu>
               <DropdownMenuTrigger render={<Button ref={actionsButton} size="sm" variant="outline" />}><Ellipsis className="size-4" />Thao tác</DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setRenameOpen(true)}><Pencil className="size-4" />Đổi tên</DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {(['csv', 'json'] as const).map(format => (
                   <DropdownMenuItem key={format} onClick={() => void action(
                     () => api.download(`/runs/${r.id}/export?format=${format}`, `benchmark-${r.id}.${format}`), 'Đã xuất kết quả',
@@ -369,7 +392,53 @@ function RunResults({ detail, pending, action, onDelete }: {
         </TabsContent>
       </Tabs>
       <DeleteRunDialog runId={r.id} onDelete={onDelete} open={deleteOpen} setOpen={setDeleteOpen} returnFocus={actionsButton} />
+      {renameOpen && <RenameRunDialog run={r} onSave={onRename} onClose={() => setRenameOpen(false)} returnFocus={actionsButton} />}
     </>
+  );
+}
+
+function RenameRunDialog({ run, onSave, onClose, returnFocus }: {
+  run: BenchmarkRun; onSave: (id: number, name: string) => Promise<void>; onClose: () => void;
+  returnFocus: React.RefObject<HTMLButtonElement | null>;
+}) {
+  const [name, setName] = useState(run.name ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (saving) return;
+    setSaving(true);
+    setError(undefined);
+    try {
+      await onSave(run.id, name);
+      onClose();
+    } catch (failure) {
+      setError(getErrorMessage(failure));
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={open => { if (!open && !saving) onClose(); }}>
+      <DialogContent finalFocus={returnFocus} showCloseButton={!saving}>
+        <DialogHeader>
+          <DialogTitle>Đổi tên lượt #{run.id}</DialogTitle>
+          <DialogDescription>Để trống để dùng tên mặc định “Lượt #{run.id}”.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <label className="grid gap-1.5 text-sm font-medium">
+            Tên lượt chạy
+            <Input value={name} onChange={event => setName(event.target.value)} maxLength={runNameLimit} disabled={saving} />
+          </label>
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Hủy</Button>
+            <Button type="submit" disabled={saving || name.trim() === (run.name ?? '')}>{saving ? 'Đang lưu…' : 'Lưu tên'}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

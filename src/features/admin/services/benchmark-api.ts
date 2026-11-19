@@ -16,6 +16,7 @@ export interface BenchmarkDataset {
 export interface DatasetRow { id: number; name: string; spaceId: number }
 export interface BenchmarkRun {
   id: number; datasetId: number; status: string; smoke: boolean; createdAt: string;
+  name?: string | null;
   snapshotJson: string; configJson: string;
 }
 export interface MetricSummary { mean: number | null; median: number | null; p95: number | null; valid: number; errors: number; missing: number; notApplicable: number }
@@ -48,7 +49,10 @@ export const benchmarkApi = {
   run: (id: number) => get<RunDetail>(`/runs/${id}`),
   deleteRun: async (id: number) => { await apiClient.delete(root + `/runs/${id}`); },
   deleteRuns: async (runIds: number[]) => { await apiClient.post(root + '/runs/bulk-delete', { runIds }); },
-  start: (id: number, smoke: boolean) => post<BenchmarkRun>(`/datasets/${id}/runs`, { smoke }),
+  start: (id: number, smoke: boolean, name: string) => post<BenchmarkRun>(`/datasets/${id}/runs`, { smoke, name }),
+  renameRun: async (id: number, name: string): Promise<BenchmarkRun> => {
+    return (await apiClient.patch<{ result: BenchmarkRun }>(root + `/runs/${id}`, { name })).data.result;
+  },
   resume: (id: number) => post(`/runs/${id}/resume`),
   retryJudge: (id: number) => post(`/runs/${id}/retry-judge`),
   download: async (path: string, filename: string) => {

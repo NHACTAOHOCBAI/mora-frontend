@@ -19,6 +19,10 @@ export function formatRunTime(value: string) {
   return value ? dateFormat.format(new Date(value)) : '—';
 }
 
+export function runDisplayName(run: BenchmarkRun) {
+  return run.name || `Lượt #${run.id}`;
+}
+
 export const defaultRunFilters = { dataset: 'all', status: 'all', kind: 'all' };
 type RunFilters = typeof defaultRunFilters;
 
@@ -92,10 +96,12 @@ export function BenchmarkRunList({ runs, visibleRuns, value, onChange, loading, 
                   className="w-full cursor-pointer rounded-md border border-transparent px-3 py-2.5 text-left hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring aria-[current=true]:border-border aria-[current=true]:bg-muted"
                   onClick={() => onChange(run.id)}>
                   <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                    <span className="text-sm font-semibold">Lượt #{run.id}</span>
+                    <span className="min-w-0 break-words text-sm font-semibold">{runDisplayName(run)}</span>
                     <RunStatusBadge status={run.status} />
                   </span>
-                  <span className="mt-1 block text-xs text-muted-foreground">Dataset {run.datasetId} · {run.smoke ? 'Chạy thử' : 'Chính thức'}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {run.name && `#${run.id} · `}Dataset {run.datasetId} · {run.smoke ? 'Chạy thử' : 'Chính thức'}
+                  </span>
                   <time dateTime={run.createdAt || undefined} className="block text-xs text-muted-foreground">{formatRunTime(run.createdAt)}</time>
                 </button>
               </li>

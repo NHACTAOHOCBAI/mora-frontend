@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getErrorMessage } from '@/lib/api-error';
-import { canDeleteRun, RunStatusBadge } from './BenchmarkRunSelect';
+import { canDeleteRun, runDisplayName, RunStatusBadge } from './BenchmarkRunSelect';
 import type { BenchmarkRun } from '../services/benchmark-api';
 
 const dateFormat = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
@@ -126,7 +126,8 @@ export function BenchmarkBulkDelete({ runs, onExit, onDelete, onRefresh }: Props
                         onCheckedChange={next => setSelected(previous => next ? [...previous, run.id] : previous.filter(id => id !== run.id))} />
                     </TableCell>
                     <TableCell className="whitespace-normal">
-                      <span className="font-medium">Lượt #{run.id}</span>
+                      <span className="break-words font-medium">{runDisplayName(run)}</span>
+                      {run.name && <span className="block text-xs text-muted-foreground">Lượt #{run.id}</span>}
                       <span className="block text-xs text-muted-foreground md:hidden">Dataset {run.datasetId} · {kind}</span>
                       <time dateTime={run.createdAt ?? undefined} className="block text-xs text-muted-foreground md:hidden">{started}</time>
                     </TableCell>
