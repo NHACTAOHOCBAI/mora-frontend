@@ -46,6 +46,8 @@ export const benchmarkApi = {
   },
   runs: () => get<BenchmarkRun[]>('/runs'),
   run: (id: number) => get<RunDetail>(`/runs/${id}`),
+  deleteRun: async (id: number) => { await apiClient.delete(root + `/runs/${id}`); },
+  deleteRuns: async (runIds: number[]) => { await apiClient.post(root + '/runs/bulk-delete', { runIds }); },
   start: (id: number, smoke: boolean) => post<BenchmarkRun>(`/datasets/${id}/runs`, { smoke }),
   resume: (id: number) => post(`/runs/${id}/resume`),
   retryJudge: (id: number) => post(`/runs/${id}/retry-judge`),
