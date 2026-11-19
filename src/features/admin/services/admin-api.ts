@@ -25,7 +25,9 @@ export interface AdminDocumentSummary { id: number; name: string; status: Docume
 export interface AdminMemberSummary { userId: number; fullName: string; email: string; avatarUrl?: string; role: string; joinedAt: string; }
 export interface AdminSpaceDetail { space: AdminSpaceSummary; description?: string; members: AdminMemberSummary[]; documents: AdminDocumentSummary[]; }
 export interface AdminUserDetail { id: number; email: string; fullName: string; avatarUrl?: string; role: Role; active: boolean; createdAt: string; updatedAt?: string; ownedSpaces: AdminSpaceSummary[]; memberSpaces: AdminSpaceSummary[]; uploadedDocuments: AdminDocumentSummary[]; }
-export interface AdminDashboard { rangeDays: number; totalUsers: number; totalSpaces: number; totalDocuments: number; documentsNeedingAttention: number; activity: Array<{ date: string; users: number; spaces: number; documents: number }>; documentStatusCounts: Record<DocumentStatus, number>; failedDocuments: AdminDocumentSummary[]; recentSpaces: AdminSpaceSummary[]; }
+export interface AdminAiUsageBreakdown { key: string; totalTokens: number; costVnd: number; requestCount: number; }
+export interface AdminAiUsage { totalTokens: number; totalCostVnd: number; requestCount: number; trackingStartedAt?: string; daily: Array<{ date: string; totalTokens: number; costVnd: number; requestCount: number }>; byOperation: AdminAiUsageBreakdown[]; byModel: AdminAiUsageBreakdown[]; }
+export interface AdminDashboard { rangeDays: number; totalUsers: number; totalSpaces: number; totalDocuments: number; documentsNeedingAttention: number; activity: Array<{ date: string; users: number; spaces: number; documents: number }>; documentStatusCounts: Record<DocumentStatus, number>; failedDocuments: AdminDocumentSummary[]; recentSpaces: AdminSpaceSummary[]; aiUsage: AdminAiUsage; }
 
 export const adminApi = {
   getAllUsers: async (params?: QueryParams): Promise<PageResponse<UserResponse>> => {
