@@ -10,22 +10,19 @@ import {
 import { cn } from "@/lib/utils"
 
 export function NavMain({
-  items,
+  groups,
 }: {
-  items: {
-    title: string
-    url: string
-    icon?: React.ReactNode
-  }[]
+  groups: { label: string; items: { title: string; url: string; icon?: React.ReactNode }[] }[]
 }) {
   const location = useLocation()
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Quản trị</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu className="gap-1.5">
-          {items.map((item) => {
+    <>
+      {groups.map((group) => <SidebarGroup key={group.label} className="py-1">
+        <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu className="gap-1.5">
+          {group.items.map((item) => {
             const isActive = item.url === '/' || item.url === '/admin'
               ? location.pathname === item.url
               : location.pathname.startsWith(item.url) || (item.url === '/admin/user' && location.pathname === '/admin/users')
@@ -47,9 +44,10 @@ export function NavMain({
               </SidebarMenuItem>
             )
           })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>)}
+    </>
   )
 }
 

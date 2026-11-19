@@ -10,24 +10,18 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, UsersIcon, FolderIcon, FileTextIcon, FlaskConical } from "lucide-react"
+import { LayoutDashboardIcon, UsersIcon, FolderIcon, FileTextIcon, FlaskConical, House } from "lucide-react"
 
 const data = {
-  navMain: [
-    { title: "Tổng quan", url: "/admin", icon: <LayoutDashboardIcon /> },
-    { title: "Benchmark RAG", url: "/admin/benchmarks", icon: <FlaskConical /> },
-    {
-      title: "Quản lý thành viên",
-      url: "/admin/users",
-      icon: <UsersIcon />,
-    },
-    { title: "Không gian", url: "/admin/spaces", icon: <FolderIcon /> },
-    { title: "Tài liệu & xử lý", url: "/admin/documents", icon: <FileTextIcon /> },
-    {
-      title: "Quay lại Dashboard",
-      url: "/",
-      icon: <LayoutDashboardIcon />,
-    },
+  navGroups: [
+    { label: "Hệ thống", items: [{ title: "Tổng quan", url: "/admin", icon: <LayoutDashboardIcon /> }] },
+    { label: "Đánh giá AI", items: [{ title: "Benchmark RAG", url: "/admin/benchmarks", icon: <FlaskConical /> }] },
+    { label: "Quản lý", items: [
+      { title: "Quản lý thành viên", url: "/admin/users", icon: <UsersIcon /> },
+      { title: "Không gian", url: "/admin/spaces", icon: <FolderIcon /> },
+      { title: "Tài liệu & xử lý", url: "/admin/documents", icon: <FileTextIcon /> },
+    ] },
+    { label: "Điều hướng", items: [{ title: "Không gian của tôi", url: "/app", icon: <House /> }] },
   ],
 }
 
@@ -51,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain groups={data.navGroups} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
