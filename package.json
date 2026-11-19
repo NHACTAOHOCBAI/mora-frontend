@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test:benchmark-details": "node --test scripts/test-benchmark-details.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

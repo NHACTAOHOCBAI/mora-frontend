@@ -20,6 +20,7 @@ const AdminDocumentsPage = lazy(() => import('@/pages/admin/AdminDocumentsPage')
 const AdminSpaceDetailPage = lazy(() => import('@/pages/admin/AdminDetailPages').then(m => ({ default: m.AdminSpaceDetailPage })));
 const AdminDocumentDetailPage = lazy(() => import('@/pages/admin/AdminDetailPages').then(m => ({ default: m.AdminDocumentDetailPage })));
 const AdminUserDetailPage = lazy(() => import('@/pages/admin/AdminDetailPages').then(m => ({ default: m.AdminUserDetailPage })));
+const AdminBenchmarksPage = lazy(() => import('@/pages/admin/AdminBenchmarksPage').then(m => ({ default: m.AdminBenchmarksPage })));
 const ProfilePage = lazy(() => import('@/pages/user/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const JoinSpacePage = lazy(() => import('@/pages/user/JoinSpacePage').then(m => ({ default: m.JoinSpacePage })));
 const PrivacyPage = lazy(() => import('@/pages/legal/LegalPage').then(m => ({ default: () => <m.LegalPage kind="privacy" /> })));
@@ -156,6 +157,10 @@ const router = createBrowserRouter([{
           { path: '/admin/spaces/:id', element: <Suspense fallback={<LoadingFallback />}><AdminSpaceDetailPage /></Suspense> },
           { path: '/admin/documents', element: <Suspense fallback={<LoadingFallback />}><AdminDocumentsPage /></Suspense> },
           { path: '/admin/documents/:id', element: <Suspense fallback={<LoadingFallback />}><AdminDocumentDetailPage /></Suspense> },
+          {
+            path: '/admin/benchmarks',
+            element: <Suspense fallback={<LoadingFallback />}><AdminBenchmarksPage /></Suspense>,
+          },
           {
             path: '/admin/user',
             element: (

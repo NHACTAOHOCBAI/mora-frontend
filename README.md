@@ -1,5 +1,7 @@
 # Mora Frontend
 
+Benchmark RAG v1: trang admin `/admin/benchmarks`; xem [hướng dẫn chuẩn bị dataset và server](../mora-ai/benchmarks/README.md).
+
 Ứng dụng web của Mora — không gian học tập cộng tác, nơi nhóm có thể tập hợp tài liệu, hỏi đáp với AI có dẫn nguồn và tạo bộ ôn tập từ chính tài liệu của mình.
 
 ## Vai trò trong hệ thống
