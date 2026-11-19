@@ -21,13 +21,20 @@ function Meta({ label, value }: { label: string; value: string }) {
   return <div><p className="type-meta text-muted-foreground">{label}</p><p className="mt-1 text-sm font-medium">{value}</p></div>;
 }
 
+function DetailLoadError({ retry }: { retry: () => void }) {
+  return <div className="rounded-xl border border-dashed p-8 text-center"><h1 className="type-page-title">Không tải được dữ liệu</h1><p className="mt-2 text-sm text-muted-foreground">Không thể lấy thông tin chi tiết lúc này. Vui lòng thử lại.</p><Button className="mt-4" variant="outline" onClick={retry}>Thử lại</Button></div>;
+}
+
 export function AdminSpaceDetailPage() {
   const id = Number(useParams().id);
   const query = useAdminSpace(id);
   if (query.isLoading) return <Loading />;
-  if (!query.data) return <p className="text-sm text-muted-foreground">Không tìm thấy Space.</p>;
+  if (query.isError) return <DetailLoadError retry={() => void query.refetch()} />;
+  if (!query.data?.space) return <p className="text-sm text-muted-foreground">Không tìm thấy Space.</p>;
 
-  const { space, members, documents, description } = query.data;
+  const { space, description } = query.data;
+  const members = Array.isArray(query.data.members) ? query.data.members : [];
+  const documents = Array.isArray(query.data.documents) ? query.data.documents : [];
   const emptyDescription = 'Space này chưa có mô tả. Bạn vẫn có thể xem thành viên và tài liệu bên dưới.';
 
   return <div className="mx-auto w-full max-w-6xl space-y-6">
