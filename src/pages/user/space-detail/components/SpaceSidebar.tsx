@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { FileText, Upload, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popconfirm } from "@/components/ui/popconfirm";
 import type { SpaceSidebarProps } from "../types";
 import {
   useUploadDocument,
@@ -85,25 +86,12 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
     );
   };
 
-  const handleDocumentDelete = (e: React.MouseEvent, docId: number) => {
-    e.stopPropagation();
+  const deleteDocument = async (docId: number) => {
     if (!space) return;
-
-    if (confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) {
-      deleteMutation.mutate(
-        { id: docId, spaceId: space.id },
-        {
-          onSuccess: () => {
-            toast.success("Xóa tài liệu thành công");
-            if (selectedDocumentId === docId) {
-              onSelectDocument(null);
-            }
-          },
-          onError: (error: unknown) => {
-            toast.error(getErrorMessage(error));
-          },
-        },
-      );
+    await deleteMutation.mutateAsync({ id: docId, spaceId: space.id });
+    toast.success("Xóa tài liệu thành công");
+    if (selectedDocumentId === docId) {
+      onSelectDocument(null);
     }
   };
 
@@ -239,16 +227,14 @@ export const SpaceSidebar: React.FC<SpaceSidebarProps> = ({
                       </span>
                     </button>
                     {(isOwner || doc.uploadedById === currentUserId) && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
-                        title="Xóa tài liệu"
-                        disabled={processing || deleteMutation.isPending}
-                        onClick={(e) => handleDocumentDelete(e, doc.id)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
+                      <Popconfirm
+                        title="Xóa tài liệu?"
+                        description={`“${doc.name}” sẽ bị xóa vĩnh viễn.`}
+                        confirmLabel="Xóa tài liệu"
+                        pending={deleteMutation.isPending}
+                        onConfirm={() => deleteDocument(doc.id)}
+                        trigger={<Button variant="ghost" size="icon" className="size-7 shrink-0 text-muted-foreground hover:text-destructive" title="Xóa tài liệu" disabled={processing || deleteMutation.isPending} onClick={(event) => event.stopPropagation()}><Trash2 className="size-3.5" /></Button>}
+                      />
                     )}
                   </div>
                 );

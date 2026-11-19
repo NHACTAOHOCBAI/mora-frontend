@@ -19,16 +19,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -45,8 +35,6 @@ export const AdminUsersPage: React.FC = () => {
   const [editActive, setEditActive] = useState<boolean>(true);
   const [editRole, setEditRole] = useState<Role>('ROLE_USER');
 
-  // Delete Alert States
-  const [userIdToDelete, setUserIdToDelete] = useState<number | null>(null);
 
   const handleEditClick = (user: UserResponse) => {
     setUserToEdit(user);
@@ -71,15 +59,9 @@ export const AdminUsersPage: React.FC = () => {
     }
   };
 
-  const handleDeleteConfirm = async () => {
-    if (userIdToDelete === null) return;
-    try {
-      await deleteUser(userIdToDelete);
-      toast.success('Xóa thành viên thành công!');
-      setUserIdToDelete(null);
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
-    }
+  const handleDeleteConfirm = async (userId: number) => {
+    await deleteUser(userId);
+    toast.success('Xóa thành viên thành công!');
   };
 
   const handleRefresh = () => {
@@ -112,7 +94,7 @@ export const AdminUsersPage: React.FC = () => {
       </div>
 
       <CrudTable<UserResponse>
-        columns={userColumns(handleEditClick, setUserIdToDelete, handleImpersonate)}
+        columns={userColumns(handleEditClick, handleDeleteConfirm, handleImpersonate)}
         useQuery={useAdminUsersQuery}
         filterPlaceholder="Lọc theo tên, email, họ tên..."
       >
@@ -185,28 +167,6 @@ export const AdminUsersPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete User AlertDialog */}
-      <AlertDialog open={userIdToDelete !== null} onOpenChange={(open) => !open && setUserIdToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Hành động này sẽ xóa vĩnh viễn tài khoản thành viên này cùng toàn bộ các không gian học tập, tài liệu và lịch sử chat liên quan. Không thể hoàn tác hành động này.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
-              Hủy bỏ
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
-            >
-              Xác nhận xóa
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

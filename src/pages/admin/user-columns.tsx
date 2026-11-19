@@ -14,10 +14,12 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import type { UserResponse } from "@/features/auth/types";
 import { Link } from "react-router-dom";
+import { Popconfirm } from "@/components/ui/popconfirm";
+import { Button } from "@/components/ui/button";
 
 export const userColumns = (
     onEdit: (user: UserResponse) => void,
-    onDelete: (id: number) => void,
+    onDelete: (id: number) => Promise<void>,
     onImpersonate: (id: number) => void
 ): ColumnDef<UserResponse>[] => [
     {
@@ -103,7 +105,7 @@ export const userColumns = (
             const user = row.original;
 
             return (
-                <div className="text-right pr-4">
+                <div className="flex justify-end gap-1 pr-4">
                     <DropdownMenu>
                         <DropdownMenuTrigger className="h-8 w-8 p-0 cursor-pointer hover:bg-muted inline-flex items-center justify-center rounded-lg border border-transparent transition-colors">
                             <span className="sr-only">Mở menu</span>
@@ -133,16 +135,15 @@ export const userColumns = (
                                 <span>Đăng nhập dưới tư cách người này</span>
                             </DropdownMenuItem>
 
-                            {/* Delete Action */}
-                            <DropdownMenuItem
-                                onClick={() => onDelete(user.id)}
-                                className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                <span>Xóa thành viên</span>
-                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    <Popconfirm
+                        title="Xóa thành viên?"
+                        description="Tài khoản cùng toàn bộ Space, tài liệu và lịch sử chat liên quan sẽ bị xóa vĩnh viễn."
+                        confirmLabel="Xóa thành viên"
+                        onConfirm={() => onDelete(user.id)}
+                        trigger={<Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" aria-label={`Xóa thành viên ${user.fullName}`}><Trash2 className="size-4" /></Button>}
+                    />
                 </div>
             );
         },

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Popconfirm } from "@/components/ui/popconfirm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ErrorView } from "@/components/shared/ErrorView";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -49,10 +49,7 @@ export function SpaceSettingsPage() {
   const [description, setDescription] = useState("");
   const [search, setSearch] = useState("");
   const [inviteMethod, setInviteMethod] = useState<"link" | "account">("link");
-  const [removing, setRemoving] = useState<SpaceMemberResponse | null>(null);
-  const [leaveOpen, setLeaveOpen] = useState(false);
   const [successorId, setSuccessorId] = useState<string>("");
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteName, setDeleteName] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [selectedDocument, setSelectedDocument] = useState<DocumentResponse | null>(null);
@@ -96,29 +93,23 @@ export function SpaceSettingsPage() {
       onError: (error) => toast.error(getErrorMessage(error)),
     });
   };
-  const confirmRemove = () => {
-    if (!removing) return;
-    removeMember.mutate({ spaceId, userId: removing.userId }, {
-      onSuccess: () => { toast.success(`Đã xóa ${memberName(removing)} khỏi Space`); setRemoving(null); },
-      onError: (error) => toast.error(getErrorMessage(error)),
-    });
+  const confirmRemove = async (member: SpaceMemberResponse) => {
+    await removeMember.mutateAsync({ spaceId, userId: member.userId });
+    toast.success(`Đã xóa ${memberName(member)} khỏi Space`);
   };
-  const confirmLeave = () => {
+  const confirmLeave = async () => {
     const successorUserId = isDirectOwner ? Number(successorId) : undefined;
     if (isDirectOwner && (!successorUserId || !successors.some((member) => member.userId === successorUserId))) {
-      toast.error("Hãy chọn người kế nhiệm trước khi rời Space");
-      return;
+      throw new Error("Hãy chọn người kế nhiệm trước khi rời Space");
     }
-    leaveSpace.mutate({ spaceId, successorUserId }, {
-      onSuccess: () => { toast.success("Bạn đã rời Space"); navigate("/app"); },
-      onError: (error) => toast.error(getErrorMessage(error)),
-    });
+    await leaveSpace.mutateAsync({ spaceId, successorUserId });
+    toast.success("Bạn đã rời Space");
+    navigate("/app");
   };
-  const confirmDelete = () => {
-    deleteSpace.mutate(spaceId, {
-      onSuccess: () => { toast.success("Đã xóa Space"); navigate("/app"); },
-      onError: (error) => toast.error(getErrorMessage(error)),
-    });
+  const confirmDelete = async () => {
+    await deleteSpace.mutateAsync(spaceId);
+    toast.success("Đã xóa Space");
+    navigate("/app");
   };
 
   return (
@@ -157,12 +148,12 @@ export function SpaceSettingsPage() {
                 {canManage ? <Button disabled={updateSpace.isPending || (name.trim() === space.name && description.trim() === (space.description || ""))} onClick={saveGeneral}>{updateSpace.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{updateSpace.isPending ? "Đang lưu..." : "Lưu thay đổi"}</Button> : <p className="rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">Chỉ Owner hoặc quản trị viên hệ thống mới có thể chỉnh sửa thông tin Space.</p>}
               </div>
               <div className="mt-10 border-t pt-6"><SectionHeading title="Vùng nguy hiểm" description="Những thao tác này có thể làm bạn mất quyền truy cập hoặc xóa dữ liệu vĩnh viễn." />
-                <div className="mt-4 space-y-4"><div className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">Rời Space</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{isDirectOwner ? "Bạn cần chọn người kế nhiệm để chuyển quyền sở hữu trước khi rời." : "Bạn sẽ mất quyền truy cập cho đến khi được mời lại."}</p></div>{self && <Button variant="outline" onClick={() => setLeaveOpen(true)}><LogOut className="size-4" />Rời Space</Button>}</div>
-                {canManage && <div className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">Xóa Space</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Toàn bộ tài liệu, hội thoại, thành viên và lời mời sẽ bị xóa vĩnh viễn.</p></div><Button variant="destructive" onClick={() => setDeleteOpen(true)}><Trash2 className="size-4" />Xóa Space</Button></div>}</div>
+                <div className="mt-4 space-y-4"><div className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">Rời Space</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{isDirectOwner ? "Bạn cần chọn người kế nhiệm để chuyển quyền sở hữu trước khi rời." : "Bạn sẽ mất quyền truy cập cho đến khi được mời lại."}</p></div>{self && <Popconfirm title={isDirectOwner ? "Chuyển quyền và rời Space?" : "Rời Space?"} description={isDirectOwner ? "Người kế nhiệm sẽ trở thành Owner của Space. Thao tác này không thể hoàn tác." : `Bạn sẽ mất quyền truy cập vào “${space.name}”.`} confirmLabel={isDirectOwner ? "Chuyển quyền và rời" : "Rời Space"} confirmDisabled={isDirectOwner && !successorId} pending={leaveSpace.isPending} onConfirm={confirmLeave} trigger={<Button variant="outline"><LogOut className="size-4" />Rời Space</Button>}>{isDirectOwner && <div className="space-y-2"><label htmlFor="successor" className="text-sm font-medium">Người kế nhiệm</label><Select value={successorId} onValueChange={(value) => setSuccessorId(value ?? "")}><SelectTrigger id="successor" className="h-9 w-full bg-card"><SelectValue placeholder="Chọn một thành viên" /></SelectTrigger><SelectContent align="start" alignItemWithTrigger={false}>{successors.map((member) => <SelectItem key={member.userId} value={String(member.userId)}>{memberName(member)} · {ROLE_DETAILS[member.role].label}</SelectItem>)}</SelectContent></Select>{!successors.length && <p className="text-sm text-destructive">Hãy thêm ít nhất một thành viên trước khi rời Space.</p>}</div>}</Popconfirm>}</div>
+                {canManage && <div className="flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">Xóa Space</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Toàn bộ tài liệu, hội thoại, thành viên và lời mời sẽ bị xóa vĩnh viễn.</p></div><Popconfirm title="Xóa vĩnh viễn Space?" description={<>Nhập chính xác tên Space <strong>{space.name}</strong> để xác nhận. Toàn bộ dữ liệu sẽ không thể khôi phục.</>} confirmLabel="Xóa vĩnh viễn" confirmDisabled={deleteName !== space.name} pending={deleteSpace.isPending} onConfirm={confirmDelete} trigger={<Button variant="destructive"><Trash2 className="size-4" />Xóa Space</Button>}><Input value={deleteName} onChange={(event) => setDeleteName(event.target.value)} aria-label="Xác nhận tên Space" placeholder={space.name} /></Popconfirm></div>}</div>
               </div></div>}
             {section === "members" && <div className="p-5 sm:p-7"><SectionHeading title="Thành viên" description="Xem thành viên, phân quyền và mời thêm người vào Space." />
               <div className="mt-6 flex flex-col gap-3 sm:flex-row"><Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm tên hoặc email..." className="sm:max-w-sm" />{canManage && <Button onClick={() => { setSection("invites"); setInviteMethod("account"); }}><UserPlus className="size-4" />Mời thành viên</Button>}</div>
-              <div className="mt-5 overflow-hidden rounded-xl border"><ul className="divide-y">{membersQuery.isLoading ? <li className="p-8 text-center text-sm text-muted-foreground"><Loader2 className="mr-2 inline size-4 animate-spin" />Đang tải thành viên...</li> : visibleMembers.map((member) => <li key={member.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><Avatar className="size-10"><AvatarImage src={member.avatarUrl} alt={memberName(member)} /><AvatarFallback>{toAlias(memberName(member))}</AvatarFallback></Avatar><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{memberName(member)} {member.userId === user?.id && <span className="ml-1 rounded bg-muted px-1.5 py-0.5 type-meta font-normal text-muted-foreground">Bạn</span>}</p><p className="truncate type-meta text-muted-foreground">{member.email}</p></div><div className="flex items-center gap-2">{canManage && member.role !== "OWNER" ? <MemberRoleSelect value={member.role} label={`Vai trò của ${memberName(member)}`} disabled={updateRole.isPending || removeMember.isPending} onChange={(role) => changeRole(member, role)} /> : <MemberRoleBadge role={member.role} />}{canManage && member.role !== "OWNER" && <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" aria-label={`Xóa ${memberName(member)}`} onClick={() => setRemoving(member)}><Trash2 className="size-4" /></Button>}</div></li>)}</ul></div>
+              <div className="mt-5 overflow-hidden rounded-xl border"><ul className="divide-y">{membersQuery.isLoading ? <li className="p-8 text-center text-sm text-muted-foreground"><Loader2 className="mr-2 inline size-4 animate-spin" />Đang tải thành viên...</li> : visibleMembers.map((member) => <li key={member.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><Avatar className="size-10"><AvatarImage src={member.avatarUrl} alt={memberName(member)} /><AvatarFallback>{toAlias(memberName(member))}</AvatarFallback></Avatar><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{memberName(member)} {member.userId === user?.id && <span className="ml-1 rounded bg-muted px-1.5 py-0.5 type-meta font-normal text-muted-foreground">Bạn</span>}</p><p className="truncate type-meta text-muted-foreground">{member.email}</p></div><div className="flex items-center gap-2">{canManage && member.role !== "OWNER" ? <MemberRoleSelect value={member.role} label={`Vai trò của ${memberName(member)}`} disabled={updateRole.isPending || removeMember.isPending} onChange={(role) => changeRole(member, role)} /> : <MemberRoleBadge role={member.role} />}{canManage && member.role !== "OWNER" && <Popconfirm title="Xóa thành viên khỏi Space?" description={`${memberName(member)} sẽ mất quyền truy cập vào “${space.name}”.`} confirmLabel="Xóa khỏi Space" pending={removeMember.isPending} onConfirm={() => confirmRemove(member)} trigger={<Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" aria-label={`Xóa ${memberName(member)}`}><Trash2 className="size-4" /></Button>} />}</div></li>)}</ul></div>
               <details className="mt-5 text-sm text-muted-foreground"><summary className="cursor-pointer font-medium text-foreground">Các vai trò khác nhau thế nào?</summary><div className="mt-3 grid gap-3 sm:grid-cols-3">{(["OWNER", "EDITOR", "VIEWER"] as const).map((role) => <div key={role} className="rounded-lg bg-muted/50 p-3"><p className="font-medium text-foreground">{ROLE_DETAILS[role].label}</p><p className="mt-1 text-xs leading-5">{ROLE_DETAILS[role].description}</p></div>)}</div></details>
             </div>}
             {section === "invites" && <div className="p-5 sm:p-7"><SectionHeading title="Liên kết mời" description="Mời người khác bằng liên kết chia sẻ hoặc tài khoản đã có trên Mora." />{canManage ? <><div className="mt-6 flex gap-2 border-b"><button className={`border-b-2 px-3 pb-3 text-sm font-medium ${inviteMethod === "link" ? "border-primary text-foreground" : "border-transparent text-muted-foreground"}`} onClick={() => setInviteMethod("link")}>Chia sẻ liên kết</button><button className={`border-b-2 px-3 pb-3 text-sm font-medium ${inviteMethod === "account" ? "border-primary text-foreground" : "border-transparent text-muted-foreground"}`} onClick={() => setInviteMethod("account")}>Thêm bằng tài khoản</button></div><div className="mt-6 max-w-2xl">{inviteMethod === "link" ? <MemberInvitationPanel spaceId={spaceId} open /> : <AddSpaceMemberForm spaceId={spaceId} onAdded={() => { setSection("members"); setSearch(""); }} />}</div></> : <LockedSection text="Chỉ Owner hoặc quản trị viên hệ thống có thể tạo và xem liên kết mời." />}</div>}
@@ -173,9 +164,6 @@ export function SpaceSettingsPage() {
           {selectedDocument && <section className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden rounded-2xl border border-border bg-card"><div className="flex items-center justify-between gap-3 border-b p-3"><span className="truncate text-sm">{selectedDocument.name}</span><Button variant="ghost" size="icon" aria-label="Đóng tài liệu" onClick={() => setSelectedDocument(null)}><X className="size-4" /></Button></div><div className="flex-1 min-h-0"><PdfViewer url={selectedDocument.storageUrl} currentPage={citationPage} onPageChange={setCitationPage} /></div></section>}
         </div>
       </div>
-      <AlertDialog open={!!removing} onOpenChange={(open) => !open && setRemoving(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Xóa thành viên khỏi Space?</AlertDialogTitle><AlertDialogDescription>{removing && `${memberName(removing)} sẽ mất quyền truy cập vào “${space.name}”.`}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={removeMember.isPending}>Hủy</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={removeMember.isPending} onClick={confirmRemove}>{removeMember.isPending && <Loader2 className="size-4 animate-spin" />}Xóa khỏi Space</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{isDirectOwner ? "Chuyển quyền và rời Space?" : "Rời Space?"}</AlertDialogTitle><AlertDialogDescription>{isDirectOwner ? "Người kế nhiệm sẽ trở thành Owner của Space. Thao tác này không thể hoàn tác." : `Bạn sẽ mất quyền truy cập vào “${space.name}”.`}</AlertDialogDescription></AlertDialogHeader>{isDirectOwner && <div className="space-y-2"><label htmlFor="successor" className="text-sm font-medium">Người kế nhiệm</label><Select value={successorId} onValueChange={(value) => setSuccessorId(value ?? "")}><SelectTrigger id="successor" className="h-9 w-full max-w-sm bg-card"><SelectValue placeholder="Chọn một thành viên" /></SelectTrigger><SelectContent align="start" alignItemWithTrigger={false}>{successors.map((member) => <SelectItem key={member.userId} value={String(member.userId)}>{memberName(member)} · {ROLE_DETAILS[member.role].label}</SelectItem>)}</SelectContent></Select>{!successors.length && <p className="text-sm text-destructive">Hãy thêm ít nhất một thành viên trước khi rời Space.</p>}</div>}<AlertDialogFooter><AlertDialogCancel disabled={leaveSpace.isPending}>Hủy</AlertDialogCancel><AlertDialogAction disabled={leaveSpace.isPending || (isDirectOwner && !successorId)} onClick={confirmLeave}>{leaveSpace.isPending && <Loader2 className="size-4 animate-spin" />}{isDirectOwner ? "Chuyển quyền và rời" : "Rời Space"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Xóa vĩnh viễn Space?</AlertDialogTitle><AlertDialogDescription>Nhập chính xác tên Space <strong>{space.name}</strong> để xác nhận. Toàn bộ dữ liệu sẽ không thể khôi phục.</AlertDialogDescription></AlertDialogHeader><Input value={deleteName} onChange={(event) => setDeleteName(event.target.value)} aria-label="Xác nhận tên Space" placeholder={space.name} /><AlertDialogFooter><AlertDialogCancel disabled={deleteSpace.isPending}>Hủy</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteSpace.isPending || deleteName !== space.name} onClick={confirmDelete}>{deleteSpace.isPending && <Loader2 className="size-4 animate-spin" />}Xóa vĩnh viễn</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </div>
   );
 }

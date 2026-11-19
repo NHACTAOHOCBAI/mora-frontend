@@ -9,7 +9,6 @@ import {
   Users,
   Search,
   MoreHorizontal,
-  Trash2,
   ArrowRight,
   BookOpen,
   RefreshCw,
@@ -25,7 +24,7 @@ import {
 import type { SpaceSort } from "@/features/chat/utils/space-list";
 import { MemberRoleBadge } from "@/features/chat/components/MemberRoleSelect";
 import { CreateSpaceDialog } from "@/features/chat/components/CreateSpaceDialog";
-import { MemberConfirmDialog } from "@/features/chat/components/MemberConfirmDialog";
+import { Popconfirm } from "@/components/ui/popconfirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,12 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api-error";
 
@@ -62,8 +55,6 @@ export function DashboardPage() {
   const [sort, setSort] = useState<SpaceSort>("newest");
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
-  const [deleting, setDeleting] = useState<SpaceResponse | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const visibleSpaces = filterAndSortSpaces(spaces.data || [], search, sort);
@@ -88,16 +79,9 @@ export function DashboardPage() {
       },
     );
   };
-  const confirmDelete = () => {
-    if (!deleting || remove.isPending) return;
-    setDeleteError(null);
-    remove.mutate(deleting.id, {
-      onSuccess: () => {
-        setDeleting(null);
-        toast.success("Đã xóa không gian học tập");
-      },
-      onError: (error) => setDeleteError(getErrorMessage(error)),
-    });
+  const deleteSpace = async (space: SpaceResponse) => {
+    await remove.mutateAsync(space.id);
+    toast.success("Đã xóa không gian học tập");
   };
   return (
     <div className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 md:p-8 space-y-6">
@@ -316,26 +300,14 @@ export function DashboardPage() {
                           <MemberRoleBadge role={space.currentUserRole} />
                         )}
                         {canDeleteSpace(space, user?.role) && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              aria-label={`Thao tác không gian ${space.name}`}
-                              className="relative z-10 size-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                            >
-                              <MoreHorizontal className="size-4" />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onClick={() => {
-                                  setDeleteError(null);
-                                  setDeleting(space);
-                                }}
-                              >
-                                <Trash2 className="size-4" />
-                                Xóa không gian
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Popconfirm
+                            title="Xóa không gian?"
+                            description={`Không gian “${space.name}” cùng toàn bộ tài liệu và lịch sử chat sẽ bị xóa vĩnh viễn.`}
+                            confirmLabel="Xóa không gian"
+                            pending={remove.isPending}
+                            onConfirm={() => deleteSpace(space)}
+                            trigger={<Button variant="ghost" size="icon" aria-label={`Xóa không gian ${space.name}`} className="relative z-10 size-8 shrink-0"><MoreHorizontal className="size-4" /></Button>}
+                          />
                         )}
                       </div>
                     </div>
@@ -422,17 +394,6 @@ export function DashboardPage() {
           setPage(1);
         }}
         returnFocus={createButtonRef}
-      />
-      <MemberConfirmDialog
-        open={!!deleting}
-        title="Xóa không gian?"
-        description={`Không gian “${deleting?.name || ""}” cùng toàn bộ tài liệu và lịch sử chat sẽ bị xóa vĩnh viễn. Thao tác này không thể hoàn tác.`}
-        actionLabel="Xóa không gian"
-        pending={remove.isPending}
-        error={deleteError}
-        onCancel={() => setDeleting(null)}
-        onConfirm={confirmDelete}
-        returnFocus={headingRef}
       />
     </div>
   );

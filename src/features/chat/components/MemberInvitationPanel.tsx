@@ -20,12 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
   useSpaceInvitations,
   useCreateSpaceInvitation,
   useRevokeSpaceInvitation,
@@ -33,7 +27,7 @@ import {
 import type { SpaceInvitationResponse } from "../types";
 import { isActiveInvitation } from "../utils/member-management";
 import { MemberRoleBadge, MemberRoleChoices } from "./MemberRoleSelect";
-import { MemberConfirmDialog } from "./MemberConfirmDialog";
+import { Popconfirm } from "@/components/ui/popconfirm";
 import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
 
@@ -57,10 +51,6 @@ export function MemberInvitationPanel({
   const [created, setCreated] = useState<SpaceInvitationResponse | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
-  const [revoking, setRevoking] = useState<SpaceInvitationResponse | null>(
-    null,
-  );
-  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const listTitleRef = useRef<HTMLHeadingElement>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -115,20 +105,10 @@ export function MemberInvitationPanel({
       },
     );
   };
-  const confirmRevoke = () => {
-    if (!revoking) return;
-    setConfirmError(null);
-    revoke.mutate(
-      { spaceId, invitationId: revoking.id },
-      {
-        onSuccess: () => {
-          if (created?.id === revoking.id) setCreated(null);
-          setRevoking(null);
-          toast.success("Đã thu hồi liên kết mời");
-        },
-        onError: (error) => setConfirmError(getErrorMessage(error)),
-      },
-    );
+  const confirmRevoke = async (invitation: SpaceInvitationResponse) => {
+    await revoke.mutateAsync({ spaceId, invitationId: invitation.id });
+    if (created?.id === invitation.id) setCreated(null);
+    toast.success("Đã thu hồi liên kết mời");
   };
   return (
     <div className="space-y-6">
@@ -310,41 +290,19 @@ export function MemberInvitationPanel({
                     <Copy className="size-4" />
                   )}
                 </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    aria-label={`Thao tác liên kết ${invitation.inviteCode}`}
-                    className="size-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-muted"
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={() => {
-                        setConfirmError(null);
-                        setRevoking(invitation);
-                      }}
-                    >
-                      Thu hồi liên kết
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Popconfirm
+                  title="Thu hồi liên kết mời?"
+                  description={`Liên kết ${invitation.inviteCode} sẽ không thể dùng để tham gia nữa.`}
+                  confirmLabel="Thu hồi liên kết"
+                  pending={revoke.isPending}
+                  onConfirm={() => confirmRevoke(invitation)}
+                  trigger={<Button variant="ghost" size="icon" aria-label={`Thu hồi liên kết ${invitation.inviteCode}`}><MoreHorizontal className="size-4" /></Button>}
+                />
               </div>
             </div>
           ))
         )}
       </section>
-      <MemberConfirmDialog
-        open={!!revoking}
-        title="Thu hồi liên kết mời?"
-        description={`Liên kết ${revoking?.inviteCode || ""} sẽ không thể dùng để tham gia nữa. Thành viên đã tham gia vẫn ở trong nhóm.`}
-        actionLabel="Thu hồi liên kết"
-        pending={revoke.isPending}
-        error={confirmError}
-        onCancel={() => setRevoking(null)}
-        onConfirm={confirmRevoke}
-        returnFocus={listTitleRef}
-      />
     </div>
   );
 }

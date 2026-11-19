@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popconfirm } from "@/components/ui/popconfirm";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -125,18 +126,16 @@ export function StudySetPanel({
                   <BookOpen className="w-3.5 h-3.5 mr-1" />
                   Ôn tập
                 </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => {
-                    if (confirm("Xóa bộ ôn tập này?"))
-                      remove.mutate(s.id, {
-                        onError: (e) => toast.error(getErrorMessage(e)),
-                      });
+                <Popconfirm
+                  title="Xóa bộ ôn tập?"
+                  description="Flashcard và câu hỏi quiz trong bộ này sẽ bị xóa vĩnh viễn."
+                  confirmLabel="Xóa bộ"
+                  onConfirm={async () => {
+                    await remove.mutateAsync(s.id);
+                    toast.success("Đã xóa bộ ôn tập");
                   }}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+                  trigger={<Button size="icon" variant="ghost" aria-label={`Xóa ${s.title}`}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
+                />
               </div>
             </div>
           ))}

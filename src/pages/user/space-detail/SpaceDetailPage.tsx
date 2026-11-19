@@ -10,7 +10,6 @@ import {
   PanelLeft,
   MessageSquare,
   BookOpen,
-  MoreHorizontal,
   X,
   Settings,
   Pin,
@@ -35,23 +34,8 @@ import type {
   SpaceDetailResponse,
 } from "@/features/chat/types";
 import type { DocumentResponse } from "@/features/chat/services/document-api";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Popconfirm } from "@/components/ui/popconfirm";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/api-error";
 
@@ -73,7 +57,6 @@ export const SpaceDetailPage: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => window.innerWidth < 768,
   );
-  const [showClearHistoryAlert, setShowClearHistoryAlert] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const isStudyOpen = searchParams.get("view") === "study";
   const setIsStudyOpen = (open: boolean) => setSearchParams(open ? { view: "study" } : {});
@@ -340,17 +323,10 @@ export const SpaceDetailPage: React.FC = () => {
   };
 
   // Xác nhận xóa lịch sử cuộc trò chuyện
-  const handleClearHistoryConfirm = () => {
-    clearSpaceHistoryMutation.mutate(spaceId, {
-      onSuccess: () => {
-        setSpaceMessages([]);
-        setShowClearHistoryAlert(false);
-        toast.success("Đã xóa sạch lịch sử cuộc trò chuyện!");
-      },
-      onError: (err: unknown) => {
-        toast.error(getErrorMessage(err));
-      },
-    });
+  const handleClearHistoryConfirm = async () => {
+    await clearSpaceHistoryMutation.mutateAsync(spaceId);
+    setSpaceMessages([]);
+    toast.success("Đã xóa sạch lịch sử cuộc trò chuyện!");
   };
 
   // Xử lý khi click vào nhãn nguồn trích dẫn
@@ -476,23 +452,14 @@ export const SpaceDetailPage: React.FC = () => {
                       Đã ghim
                       {pinsQuery.isSuccess && <span className="text-xs text-muted-foreground">{pins.length}</span>}
                     </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        aria-label="Thao tác hội thoại"
-                        className="p-2 rounded-lg hover:bg-muted"
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          disabled={(!isOwner && currentUser?.role !== "ROLE_ADMIN") || spaceMessages.length === 0}
-                          onClick={() => setShowClearHistoryAlert(true)}
-                        >
-                          <Trash2 className="size-4" />
-                          Xóa lịch sử hội thoại
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Popconfirm
+                      title="Xóa lịch sử hội thoại?"
+                      description="Toàn bộ tin nhắn, câu hỏi đáp và tin đã ghim trong Space này sẽ bị xóa vĩnh viễn."
+                      confirmLabel="Xóa lịch sử"
+                      pending={clearSpaceHistoryMutation.isPending}
+                      onConfirm={handleClearHistoryConfirm}
+                      trigger={<Button variant="ghost" size="icon" aria-label="Xóa lịch sử hội thoại" disabled={(!isOwner && currentUser?.role !== "ROLE_ADMIN") || spaceMessages.length === 0}><Trash2 className="size-4" /></Button>}
+                    />
                   </div>
                 </div>
                 <ChatContainer
@@ -564,35 +531,6 @@ export const SpaceDetailPage: React.FC = () => {
         onJump={handleJump}
         returnFocus={pinButtonRef}
       />
-
-      {/* Clear Chat History AlertDialog */}
-      <AlertDialog
-        open={showClearHistoryAlert}
-        onOpenChange={setShowClearHistoryAlert}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Bạn có chắc muốn xóa lịch sử trò chuyện này?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Hành động này sẽ xóa sạch toàn bộ nội dung tin nhắn và câu hỏi đáp
-              của cuộc trò chuyện hiện tại, bao gồm tất cả tin đã ghim. Không thể hoàn tác hành động này.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
-              Hủy bỏ
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleClearHistoryConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
-            >
-              Xác nhận xóa
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
     </div>
   );
