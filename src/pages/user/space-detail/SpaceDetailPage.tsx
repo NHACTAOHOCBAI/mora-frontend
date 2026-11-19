@@ -16,11 +16,11 @@ import {
 } from "lucide-react";
 import { useSpaceDetail } from "@/features/chat/hooks/useSpace";
 import {
-  useSendSpaceChatMessage,
   useSendGroupMessage,
   useSpaceChatHistory,
   useClearSpaceChatHistory,
 } from "@/features/chat/hooks/useChat";
+import { streamSpaceChatMessage, cancelSpaceChatStream } from "@/features/chat/services/chat-api";
 import { useSpaceSocket } from "@/features/chat/hooks/useSpaceSocket";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useMessagePins } from "@/features/chat/hooks/useMessagePins";
@@ -30,6 +30,7 @@ import { PdfViewer } from "@/features/chat/components/PdfViewer";
 import { StudySetPanel } from "@/features/study/components/StudySetPanel";
 import type {
   Message,
+  AiStreamEvent,
   TypingNotification,
   SpaceDetailResponse,
 } from "@/features/chat/types";
@@ -54,6 +55,10 @@ export const SpaceDetailPage: React.FC = () => {
   const { user: currentUser } = useAuth();
 
   const [spaceMessages, setSpaceMessages] = useState<Message[]>([]);
+  const streamDraftsRef = useRef(new Map<string, { userTemporaryId?: number; assistantTemporaryId: number }>());
+  const lastStreamSequenceRef = useRef(new Map<string, number>());
+  const pendingStreamTextRef = useRef(new Map<string, string>());
+  const streamFlushFrameRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     () => window.innerWidth < 768,
   );
@@ -109,9 +114,34 @@ export const SpaceDetailPage: React.FC = () => {
     setJumpToMessage({ id: messageId, token: Date.now() });
   };
 
-  const sendSpaceMessageMutation = useSendSpaceChatMessage();
   const sendGroupMessageMutation = useSendGroupMessage();
   const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const activeStreamRequestRef = useRef<string | null>(null);
+
+  const flushStreamText = useCallback(() => {
+    const pending = new Map(pendingStreamTextRef.current);
+    pendingStreamTextRef.current.clear();
+    streamFlushFrameRef.current = null;
+    if (!pending.size) return;
+    setSpaceMessages(prev => prev.map(message => {
+      for (const [generationId, text] of pending) {
+        const draft = streamDraftsRef.current.get(generationId);
+        if (draft?.assistantTemporaryId === message.id) return { ...message, text: message.text + text, streamStatus: "Đang soạn câu trả lời…" };
+      }
+      return message;
+    }));
+  }, []);
+
+  const queueStreamText = useCallback((generationId: string, text: string) => {
+    pendingStreamTextRef.current.set(generationId, (pendingStreamTextRef.current.get(generationId) || "") + text);
+    // Parsing Markdown on every network chunk is expensive.  Small batches retain
+    // the typing effect while keeping layout and React work stable.
+    if (streamFlushFrameRef.current === null) streamFlushFrameRef.current = setTimeout(flushStreamText, 80);
+  }, [flushStreamText]);
+
+  useEffect(() => () => {
+    if (streamFlushFrameRef.current !== null) clearTimeout(streamFlushFrameRef.current);
+  }, []);
 
   // Chat History hooks (Initial load without 3s polling)
   const { data: spaceHistoryData } = useSpaceChatHistory(spaceId, { enabled: validSpaceId });
@@ -127,6 +157,16 @@ export const SpaceDetailPage: React.FC = () => {
   // Real-time WebSocket handlers
   const handleSocketMessageReceived = useCallback((newMsg: Message) => {
     setSpaceMessages((prev) => {
+      // The sender already rendered this question optimistically.  Reconcile it
+      // here so the assistant draft never jumps above the user message.
+      if (newMsg.messageType === "AI_QUERY" && newMsg.userId === currentUser?.id) {
+        const optimisticIndex = prev.findIndex((m) => m.id < 0 && m.messageType === "AI_QUERY" && m.userId === currentUser?.id && m.text === newMsg.text);
+        if (optimisticIndex !== -1) {
+          const updated = [...prev];
+          updated[optimisticIndex] = newMsg;
+          return updated;
+        }
+      }
       const existingIndex = prev.findIndex((m) => m.id === newMsg.id);
       if (existingIndex !== -1) {
         const updated = [...prev];
@@ -141,7 +181,46 @@ export const SpaceDetailPage: React.FC = () => {
     } else if (newMsg.messageType === "AI_QUERY") {
       setIsAiProcessing(true);
     }
-  }, []);
+  }, [currentUser?.id]);
+
+  const handleAiStreamEvent = useCallback((event: AiStreamEvent) => {
+    const previousSequence = lastStreamSequenceRef.current.get(event.generationId) ?? 0;
+    if (event.sequence <= previousSequence) return;
+    lastStreamSequenceRef.current.set(event.generationId, event.sequence);
+    const draft = streamDraftsRef.current.get(event.generationId);
+    const statusLabel: Record<string, string> = { retrieving: "Đang tìm trong tài liệu…", generating: "Đang soạn câu trả lời…", citing: "Đang kiểm tra nguồn…" };
+
+    if (event.type === "accepted" && event.message) {
+      const savedQuestion = { ...event.message, timestamp: new Date(event.message.timestamp) };
+      const assistantTemporaryId = draft?.assistantTemporaryId ?? -(Date.now() + Math.floor(Math.random() * 100000));
+      streamDraftsRef.current.set(event.generationId, { userTemporaryId: draft?.userTemporaryId, assistantTemporaryId });
+      setSpaceMessages((prev) => {
+        const persistedIndex = prev.findIndex(m => m.id === savedQuestion.id);
+        const userIndex = persistedIndex >= 0 ? persistedIndex : (draft?.userTemporaryId == null ? -1 : prev.findIndex(m => m.id === draft.userTemporaryId));
+        const next = [...prev];
+        if (userIndex >= 0) next[userIndex] = savedQuestion;
+        else next.push(savedQuestion);
+        if (!next.some(m => m.id === assistantTemporaryId)) next.push({ id: assistantTemporaryId, sender: "assistant", messageType: "AI_RESPONSE", text: "", timestamp: new Date(), streamStatus: "Đang chuẩn bị câu trả lời…" });
+        return next;
+      });
+      return;
+    }
+    if (!draft) return;
+    if (event.type === "status") {
+      setSpaceMessages(prev => prev.map(m => m.id === draft.assistantTemporaryId ? { ...m, streamStatus: statusLabel[event.stage || ""] || "Đang chuẩn bị câu trả lời…" } : m));
+    } else if (event.type === "delta") {
+      queueStreamText(event.generationId, event.text || "");
+    } else if (event.type === "citations") {
+      setSpaceMessages(prev => prev.map(m => m.id === draft.assistantTemporaryId ? { ...m, citations: event.citations || [] } : m));
+    } else if (event.type === "done" && event.message) {
+      const completed = { ...event.message, timestamp: new Date(event.message.timestamp) };
+      setSpaceMessages(prev => prev.filter(m => m.id !== completed.id).map(m => m.id === draft.assistantTemporaryId ? completed : m));
+      streamDraftsRef.current.delete(event.generationId);
+      lastStreamSequenceRef.current.delete(event.generationId);
+    } else if (event.type === "error") {
+      setSpaceMessages(prev => prev.map(m => m.id === draft.assistantTemporaryId ? { ...m, text: event.text || "Không thể tạo câu trả lời.", streamStatus: undefined } : m));
+    }
+  }, [queueStreamText]);
 
   const handleSocketTypingReceived = useCallback(
     (info: TypingNotification) => {
@@ -169,6 +248,7 @@ export const SpaceDetailPage: React.FC = () => {
   const { sendTyping } = useSpaceSocket({
     spaceId: validSpaceId ? spaceId : undefined,
     onMessageReceived: handleSocketMessageReceived,
+    onAiStreamEvent: handleAiStreamEvent,
     onTypingReceived: handleSocketTypingReceived,
     onStateChanged: handleStateChanged,
   });
@@ -287,39 +367,33 @@ export const SpaceDetailPage: React.FC = () => {
       text: msg.text,
     }));
 
+    const requestId = crypto.randomUUID();
+    const temporaryUserId = -Date.now();
+    const temporaryId = -(Date.now() + 1);
+    streamDraftsRef.current.set(requestId, { userTemporaryId: temporaryUserId, assistantTemporaryId: temporaryId });
+    activeStreamRequestRef.current = requestId;
     setIsAiProcessing(true);
+    setSpaceMessages((prev) => [...prev,
+      { id: temporaryUserId, sender: "user", userId: currentUser?.id, messageType: "AI_QUERY", text, timestamp: new Date() },
+      { id: temporaryId, sender: "assistant", messageType: "AI_RESPONSE", text: "", timestamp: new Date(), streamStatus: "Đang chuẩn bị câu trả lời…" },
+    ]);
+    try {
+      await streamSpaceChatMessage({ spaceId, question: text, history: historyDto, documentIds: selectedDocIdsForAi.length ? selectedDocIdsForAi : undefined }, requestId, {
+        onEvent: (name, payload) => handleAiStreamEvent({ ...payload, type: name } as AiStreamEvent),
+      });
+    } catch (err) {
+      setSpaceMessages((prev) => prev.filter(m => m.id !== temporaryId && m.id !== temporaryUserId));
+      streamDraftsRef.current.delete(requestId);
+      toast.error(getErrorMessage(err));
+    } finally {
+      activeStreamRequestRef.current = null;
+      setIsAiProcessing(false);
+    }
+  };
 
-    // Gửi lên server đồng bộ với scope tài liệu chọn lọc
-    sendSpaceMessageMutation.mutate(
-      {
-        spaceId,
-        question: text,
-        history: historyDto,
-        documentIds:
-          selectedDocIdsForAi.length > 0 ? selectedDocIdsForAi : undefined,
-      },
-      {
-        onSuccess: () => {
-          setIsAiProcessing(false);
-          toast.success("AI đã phản hồi xong!");
-        },
-        onError: (err: unknown) => {
-          console.error(err);
-          setIsAiProcessing(false);
-          const errorText = getErrorMessage(err);
-
-          const errorMessage: Message = {
-            id: -(Date.now() + 2),
-            sender: "assistant",
-            messageType: "AI_RESPONSE",
-            text: errorText,
-            timestamp: new Date(),
-          };
-          setSpaceMessages((prev) => [...prev, errorMessage]);
-          toast.error(errorText);
-        },
-      },
-    );
+  const handleStopGenerating = () => {
+    const requestId = activeStreamRequestRef.current;
+    if (requestId) void cancelSpaceChatStream(spaceId, requestId);
   };
 
   // Xác nhận xóa lịch sử cuộc trò chuyện
@@ -472,6 +546,7 @@ export const SpaceDetailPage: React.FC = () => {
                   onSendMessage={handleSendMessageToAi}
                   onSendGroupMessage={handleSendGroupMessage}
                   isLoading={isAiProcessing}
+                  onStopGenerating={handleStopGenerating}
                   onCitationClick={handleCitationClick}
                   selectedDocCount={selectedDocIdsForAi.length}
                   totalDocCount={

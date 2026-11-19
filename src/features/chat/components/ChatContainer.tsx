@@ -7,6 +7,7 @@ import {
   User,
   MapPin,
   Loader2,
+  Square,
   Sparkles,
   Copy,
   Check,
@@ -71,6 +72,8 @@ const MemoizedMessageItem = React.memo(
     const timestampId = useId();
     const touchStart = useRef<{ x: number; y: number } | null>(null);
     const timestamp = new Date(message.timestamp);
+    const isPreparingAnswer = isAI && !message.text && !!message.streamStatus;
+    const canCopyAnswer = isAI && message.id > 0 && !message.streamStatus && !!message.text.trim();
     const hasTimestamp = Number.isFinite(timestamp.getTime());
     const timeLabel = hasTimestamp
       ? timestamp.toLocaleTimeString("vi-VN", {
@@ -190,7 +193,12 @@ const MemoizedMessageItem = React.memo(
                       : "bg-card border-border text-foreground"
               }`}
             >
-              <ReactMarkdown
+              {isPreparingAnswer ? (
+                <div className="flex items-center gap-2 py-0.5 text-muted-foreground" role="status" aria-live="polite">
+                  <Loader2 className="size-3.5 animate-spin text-primary" />
+                  <span>{message.streamStatus}</span>
+                </div>
+              ) : <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                   p: ({ children }) => (
@@ -273,10 +281,10 @@ const MemoizedMessageItem = React.memo(
                 }}
               >
                 {message.text}
-              </ReactMarkdown>
+              </ReactMarkdown>}
 
               {/* Copy text action */}
-              {isAI && (
+              {canCopyAnswer && (
                 <button
                   onClick={() => handleCopyText(message.id, message.text)}
                   className="absolute top-2 right-2 p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-muted transition-all text-muted-foreground cursor-pointer"
@@ -323,6 +331,14 @@ const MemoizedMessageItem = React.memo(
           )}
 
           {/* Citations */}
+          {isAI &&
+            message.streamStatus === "Đang kiểm tra nguồn…" &&
+            (!message.citations || message.citations.length === 0) && (
+              <div className="flex flex-wrap gap-1.5 pt-0.5 pl-1" aria-label="Đang tải nguồn trích dẫn">
+                <span className="h-7 w-48 rounded-lg border border-transparent bg-muted animate-pulse" />
+                <span className="h-7 w-36 rounded-lg border border-transparent bg-muted animate-pulse" />
+              </div>
+            )}
           {isAI &&
             message.citations &&
             message.citations.length > 0 &&
@@ -424,6 +440,7 @@ interface ChatContainerProps {
   onSendMessage: (text: string) => void;
   onSendGroupMessage?: (text: string) => void;
   isLoading: boolean;
+  onStopGenerating?: () => void;
   onCitationClick: (pageNumber: number, documentId?: number) => void;
   selectedDocCount?: number;
   totalDocCount?: number;
@@ -447,6 +464,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   onSendMessage,
   onSendGroupMessage,
   isLoading,
+  onStopGenerating,
   onCitationClick,
   selectedDocCount = 0,
   totalDocCount = 0,
@@ -465,7 +483,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const [showAiSuggestion, setShowAiSuggestion] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
   const jumpingRef = useRef(!!jumpToMessage);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const followLatestRef = useRef(true);
+  const scrollFrameRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -641,9 +660,26 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
 
+  const handleMessagesScroll = useCallback(() => {
+    const container = messagesRef.current;
+    if (!container) return;
+    // Do not pull someone away from older messages while the answer streams.
+    followLatestRef.current = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+  }, []);
+
   useEffect(() => {
-    if (!jumpingRef.current) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+    if (jumpingRef.current || !followLatestRef.current) return;
+    if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      const container = messagesRef.current;
+      if (container && followLatestRef.current) container.scrollTop = container.scrollHeight;
+      scrollFrameRef.current = null;
+    });
+  }, [messages]);
+
+  useEffect(() => () => {
+    if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+  }, []);
 
   useEffect(() => {
     if (!jumpToMessage) return;
@@ -681,7 +717,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   return (
     <div className="flex flex-col flex-1 min-h-0 text-foreground">
       {/* Messages List */}
-      <div ref={messagesRef} className="flex-1 overflow-y-auto p-4 md:px-8 md:py-10 flex flex-col w-full">
+      <div ref={messagesRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto p-4 md:px-8 md:py-10 flex flex-col w-full">
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-center">
             <p className="text-sm text-muted-foreground">
@@ -735,18 +771,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
           })
         )}
 
-        {isLoading && (
-          <div className="flex gap-3.5 max-w-[85%] mr-auto mt-4">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center border bg-card border-border text-foreground shadow-xs shrink-0">
-              <Bot className="w-4 h-4 text-primary animate-pulse" />
-            </div>
-            <div className="flex items-center gap-2 px-4 py-3 bg-card border border-border rounded-2xl text-xs text-muted-foreground shadow-xs animate-pulse">
-              <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              <span>AI đang truy xuất tài liệu và tổng hợp câu trả lời...</span>
-            </div>
-          </div>
-        )}
-        <div ref={chatEndRef} />
       </div>
 
       <div className="shrink-0 px-3 pb-3 pt-2 md:px-8 md:pb-5 w-full">
@@ -856,15 +880,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             <Button
               type="button"
               size="icon"
-              aria-label={
-                mode === "ai" ? "Gửi câu hỏi cho Mora" : "Gửi tin nhắn nhóm"
-              }
-              disabled={!inputValue.trim() || isLoading}
-              onClick={send}
+              aria-label={isLoading ? "Dừng tạo câu trả lời" : mode === "ai" ? "Gửi câu hỏi cho Mora" : "Gửi tin nhắn nhóm"}
+              disabled={isLoading ? !onStopGenerating : !inputValue.trim()}
+              onClick={isLoading ? onStopGenerating : send}
               className="size-8 shrink-0 rounded-lg"
             >
               {isLoading ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Square className="size-3.5" fill="currentColor" />
               ) : (
                 <ArrowUp className="size-4" />
               )}

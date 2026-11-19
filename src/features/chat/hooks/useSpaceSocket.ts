@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
-import type { Message, TypingNotification } from '../types';
+import type { AiStreamEvent, Message, TypingNotification } from '../types';
 import { toast } from 'sonner';
 
 interface UseSpaceSocketProps {
@@ -8,12 +8,14 @@ interface UseSpaceSocketProps {
   onStateChanged?: (historyChanged: boolean) => void;
   onMessageReceived?: (message: Message) => void;
   onTypingReceived?: (typingInfo: TypingNotification) => void;
+  onAiStreamEvent?: (event: AiStreamEvent) => void;
 }
 
 export const useSpaceSocket = ({
   spaceId,
   onMessageReceived,
   onTypingReceived,
+  onAiStreamEvent,
   onStateChanged,
 }: UseSpaceSocketProps) => {
   const [isConnected, setIsConnected] = useState(false);
@@ -26,6 +28,7 @@ export const useSpaceSocket = ({
 
   const onMessageReceivedRef = useRef(onMessageReceived);
   const onTypingReceivedRef = useRef(onTypingReceived);
+  const onAiStreamEventRef = useRef(onAiStreamEvent);
 
   useEffect(() => {
     onMessageReceivedRef.current = onMessageReceived;
@@ -34,6 +37,7 @@ export const useSpaceSocket = ({
   useEffect(() => {
     onTypingReceivedRef.current = onTypingReceived;
   }, [onTypingReceived]);
+  useEffect(() => { onAiStreamEventRef.current = onAiStreamEvent; }, [onAiStreamEvent]);
 
   useEffect(() => {
     if (!spaceId) return;
@@ -87,6 +91,14 @@ export const useSpaceSocket = ({
             onMessageReceivedRef.current?.(msg);
           } catch (e) {
             console.error('[WebSocket] Failed to parse message payload:', e);
+          }
+        });
+
+        client.subscribe(`/topic/spaces/${spaceId}/ai-stream`, (stompMessage) => {
+          try {
+            onAiStreamEventRef.current?.(JSON.parse(stompMessage.body) as AiStreamEvent);
+          } catch (e) {
+            console.error('[WebSocket] Failed to parse AI stream payload:', e);
           }
         });
 

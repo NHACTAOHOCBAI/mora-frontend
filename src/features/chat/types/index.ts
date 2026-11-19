@@ -22,6 +22,18 @@ export interface Message {
   timestamp: string | Date;
   citations?: Citation[];
   selectedDocumentIds?: number[];
+  streamStatus?: string;
+}
+
+export interface AiStreamEvent {
+  type: 'accepted' | 'status' | 'delta' | 'citations' | 'done' | 'error';
+  generationId: string;
+  sequence: number;
+  stage?: string;
+  text?: string;
+  citations?: Citation[];
+  status?: 'completed' | 'cancelled';
+  message?: Message;
 }
 
 export interface SpaceMemberResponse {
