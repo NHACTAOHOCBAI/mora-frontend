@@ -18,18 +18,20 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { EllipsisVerticalIcon, CircleUserRoundIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
+import { useAuth } from "@/features/auth/hooks/useAuth"
+import { toAlias } from "@/lib/utils"
+import { CircleUserRoundIcon, EllipsisVerticalIcon, LogOutIcon } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
-}) {
+export function NavUser() {
   const { isMobile } = useSidebar()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  if (!user) return null
+
+  const name = user.fullName || user.email
+  const avatarFallback = toAlias(name)
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -39,12 +41,12 @@ export function NavUser({
               <SidebarMenuButton size="lg" className="aria-expanded:bg-muted" />
             }
           >
-            <Avatar className="size-8 rounded-lg grayscale">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+            <Avatar className="size-8 rounded-lg">
+              {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={name} />}
+              <AvatarFallback className="rounded-lg">{avatarFallback}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user.name}</span>
+              <span className="truncate font-medium">{name}</span>
               <span className="truncate text-xs text-foreground/70">
                 {user.email}
               </span>
@@ -61,11 +63,11 @@ export function NavUser({
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="size-8">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                    {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={name} />}
+                    <AvatarFallback className="rounded-lg">{avatarFallback}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
+                    <span className="truncate font-medium">{name}</span>
                     <span className="truncate text-xs text-muted-foreground">
                       {user.email}
                     </span>
@@ -75,27 +77,15 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <CircleUserRoundIcon
-                />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCardIcon
-                />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon
-                />
-                Notifications
+              <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                <CircleUserRoundIcon />
+                Thông tin cá nhân
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOutIcon
-              />
-              Log out
+            <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive dark:focus:bg-destructive/20">
+              <LogOutIcon />
+              Đăng xuất
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -13,11 +13,6 @@ import {
 import { LayoutDashboardIcon, UsersIcon, FolderIcon, FileTextIcon, FlaskConical } from "lucide-react"
 
 const data = {
-  user: {
-    name: "Mora Admin",
-    email: "admin@mora.com",
-    avatar: "/frog-logo.png",
-  },
   navMain: [
     { title: "Tổng quan", url: "/admin", icon: <LayoutDashboardIcon /> },
     { title: "Benchmark RAG", url: "/admin/benchmarks", icon: <FlaskConical /> },
@@ -59,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )
