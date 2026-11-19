@@ -16,3 +16,4 @@ export const useAdminDocuments = (params: QueryParams) => useQuery({
 });
 export const useAdminDocument = (id: number) => useQuery({ queryKey: ['adminDocument', id], queryFn: () => adminApi.getDocument(id), enabled: Number.isSafeInteger(id) && id > 0 });
 export const useAdminUser = (id: number) => useQuery({ queryKey: ['adminUser', id], queryFn: () => adminApi.getUser(id), enabled: Number.isSafeInteger(id) && id > 0 });
+export const useAdminAiSettings = () => useQuery({ queryKey: ['adminAiSettings'], queryFn: adminApi.getAiSettings });

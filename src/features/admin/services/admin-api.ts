@@ -28,6 +28,9 @@ export interface AdminUserDetail { id: number; email: string; fullName: string; 
 export interface AdminAiUsageBreakdown { key: string; totalTokens: number; costVnd: number; requestCount: number; }
 export interface AdminAiUsage { totalTokens: number; totalCostVnd: number; requestCount: number; trackingStartedAt?: string; daily: Array<{ date: string; totalTokens: number; costVnd: number; requestCount: number }>; byOperation: AdminAiUsageBreakdown[]; byModel: AdminAiUsageBreakdown[]; }
 export interface AdminDashboard { rangeDays: number; totalUsers: number; totalSpaces: number; totalDocuments: number; documentsNeedingAttention: number; activity: Array<{ date: string; users: number; spaces: number; documents: number }>; documentStatusCounts: Record<DocumentStatus, number>; failedDocuments: AdminDocumentSummary[]; recentSpaces: AdminSpaceSummary[]; aiUsage: AdminAiUsage; }
+export interface AiModelPrice { inputPerMillionUsd: number; cachedInputPerMillionUsd: number; outputPerMillionUsd: number; }
+export interface AdminAiSettings { apiKeyConfigured: boolean; keyFingerprint?: string; benchmarkApiKeyConfigured: boolean; benchmarkKeyFingerprint?: string; chatModel: string; parserModel: string; embeddingModel: string; benchmarkJudgeModel: string; benchmarkJudgeEmbeddingModel: string; vndPerUsd: number; pricingVersion: string; modelPrices: Record<string, AiModelPrice>; updatedAt?: string; }
+export interface AdminAiSettingsUpdate extends Omit<AdminAiSettings, 'apiKeyConfigured' | 'keyFingerprint' | 'benchmarkApiKeyConfigured' | 'benchmarkKeyFingerprint' | 'updatedAt'> { apiKey?: string; benchmarkApiKey?: string; }
 
 export const adminApi = {
   getAllUsers: async (params?: QueryParams): Promise<PageResponse<UserResponse>> => {
@@ -54,4 +57,6 @@ export const adminApi = {
   getDocuments: async (params?: QueryParams & { status?: DocumentStatus }): Promise<PageResponse<AdminDocumentSummary>> => (await apiClient.get<ApiResponse<PageResponse<AdminDocumentSummary>>>('/admin/documents', { params })).data.result,
   getDocument: async (id: number): Promise<AdminDocumentSummary> => (await apiClient.get<ApiResponse<AdminDocumentSummary>>(`/admin/documents/${id}`)).data.result,
   getUser: async (id: number): Promise<AdminUserDetail> => (await apiClient.get<ApiResponse<AdminUserDetail>>(`/admin/users/${id}`)).data.result,
+  getAiSettings: async (): Promise<AdminAiSettings> => (await apiClient.get<ApiResponse<AdminAiSettings>>('/admin/ai-settings')).data.result,
+  updateAiSettings: async (data: AdminAiSettingsUpdate): Promise<AdminAiSettings> => (await apiClient.put<ApiResponse<AdminAiSettings>>('/admin/ai-settings', data)).data.result,
 };

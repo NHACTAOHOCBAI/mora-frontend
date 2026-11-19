@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, UsersIcon, FolderIcon, FileTextIcon, FlaskConical, House } from "lucide-react"
+import { LayoutDashboardIcon, UsersIcon, FolderIcon, FileTextIcon, FlaskConical, House, Settings } from "lucide-react"
 
 const data = {
   navGroups: [
@@ -20,6 +20,7 @@ const data = {
       { title: "Quản lý thành viên", url: "/admin/users", icon: <UsersIcon /> },
       { title: "Không gian", url: "/admin/spaces", icon: <FolderIcon /> },
       { title: "Tài liệu & xử lý", url: "/admin/documents", icon: <FileTextIcon /> },
+      { title: "Cài đặt AI", url: "/admin/settings", icon: <Settings /> },
     ] },
     { label: "Điều hướng", items: [{ title: "Không gian của tôi", url: "/app", icon: <House /> }] },
   ],
