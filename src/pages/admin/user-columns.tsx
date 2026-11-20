@@ -48,6 +48,11 @@ export const userColumns = (
         enableHiding: false,
     },
     {
+        accessorKey: "planTier",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Gói" />,
+        cell: ({ row }) => <span className="inline-flex rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{row.original.planTier ?? 'FREE'}</span>,
+    },
+    {
         accessorKey: "id",
         header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
         cell: ({ row }) => <Link to={`/admin/users/${row.original.id}`} className="font-medium text-muted-foreground hover:underline">{row.original.id}</Link>,

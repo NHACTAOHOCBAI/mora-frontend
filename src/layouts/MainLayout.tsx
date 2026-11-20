@@ -5,7 +5,7 @@ import { SiteFooter } from '@/components/shared/SiteFooter';
 
 export const MainLayout: React.FC = () => {
   const { pathname } = useLocation();
-  const showFooter = pathname === '/app' || pathname === '/profile';
+  const showFooter = pathname === '/app' || pathname === '/profile' || pathname === '/plans';
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-200">
       <AppHeader homeHref="/app" />

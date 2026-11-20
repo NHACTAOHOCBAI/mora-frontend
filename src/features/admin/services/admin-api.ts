@@ -2,6 +2,7 @@ import { apiClient } from '@/services/api-client';
 import type { UserResponse, Role, AuthResponse } from '@/features/auth/types';
 import type { QueryParams } from '@/types/query';
 import type { ApiResponse } from '@/features/chat/types';
+import type { Entitlement, PlanTier } from '@/features/billing/services/billing-api';
 
 export interface AdminUserUpdateRequest {
   active: boolean;
@@ -56,6 +57,7 @@ export const adminApi = {
     const response = await apiClient.put<ApiResponse<UserResponse>>(`/admin/users/${id}`, data);
     return response.data.result;
   },
+  updateUserPlan: async (id: number, plan: PlanTier): Promise<Entitlement> => (await apiClient.patch<ApiResponse<Entitlement>>(`/admin/users/${id}/plan`, { plan })).data.result,
 
   deleteUser: async (id: number): Promise<void> => {
     await apiClient.delete<ApiResponse<void>>(`/admin/users/${id}`);

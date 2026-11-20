@@ -14,6 +14,7 @@ export interface UserResponse {
   privacyAcceptedVersion?: string;
   privacyAcceptedAt?: string;
   legalAcceptanceRequired: boolean;
+  planTier?: 'FREE' | 'PRO' | 'TEAM';
 }
 
 export interface AuthResponse {

@@ -3,7 +3,8 @@ import type { RefObject } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
+import { Link } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateSpace } from "../hooks/useSpace";
 import { getErrorMessage } from "@/lib/api-error";
 import { toast } from "sonner";
+import { useEntitlement } from '@/features/billing/hooks/useEntitlement';
 
 const createSchema = z.object({
   name: z
@@ -44,6 +46,7 @@ export function CreateSpaceDialog({
   returnFocus,
 }: CreateSpaceDialogProps) {
   const create = useCreateSpace();
+  const entitlement = useEntitlement(open);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const form = useForm<CreateValues>({
     resolver: zodResolver(createSchema),
@@ -68,6 +71,7 @@ export function CreateSpaceDialog({
     if (!next) form.reset();
     onOpenChange(next);
   };
+  const atSpaceLimit = !!entitlement.data && entitlement.data.ownedSpaces >= entitlement.data.maxOwnedSpaces;
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent
@@ -83,7 +87,7 @@ export function CreateSpaceDialog({
             Đặt tên theo môn học, chủ đề hoặc nhóm của bạn.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-4" noValidate>
+        {atSpaceLimit ? <div className="space-y-4"><div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm"><p className="font-semibold">Bạn đã dùng hết số Space của gói {entitlement.data?.planName}.</p><p className="mt-1 text-muted-foreground">Kích hoạt gói khác để tạo thêm không gian học tập.</p></div><DialogFooter><Button type="button" variant="outline" onClick={() => changeOpen(false)}>Đóng</Button><Button render={<Link to="/plans" onClick={() => changeOpen(false)} />}><Sparkles className="size-4" />Xem gói</Button></DialogFooter></div> : <form onSubmit={submit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <label htmlFor="space-name" className="text-sm font-medium">
               Tên không gian
@@ -162,7 +166,7 @@ export function CreateSpaceDialog({
               {create.isPending ? "Đang tạo..." : "Tạo không gian"}
             </Button>
           </DialogFooter>
-        </form>
+        </form>}
       </DialogContent>
     </Dialog>
   );

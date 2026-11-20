@@ -23,6 +23,7 @@ const AdminUserDetailPage = lazy(() => import('@/pages/admin/AdminDetailPages').
 const AdminBenchmarksPage = lazy(() => import('@/pages/admin/AdminBenchmarksPage').then(m => ({ default: m.AdminBenchmarksPage })));
 const AdminAiSettingsPage = lazy(() => import('@/pages/admin/AdminAiSettingsPage').then(m => ({ default: m.AdminAiSettingsPage })));
 const ProfilePage = lazy(() => import('@/pages/user/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const PlansPage = lazy(() => import('@/pages/user/PlansPage').then(m => ({ default: m.PlansPage })));
 const JoinSpacePage = lazy(() => import('@/pages/user/JoinSpacePage').then(m => ({ default: m.JoinSpacePage })));
 const PrivacyPage = lazy(() => import('@/pages/legal/LegalPage').then(m => ({ default: () => <m.LegalPage kind="privacy" /> })));
 const TermsPage = lazy(() => import('@/pages/legal/LegalPage').then(m => ({ default: () => <m.LegalPage kind="terms" /> })));
@@ -109,6 +110,7 @@ const router = createBrowserRouter([{
               </Suspense>
             ),
           },
+          { path: '/plans', element: <Suspense fallback={<LoadingFallback />}><PlansPage /></Suspense> },
           {
             path: '/join/:inviteCode',
             element: (
