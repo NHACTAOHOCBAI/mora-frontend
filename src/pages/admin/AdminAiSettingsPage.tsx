@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAdminAiSettings } from '@/features/admin/hooks/useAdminOperations';
-import { adminApi, type AdminAiSettingsUpdate, type AiModelPrice } from '@/features/admin/services/admin-api';
+import { adminApi, type AdminAiSettingsUpdate, type AiModelPrice, type AiSettingsValidation } from '@/features/admin/services/admin-api';
 import { getErrorMessage } from '@/lib/api-error';
 import { AiSettingsHistory } from './AiSettingsHistory';
 
@@ -27,6 +27,8 @@ export function AdminAiSettingsPage() {
   const [apiKey, setApiKey] = useState('');
   const [benchmarkApiKey, setBenchmarkApiKey] = useState('');
   const [saving, setSaving] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validation, setValidation] = useState<AiSettingsValidation | null>(null);
   useEffect(() => { if (query.data) setForm({ chatModel: query.data.chatModel, parserModel: query.data.parserModel, embeddingModel: query.data.embeddingModel, benchmarkJudgeModel: query.data.benchmarkJudgeModel, benchmarkJudgeEmbeddingModel: query.data.benchmarkJudgeEmbeddingModel, vndPerUsd: query.data.vndPerUsd, pricingVersion: query.data.pricingVersion, modelPrices: query.data.modelPrices }); }, [query.data]);
   if (query.isLoading || !form) return <div className="p-6 text-sm text-muted-foreground">Đang tải cấu hình AI...</div>;
   const currentSettings = query.data;
@@ -44,10 +46,24 @@ export function AdminAiSettingsPage() {
       setHistoryPage(0);
       void queryClient.invalidateQueries({ queryKey: historyQueryKey });
       toast.success('Đã áp dụng cấu hình AI cho request mới.');
+      setValidation(null);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
       setSaving(false);
+    }
+  };
+  const validateConfiguration = async () => {
+    setValidating(true);
+    try {
+      const result = await adminApi.validateAiSettings();
+      setValidation(result);
+      if (result.valid) toast.success('OpenAI đã chấp nhận API key và các model đã cấu hình.');
+      else toast.error('Cấu hình AI chưa dùng được. Xem chi tiết bên dưới.');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setValidating(false);
     }
   };
   const historyPanel = (
@@ -111,7 +127,26 @@ export function AdminAiSettingsPage() {
             </CardContent>
           </Card>
 
-          <Card><CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>Bảng giá model</CardTitle><CardDescription>USD trên 1 triệu token.</CardDescription></div><Button size="sm" variant="outline" onClick={addPrice}><Plus className="size-4" />Thêm model</Button></div></CardHeader><CardContent className="space-y-3">{Object.entries(form.modelPrices).map(([model, price]) => <div key={model} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1.5fr_1fr_1fr_1fr_auto] md:items-end"><Input defaultValue={model} aria-label="Tên model" onBlur={e => renamePrice(model, e.target.value.trim())} /><PriceInput label="Input" value={price.inputPerMillionUsd} onChange={value => setPrice(model, 'inputPerMillionUsd', value)} /><PriceInput label="Cached input" value={price.cachedInputPerMillionUsd} onChange={value => setPrice(model, 'cachedInputPerMillionUsd', value)} /><PriceInput label="Output" value={price.outputPerMillionUsd} onChange={value => setPrice(model, 'outputPerMillionUsd', value)} /><Button size="icon" variant="ghost" className="text-destructive" onClick={() => removePrice(model)} aria-label={`Xóa ${model}`}><Trash2 className="size-4" /></Button></div>)}</CardContent></Card><div className="flex justify-end"><Button onClick={save} disabled={saving}>{saving ? 'Đang lưu...' : <><Save className="size-4" />Lưu và áp dụng</>}</Button></div>
+          <Card><CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>Bảng giá model</CardTitle><CardDescription>USD trên 1 triệu token.</CardDescription></div><Button size="sm" variant="outline" onClick={addPrice}><Plus className="size-4" />Thêm model</Button></div></CardHeader><CardContent className="space-y-3">{Object.entries(form.modelPrices).map(([model, price]) => <div key={model} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1.5fr_1fr_1fr_1fr_auto] md:items-end"><Input defaultValue={model} aria-label="Tên model" onBlur={e => renamePrice(model, e.target.value.trim())} /><PriceInput label="Input" value={price.inputPerMillionUsd} onChange={value => setPrice(model, 'inputPerMillionUsd', value)} /><PriceInput label="Cached input" value={price.cachedInputPerMillionUsd} onChange={value => setPrice(model, 'cachedInputPerMillionUsd', value)} /><PriceInput label="Output" value={price.outputPerMillionUsd} onChange={value => setPrice(model, 'outputPerMillionUsd', value)} /><Button size="icon" variant="ghost" className="text-destructive" onClick={() => removePrice(model)} aria-label={`Xóa ${model}`}><Trash2 className="size-4" /></Button></div>)}</CardContent></Card>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <div className="mr-auto min-h-8 text-xs">
+              {validation?.valid ? (
+                <div role="status" className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-foreground">
+                  <CheckCircle2 className="size-3.5 text-muted-foreground" />
+                  <span className="font-medium">OpenAI đã xác thực</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{validation.checks.filter(check => check.valid).map(check => check.name).join(' và ')}</span>
+                </div>
+              ) : validation ? (
+                <div role="alert" className="max-w-xl rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-foreground">
+                  <div className="flex items-center gap-2 font-medium"><AlertCircle className="size-4 shrink-0 text-destructive" />Không thể xác thực cấu hình</div>
+                  <p className="mt-1 pl-6 text-xs leading-5 text-muted-foreground">{validation.checks.filter(check => !check.valid).map(check => `${check.name}: ${check.message}`).join(' ')}</p>
+                </div>
+              ) : <p className="pt-1 text-muted-foreground">Lưu cấu hình trước, rồi kiểm tra key và quyền truy cập model.</p>}
+            </div>
+            <Button variant="outline" onClick={validateConfiguration} disabled={saving || validating}>{validating ? <><Loader2 className="size-4 animate-spin" />Đang kiểm tra...</> : 'Kiểm tra cấu hình'}</Button>
+            <Button onClick={save} disabled={saving || validating}>{saving ? 'Đang lưu...' : <><Save className="size-4" />Lưu và áp dụng</>}</Button>
+          </div>
         </div>
         <aside className="hidden xl:block" aria-label="Lịch sử thay đổi">
           <Card>

@@ -32,6 +32,11 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn, toAlias } from "@/lib/utils";
 import { canGroupMessages, getMessageKind } from "../utils/message-grouping";
 
@@ -88,7 +93,8 @@ const MemoizedMessageItem = React.memo(
         data-group-start={isGroupStart}
         data-group-end={isGroupEnd}
         className={cn(
-          "group/message flex items-end gap-2 max-w-[88%]",
+          "group/message flex items-end gap-2",
+          isAI ? "max-w-full md:max-w-3xl" : "max-w-[88%]",
           isSelf && !isAI ? "ml-auto justify-end" : "mr-auto",
         )}
       >
@@ -308,19 +314,32 @@ const MemoizedMessageItem = React.memo(
                     const quotesText = citation.quotes.join("\n---\n");
 
                     return (
-                      <Button
-                        key={idx}
-                        onClick={() =>
-                          onCitationClick(citation.pageNumber, docId)
-                        }
-                        variant="outline"
-                        size="sm"
-                        className="h-7 max-w-[260px] text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-1 cursor-pointer bg-card hover:border-primary hover:text-primary"
-                        title={`Tài liệu: ${citation.documentName || (docId ? `Tài liệu #${docId}` : "Chưa rõ")} - Trang ${citation.pageNumber}${quotesText ? `\nTrích dẫn:\n"${quotesText}"` : ""}`}
-                      >
-                        <MapPin className="w-2.5 h-2.5 text-primary shrink-0" />
-                        <span className="truncate">{docDisplayName}</span>
-                      </Button>
+                      <Popover key={idx}>
+                        <PopoverTrigger className="flex h-7 max-w-[260px] items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold transition-all duration-200 hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-ring">
+                          <MapPin className="w-2.5 h-2.5 shrink-0 text-primary" />
+                          <span className="truncate">{docDisplayName}</span>
+                        </PopoverTrigger>
+                        <PopoverContent>
+                          <p className="pr-4 text-sm font-semibold leading-5 break-words">
+                            {citation.documentName || (docId ? `Tài liệu #${docId}` : "Nguồn tài liệu")}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">Trang {citation.pageNumber}</p>
+                          {quotesText && (
+                            <blockquote className="mt-3 max-h-36 overflow-y-auto border-l-2 border-primary/40 pl-3 text-xs leading-5 text-muted-foreground whitespace-pre-wrap">
+                              {quotesText}
+                            </blockquote>
+                          )}
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="mt-3 w-full"
+                            onClick={() => onCitationClick(citation.pageNumber, docId)}
+                          >
+                            <FileText className="size-3.5" />
+                            Mở trang trong PDF
+                          </Button>
+                        </PopoverContent>
+                      </Popover>
                     );
                   })}
                 </div>

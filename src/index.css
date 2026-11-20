@@ -228,3 +228,13 @@ input:-webkit-autofill:active {
     }
   }
 }
+
+@layer components {
+  /* Preserve hierarchy when the AI must use a nested Markdown list. */
+  .markdown-response ul { list-style-type: disc; }
+  .markdown-response ul ul { list-style-type: circle; }
+  .markdown-response ul ul ul { list-style-type: square; }
+  .markdown-response ol { list-style-type: decimal; }
+  .markdown-response ol ol { list-style-type: lower-alpha; }
+  .markdown-response ol ol ol { list-style-type: lower-roman; }
+}

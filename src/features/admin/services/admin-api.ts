@@ -32,6 +32,7 @@ export interface AdminDashboard { rangeDays: number; totalUsers: number; totalSp
 export interface AiModelPrice { inputPerMillionUsd: number; cachedInputPerMillionUsd: number; outputPerMillionUsd: number; }
 export interface AdminAiSettings { apiKeyConfigured: boolean; keyFingerprint?: string; benchmarkApiKeyConfigured: boolean; benchmarkKeyFingerprint?: string; chatModel: string; parserModel: string; embeddingModel: string; benchmarkJudgeModel: string; benchmarkJudgeEmbeddingModel: string; vndPerUsd: number; pricingVersion: string; modelPrices: Record<string, AiModelPrice>; updatedAt?: string; }
 export interface AdminAiSettingsUpdate extends Omit<AdminAiSettings, 'apiKeyConfigured' | 'keyFingerprint' | 'benchmarkApiKeyConfigured' | 'benchmarkKeyFingerprint' | 'updatedAt'> { apiKey?: string; benchmarkApiKey?: string; }
+export interface AiSettingsValidation { valid: boolean; checks: Array<{ name: string; valid: boolean; message: string }>; }
 export interface AiSettingsChange {
   group: 'CHAT' | 'BENCHMARK' | 'PRICING';
   field: string;
@@ -79,4 +80,5 @@ export const adminApi = {
     return response.data.result;
   },
   updateAiSettings: async (data: AdminAiSettingsUpdate): Promise<AdminAiSettings> => (await apiClient.put<ApiResponse<AdminAiSettings>>('/admin/ai-settings', data)).data.result,
+  validateAiSettings: async (): Promise<AiSettingsValidation> => (await apiClient.post<ApiResponse<AiSettingsValidation>>('/admin/ai-settings/validate')).data.result,
 };
